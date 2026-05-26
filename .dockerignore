@@ -1,0 +1,20 @@
+node_modules
+.git
+.gitignore
+.next
+*.md
+.env*
+!.env.example
+!.env.production
+AUTOCORE SYSTEM FILES
+APK
+BRAND
+docs
+static
+templates
+نظام إدارة المهام الذكي
+scripts
+desktop.ini
+*.log
+.vscode
+.idea

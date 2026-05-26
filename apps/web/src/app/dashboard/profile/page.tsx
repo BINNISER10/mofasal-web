@@ -1,0 +1,41 @@
+'use client';
+import React from 'react';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { useAppStore } from '@/lib/stores/appStore';
+import { Avatar } from '@/components/ui/Avatar';
+import toast from 'react-hot-toast';
+
+export default function ProfilePage() {
+  const { user } = useAuthStore();
+  const { isRTL } = useAppStore();
+
+  return (
+    <div className="max-w-lg mx-auto space-y-6">
+      <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'الملف الشخصي' : 'Profile'}</h2>
+
+      <Card className="p-5 text-center">
+        <Avatar name={user?.name || 'User'} size="xl" className="mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100">{user?.name}</h3>
+        <p className="text-sm text-gray-500 dark:text-slate-400 capitalize">{user?.role}</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400" dir="ltr">{user?.phone}</p>
+        {user?.email && <p className="text-sm text-gray-500 dark:text-slate-400">{user.email}</p>}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'المعلومات الشخصية' : 'Personal Info'}</h3>
+        <div className="space-y-4">
+          <Input label={isRTL ? 'الاسم' : 'Name'} defaultValue={user?.name} />
+          <Input label="Email" type="email" defaultValue={user?.email} />
+          <Input label={isRTL ? 'رقم الجوال' : 'Phone'} isPhone defaultValue={user?.phone?.replace('+966', '')} />
+        </div>
+      </Card>
+
+      <Button variant="primary" size="lg" fullWidth onClick={() => toast.success(isRTL ? 'تم حفظ التغييرات' : 'Changes saved')}>
+        {isRTL ? 'حفظ التغييرات' : 'Save Changes'}
+      </Button>
+    </div>
+  );
+}

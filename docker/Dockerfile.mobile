@@ -1,0 +1,40 @@
+# ═════════════════════════════════════════════════════════
+# MUFASAL Mobile (Expo / React Native) — EAS Build
+# ═════════════════════════════════════════════════════════
+# This Dockerfile is intended for CI/CD pipelines.
+# For local development, use `npx expo start` directly.
+
+FROM node:18-alpine AS deps
+RUN apk add --no-cache libc6-compat git
+WORKDIR /app
+
+COPY package.json yarn.lock* ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/ui/package.json ./packages/ui/
+COPY apps/mobile/package.json ./apps/mobile/
+
+RUN npm ci --ignore-scripts
+
+FROM node:18-alpine AS builder
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat git
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+RUN npm run build --filter=@mufasal/shared && \
+    npm run build --filter=@mufasal/ui
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+
+RUN npm install -g eas-cli
+
+COPY --from=builder /app /app
+
+WORKDIR /app/apps/mobile
+
+# Build with EAS — expects EXPO_TOKEN and other EAS credentials
+# as build-time secrets.
+CMD ["eas", "build", "--platform", "all", "--non-interactive"]

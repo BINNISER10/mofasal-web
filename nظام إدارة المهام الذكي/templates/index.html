@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form method="POST" action="{{ url_for('main.add_task') }}" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="title" placeholder="عنوان المهمة" required>
+            </div>
+            <div class="col-md-4">
+                <input type="date" class="form-control" name="due_date">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="priority">
+                    <option value="منخفضة">منخفضة</option>
+                    <option value="متوسطة" selected>متوسطة</option>
+                    <option value="عالية">عالية</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <textarea class="form-control" name="description" rows="2" placeholder="وصف المهمة (اختياري)"></textarea>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">إضافة المهمة</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="بحث..." id="searchInput" value="{{ search_query }}">
+            <button class="btn btn-outline-secondary" type="button" id="searchBtn"><i class="fas fa-search"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('main.index', filter='all', priority='all', q='') }}" class="btn btn-outline-secondary {% if filter_status=='all' and priority=='all' and search_query=='' %}active{% endif %}">الكل</a>
+            <a href="{{ url_for('main.index', filter='active', priority='all', q='') }}" class="btn btn-outline-secondary {% if filter_status=='active' and priority=='all' and search_query=='' %}active{% endif %}">نشطة</a>
+            <a href="{{ url_for('main.index', filter='completed', priority='all', q='') }}" class="btn btn-outline-secondary {% if filter_status=='completed' and priority=='all' and search_query=='' %}active{% endif %}">مكتملة</a>
+        </div>
+        <div class="btn-group mt-2" role="group">
+            <a href="{{ url_for('main.index', filter='all', priority='منخفضة', q='') }}" class="btn btn-outline-secondary {% if filter_status=='all' and priority=='منخفضة' and search_query=='' %}active{% endif %}">منخفضة</a>
+            <a href="{{ url_for('main.index', filter='all', priority='متوسطة', q='') }}" class="btn btn-outline-secondary {% if filter_status=='all' and priority=='متوسطة' and search_query=='' %}active{% endif %}">متوسطة</a>
+            <a href="{{ url_for('main.index', filter='all', priority='عالية', q='') }}" class="btn btn-outline-secondary {% if filter_status=='all' and priority=='عالية' and search_query=='' %}active{% endif %}">عالية</a>
+        </div>
+        {% if tasks | selectattr('completed', 'equalto', true) | list | length > 0 %}
+        <form method="POST" action="{{ url_for('main.clear_completed') }}" class="float-end">
+            <button type="submit" class="btn btn-danger btn-sm">حذف المكتمlete</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if tasks %}
+            <div class="list-group">
+                {% for task in tasks %}
+                <div class="list-group-item task-item {% if task.completed %}completed{% endif %}" data-task-id="{{ task.id }}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div class="form-check me-3">
+                            <input type="checkbox" class="form-check-input task-complete" {{ 'checked' if task.completed else '' }}>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">{{ task.title }}</h5>
+                            {% if task.description %}
+                                <p class="mb-1 text-truncate">{{ task.description }}</p>
+                            {% endif %}
+                            <small>
+                                {% if task.due_date %}
+                                    <i class="far fa-calendar-alt"></i> {{ task.due_date.strftime('%Y-%m-%d') }}&nbsp;&nbsp;
+                                {% endif %}
+                                <span class="badge bg-{{ {'منخفضة': 'secondary', 'متوسطة': 'info', 'عالية': 'warning'}[task.priority] }}">{{ task.priority }}</span>
+                            </small>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-edit me-2" data-bs-toggle="modal" data-bs-target="#editModal{{ task.id }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger delete-task">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center py-5">
+                لا توجد مهام تتطابق مع المعايير المحددة
+                <br>
+                <a href="{{ url_for('main.index', filter='all', priority='all', q='') }}" class="alert-link">إظهار جميع المهام</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- modals for editing tasks -->
+{% for task in tasks %}
+<div class="modal fade" id="editModal{{ task.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ task.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('main.edit_task', task_id=task.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel{{ task.id }}">تعديل المهمة: {{ task.title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editTitle{{ task.id }}" class="form-label">عنوان المهمة</label>
+                        <input type="text" class="form-control" id="editTitle{{ task.id }}" name="title" value="{{ task.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription{{ task.id }}" class="form-label">وصف المهمة</label>
+                        <textarea class="form-control" id="editDescription{{ task.id }}" name="description" rows="3">{{ task.description or '' }}</textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editDueDate{{ task.id }}" class="form-label">تاريخ الاستحقاق</label>
+                            <input type="date" class="form-control" id="editDueDate{{ task.id }}" name="due_date" value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editPriority{{ task.id }}" class="form-label">الأولوية</label>
+                            <select class="form-select" id="editPriority{{ task.id }}" name="priority">
+                                <option value="منخفضة" {% if task.priority=='منخفضة' %}selected{% endif %}>منخفضة</option>
+                                <option value="متوسطة" {% if task.priority=='متوسطة' %}selected{% endif %}>متوسطة</option>
+                                <option value="عالية" {% if task.priority=='عالية' %}selected{% endif %}>عالية</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // التبديل بين الحالة المكتملة وغير المكتملة
+    document.querySelectorAll('.task-complete').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const taskId = this.closest('.task-item').dataset.taskId;
+            fetch(`/toggle/${taskId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrf_token')
+                },
+                body: JSON.stringify({})
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      const taskItem = this.closest('.task-item');
+                      if (data.completed) {
+                          taskItem.classList.add('completed');
+                      } else {
+                          taskItem.classList.remove('completed');
+                      }
+                  }
+              });
+        });
+    });
+
+    // حذف المهمة
+    document.querySelectorAll('.delete-task').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('هل أنت متأكد من حذف هذه المهمة؟')) {
+                const taskId = this.closest('.task-item').dataset.taskId;
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/delete/${taskId}`;
+                
+                const csrfToken = getCookie('csrf_token');
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+
+    // بحث مباشر
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
+    
+    function performSearch() {
+        const query = searchInput.value.trim();
+        const url = new URL(window.location);
+        url.searchParams.set('q', query);
+        url.searchParams.set('filter', '{{ filter_status }}');
+        url.searchParams.set('priority', '{{ filter_priority }}');
+        window.location.href = url.toString();
+    }
+    
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+    
+    // دالة للحصول على كوكي CSRF
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">تعديل المهمة</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">عنوان المهمة</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ task.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">وصف المهمة</label>
+                        <textarea class="form-control" id="description" name="description" rows="4">{{ task.description or '' }}</textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="due_date" class="form-label">تاريخ الاستحقاق</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" value="{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="priority" class="form-label">الأولوية</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="منخفضة" {% if task.priority=='منخفضة' %}selected{% endif %}>منخفضة</option>
+                                <option value="متوسطة" {% if task.priority=='متوسطة' %}selected{% endif %}>متوسطة</option>
+                                <option value="عالية" {% if task.priority=='عالية' %}selected{% endif %}>عالية</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">إلغاء</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

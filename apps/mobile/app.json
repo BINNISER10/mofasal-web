@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "مفصل",
+    "slug": "mufasal",
+    "scheme": "mufasal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#00373E"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mufasal.mobile",
+      "config": {
+        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "مفصل needs your location to find nearby shops and track deliveries",
+        "NSCameraUsageDescription": "مفصل needs camera access to scan QR codes and take fabric photos",
+        "NSPhotoLibraryUsageDescription": "مفصل needs photo library access to upload fabric images"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#00373E"
+      },
+      "package": "com.mufasal.mobile",
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "locales": {
+      "ar": "./assets/locales/ar.json",
+      "en": "./assets/locales/en.json"
+    },
+    "plugins": [
+      "expo-localization",
+      "react-native-reanimated"
+    ]
+  }
+}

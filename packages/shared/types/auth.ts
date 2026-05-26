@@ -1,0 +1,71 @@
+export enum UserRole {
+  CUSTOMER = 'CUSTOMER',
+  TAILOR = 'TAILOR',
+  TAILOR_SHOP = 'TAILOR_SHOP',
+  MERCHANT = 'MERCHANT',
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  STAFF = 'STAFF',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+}
+
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  BANNED = 'BANNED',
+  PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+}
+
+export interface LoginRequest {
+  phone: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  name: string;
+  phone: string;
+  password: string;
+  role: UserRole;
+}
+
+export interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface JwtPayload {
+  userId: string;
+  role: UserRole;
+  shopId?: string;
+}
+
+export enum Permission {
+  MANAGE_USERS = 'MANAGE_USERS',
+  VIEW_USERS = 'VIEW_USERS',
+  MANAGE_ORDERS = 'MANAGE_ORDERS',
+  VIEW_ORDERS = 'VIEW_ORDERS',
+  UPDATE_ORDER_STATUS = 'UPDATE_ORDER_STATUS',
+  MANAGE_INVENTORY = 'MANAGE_INVENTORY',
+  VIEW_INVENTORY = 'VIEW_INVENTORY',
+  MANAGE_FINANCES = 'MANAGE_FINANCES',
+  VIEW_FINANCES = 'VIEW_FINANCES',
+  MANAGE_SETTINGS = 'MANAGE_SETTINGS',
+  VIEW_SETTINGS = 'VIEW_SETTINGS',
+  VIEW_REPORTS = 'VIEW_REPORTS',
+  EXPORT_REPORTS = 'EXPORT_REPORTS',
+  MANAGE_STAFF = 'MANAGE_STAFF',
+  VIEW_STAFF = 'VIEW_STAFF',
+  MANAGE_DELIVERY = 'MANAGE_DELIVERY',
+  VIEW_DELIVERY = 'VIEW_DELIVERY',
+  MANAGE_PAYMENTS = 'MANAGE_PAYMENTS',
+  VIEW_PAYMENTS = 'VIEW_PAYMENTS',
+  MANAGE_PRODUCTS = 'MANAGE_PRODUCTS',
+  VIEW_PRODUCTS = 'VIEW_PRODUCTS',
+  MANAGE_REVIEWS = 'MANAGE_REVIEWS',
+  MODERATE_REVIEWS = 'MODERATE_REVIEWS',
+  MANAGE_MARKETPLACE = 'MANAGE_MARKETPLACE',
+  MANAGE_SYSTEM = 'MANAGE_SYSTEM',
+  VIEW_AUDIT_LOGS = 'VIEW_AUDIT_LOGS',
+  MANAGE_MODULES = 'MANAGE_MODULES',
+}

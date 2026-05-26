@@ -1,0 +1,101 @@
+import enum
+
+
+class UserRole(str, enum.Enum):
+    CUSTOMER = 'CUSTOMER'
+    TAILOR = 'TAILOR'
+    TAILOR_SHOP = 'TAILOR_SHOP'
+    MERCHANT = 'MERCHANT'
+    ADMIN = 'ADMIN'
+    STAFF = 'STAFF'
+    SUPER_ADMIN = 'SUPER_ADMIN'
+
+
+class UserStatus(str, enum.Enum):
+    ACTIVE = 'ACTIVE'
+    INACTIVE = 'INACTIVE'
+    SUSPENDED = 'SUSPENDED'
+    BANNED = 'BANNED'
+
+
+class OrderStatus(str, enum.Enum):
+    PENDING = 'PENDING'
+    CONFIRMED = 'CONFIRMED'
+    MEASUREMENT_PENDING = 'MEASUREMENT_PENDING'
+    MEASUREMENT_COMPLETED = 'MEASUREMENT_COMPLETED'
+    IN_PROGRESS = 'IN_PROGRESS'
+    READY_FOR_DELIVERY = 'READY_FOR_DELIVERY'
+    OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY'
+    DELIVERED = 'DELIVERED'
+    COMPLETED = 'COMPLETED'
+    CANCELLED = 'CANCELLED'
+    REFUNDED = 'REFUNDED'
+
+
+class PaymentStatus(str, enum.Enum):
+    PENDING = 'PENDING'
+    PROCESSING = 'PROCESSING'
+    PAID = 'PAID'
+    FAILED = 'FAILED'
+    REFUNDED = 'REFUNDED'
+    PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED'
+
+
+class PaymentMethod(str, enum.Enum):
+    MADA = 'MADA'
+    VISA_MASTERCAARD = 'VISA_MASTERCARD'
+    APPLE_PAY = 'APPLE_PAY'
+    STC_PAY = 'STC_PAY'
+    TAMARA = 'TAMARA'
+    TABBY = 'TABBY'
+    SADAD = 'SADAD'
+    CASH = 'CASH'
+
+
+class ServiceType(str, enum.Enum):
+    TAILORING = 'TAILORING'
+    ALTERATION = 'ALTERATION'
+    DESIGN_CONSULTATION = 'DESIGN_CONSULTATION'
+    FABRIC_SALE = 'FABRIC_SALE'
+    READY_MADE = 'READY_MADE'
+    CHILDREN_WEAR = 'CHILDREN_WEAR'
+
+
+class LocationType(str, enum.Enum):
+    DELIVERY = 'DELIVERY'
+    PICKUP = 'PICKUP'
+    SHOP_VISIT = 'SHOP_VISIT'
+
+
+class DeliveryProvider(str, enum.Enum):
+    SHOP_VEHICLE = 'SHOP_VEHICLE'
+    UBER = 'UBER'
+    CAREEN = 'CAREEN'
+    JEENY = 'JEENY'
+    SMSA = 'SMSA'
+    ARAMEX = 'ARAMEX'
+
+
+class DeliveryStatus(str, enum.Enum):
+    PENDING = 'PENDING'
+    PICKED_UP = 'PICKED_UP'
+    IN_TRANSIT = 'IN_TRANSIT'
+    DELIVERED = 'DELIVERED'
+    FAILED = 'FAILED'
+    RETURNED = 'RETURNED'
+
+
+class InventoryMovementType(str, enum.Enum):
+    IN = 'IN'
+    OUT = 'OUT'
+
+
+class NotificationType(str, enum.Enum):
+    ORDER_UPDATE = 'ORDER_UPDATE'
+    PAYMENT_UPDATE = 'PAYMENT_UPDATE'
+    DELIVERY_UPDATE = 'DELIVERY_UPDATE'
+    PROMOTION = 'PROMOTION'
+    SYSTEM = 'SYSTEM'
+    MESSAGE = 'MESSAGE'
+    REVIEW = 'REVIEW'
+    CONFIRMATION = 'CONFIRMATION'

@@ -1,0 +1,918 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ─── 0. SaaS & Webhooks ───
+model Shop {
+  id               String        @id @default(uuid())
+  name             String
+  nameAr           String?
+  description      String?
+  logo             String?
+  coverImage       String?
+  ownerId          String?
+  phone            String?
+  email            String?
+  address          String?
+  city             String?
+  region           String?
+  lat              Float?
+  lng              Float?
+  rating           Float         @default(0)
+  reviewCount      Int           @default(0)
+  orderCount       Int           @default(0)
+  isVerified       Boolean       @default(false)
+  isOpen           Boolean       @default(true)
+  deliveryRadius   Float?
+  deliveryFee      Float         @default(0)
+  minOrderAmount   Float         @default(0)
+  commissionRate   Float         @default(0.1)
+  subscriptionPlan String        @default("FREE_TRIAL")
+  aiProvider       String        @default("gemini")
+  aiApiKey         String?
+  trialEndsAt      DateTime?
+  createdAt        DateTime      @default(now())
+
+  users         User[]
+  products      Product[]
+  customers     Customer[]
+  invoices      Invoice[]
+  accounts      Account[]
+  roles         Role[]
+  integrations  Integration[]
+  orders        Order[]
+  shopServices      ShopService[]
+  shopVehicles      ShopVehicle[]
+  serviceRequests   ServiceRequest[]
+  departments       Department[]
+  employees         Employee[]
+  purchaseOrders    PurchaseOrder[]
+  suppliers         Supplier[]
+  posSessions       POSSession[]
+
+  @@index([subscriptionPlan])
+  @@index([city])
+  @@index([rating])
+}
+
+model Integration {
+  id          String   @id @default(uuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  serviceName String
+  webhookUrl  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([shopId, serviceName])
+}
+
+// ─── 1. HR & Behavioral AI ───
+model User {
+  id             String    @id @default(uuid())
+  shopId         String?
+  shop           Shop?     @relation(fields: [shopId], references: [id])
+  name           String
+  email          String?   @unique
+  phone          String?   @unique
+  password       String
+  roleId         String
+  role           Role      @relation(fields: [roleId], references: [id])
+  status         String    @default("ACTIVE")
+  avatar         String?
+  phoneVerified  Boolean   @default(false)
+  emailVerified  Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+
+  tasks          ManufacturingTask[]
+  sales          Invoice[]           @relation("SalesRepresentative")
+  behaviorLogs   UserBehaviorLog[]
+  aiProfile      AIProfile?
+  cart           Cart?
+  sentMessages   Message[]
+  addresses      UserAddress[]
+  measurements   UserMeasurement[]
+  notifications  Notification[]
+  serviceRequests ServiceRequest[]
+  reviews           Review[]
+  auditLogs         AuditLog[]
+  employee          Employee?
+  approvedLeaves    LeaveRequest[]   @relation("LeaveApprover")
+  processedPayrolls Payroll[]        @relation("PayrollProcessor")
+  createdPurchaseOrders PurchaseOrder[] @relation("PurchaseOrderCreator")
+  posSessions       POSSession[]
+
+  @@index([shopId, email])
+  @@index([shopId, phone])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  name        String
+  permissions Json
+  parentId    String?
+
+  parent   Role?  @relation("RoleHierarchy", fields: [parentId], references: [id])
+  children Role[] @relation("RoleHierarchy")
+  users    User[]
+
+  @@index([shopId])
+}
+
+model UserBehaviorLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  actionType  String
+  actionData  Json
+  createdAt   DateTime @default(now())
+
+  @@index([userId, actionType])
+  @@index([customerId, actionType])
+}
+
+model AIProfile {
+  id          String   @id @default(uuid())
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id])
+  customerId  String?  @unique
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  preferences Json
+  insights    String
+  lastUpdated DateTime @default(now())
+}
+
+// ─── Marketplace Models ───
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  nameAr      String?
+  slug        String     @unique
+  description String?
+  image       String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  order       Int        @default(0)
+  isActive    Boolean    @default(true)
+
+  products    Product[]
+}
+
+model Cart {
+  id     String     @id @default(uuid())
+  userId String     @unique
+  user   User       @relation(fields: [userId], references: [id])
+  items  CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  variantId String?
+  quantity  Int     @default(1)
+
+  @@index([cartId])
+  @@index([productId])
+}
+
+// ─── 2. Inventory & Procurement ───
+model Product {
+  id          String    @id @default(uuid())
+  shopId      String
+  shop        Shop      @relation(fields: [shopId], references: [id])
+  name        String
+  nameAr      String?
+  description String?
+  sku         String
+  type        String
+  price       Float     @default(0)
+  costPrice   Float     @default(0)
+  stockQuantity Int     @default(0)
+  unit        String    @default("piece")
+  images      String[]
+  tags        String?
+  isActive    Boolean   @default(true)
+  visibility  String    @default("PUBLIC")
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  variants              ProductVariant[]
+  inventoryMovements    InventoryMovement[]
+  cartItems             CartItem[]
+  purchaseOrderItems    PurchaseOrderItem[]
+  supplierProducts      SupplierProduct[]
+
+  @@index([shopId, sku])
+  @@index([categoryId])
+}
+
+model ProductVariant {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  nameAr    String?
+  price     Float   @default(0)
+  stock     Int     @default(0)
+  sku       String?
+  isActive  Boolean @default(true)
+
+  @@index([productId])
+}
+
+model InventoryMovement {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  type        String
+  quantity    Int
+  reference   String?
+  notes       String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([productId, type])
+}
+
+model ShopService {
+  id          String   @id @default(uuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  serviceType String
+  name        String
+  nameAr      String?
+  description String?
+  price       Float    @default(0)
+  duration    Int?
+  isActive    Boolean  @default(true)
+
+  @@index([shopId, serviceType])
+}
+
+model ShopVehicle {
+  id          String  @id @default(uuid())
+  shopId      String
+  shop        Shop    @relation(fields: [shopId], references: [id])
+  plateNumber String
+  model       String?
+  color       String?
+  driverName  String?
+  driverPhone String?
+  isActive    Boolean @default(true)
+
+  @@index([shopId])
+}
+
+model ServiceRequest {
+  id            String   @id @default(uuid())
+  shopId        String
+  shop          Shop     @relation(fields: [shopId], references: [id])
+  customerId    String?
+  customer      User?    @relation(fields: [customerId], references: [id])
+  serviceType   String
+  locationType  String?
+  addressId     String?
+  customAddress String?
+  scheduledDate DateTime?
+  preferredTime String?
+  notes         String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+
+  @@index([shopId, status])
+  @@index([customerId])
+}
+
+// ─── 3. Orders & Sales ───
+model Order {
+  id              String         @id @default(uuid())
+  orderNumber     String         @unique
+  customerId      String
+  customer        Customer       @relation(fields: [customerId], references: [id])
+  shopId          String
+  shop            Shop           @relation(fields: [shopId], references: [id])
+  status          String         @default("PENDING")
+  totalAmount     Float          @default(0)
+  vatAmount       Float          @default(0)
+  deliveryFee     Float          @default(0)
+  grandTotal      Float          @default(0)
+  customerNotes   String?
+  paymentMethod   String?
+  paymentStatus   String         @default("UNPAID")
+  isConfirmed     Boolean        @default(false)
+  confirmedDate   DateTime?
+  confirmationToken String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  items             OrderItem[]
+  review            Review?
+  deliveryRequest   DeliveryRequest?
+  paymentTransactions PaymentTransaction[]
+  invoices          Invoice[]
+  conversation      Conversation?
+  orderMeasurements OrderMeasurement[]
+  confirmationLinks ConfirmationLink[]
+  posOrders         POSOrder[]
+
+  @@index([shopId, status, createdAt])
+  @@index([customerId])
+  @@index([orderNumber])
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id])
+  name       String
+  quantity   Int     @default(1)
+  unitPrice  Float   @default(0)
+  totalPrice Float   @default(0)
+
+  @@index([orderId])
+}
+
+model Customer {
+  id           String    @id @default(uuid())
+  shopId       String
+  shop         Shop      @relation(fields: [shopId], references: [id])
+  name         String
+  phone        String
+  measurements Json?
+  createdAt    DateTime  @default(now())
+
+  invoices     Invoice[]
+  behaviorLogs UserBehaviorLog[]
+  aiProfile    AIProfile?
+  orders       Order[]
+
+  @@index([shopId, phone])
+}
+
+// ─── 4. Reviews ───
+model Review {
+  id                     String   @id @default(uuid())
+  orderId                String   @unique
+  order                  Order    @relation(fields: [orderId], references: [id])
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id])
+  shopRating             Int?
+  tailorRating           Int?
+  representativeRating   Int?
+  shopReview             String?
+  tailorReview           String?
+  representativeReview   String?
+  isPublished            Boolean  @default(true)
+  createdAt              DateTime @default(now())
+
+  @@index([userId])
+  @@index([orderId])
+}
+
+// ─── 5. Delivery ───
+model DeliveryRequest {
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
+  provider        String
+  status          String   @default("PENDING")
+  driverName      String?
+  driverPhone     String?
+  trackingUrl     String?
+  waybillNumber   String?
+  estimatedArrival DateTime?
+  createdAt       DateTime @default(now())
+
+  tracking        DeliveryTracking[]
+
+  @@index([orderId])
+  @@index([provider, status])
+}
+
+model DeliveryTracking {
+  id                String   @id @default(uuid())
+  deliveryRequestId String
+  deliveryRequest   DeliveryRequest @relation(fields: [deliveryRequestId], references: [id])
+  lat               Float?
+  lng               Float?
+  status            String?
+  timestamp         DateTime @default(now())
+
+  @@index([deliveryRequestId])
+}
+
+// ─── 6. Payments ───
+model PaymentTransaction {
+  id               String   @id @default(uuid())
+  orderId          String
+  order            Order    @relation(fields: [orderId], references: [id])
+  amount           Float
+  method           String
+  status           String   @default("PROCESSING")
+  gatewayReference String?
+  gatewayResponse  Json?
+  createdAt        DateTime @default(now())
+
+  @@index([orderId])
+  @@index([gatewayReference])
+  @@index([status])
+}
+
+// ─── 7. Invoicing & ZATCA ───
+model Invoice {
+  id          String   @id @default(uuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  repId       String?
+  representative User? @relation("SalesRepresentative", fields: [repId], references: [id])
+  totalAmount Float
+  taxAmount   Float
+  status      String   @default("DRAFT")
+  orderId     String?
+  order       Order?    @relation(fields: [orderId], references: [id])
+  invoiceNumber String?
+  uuid        String?
+  vatAmount   Float?
+  grandTotal  Float?
+  zatcaStatus String?
+  zatcaUuid   String?
+  zatcaHash   String?
+  signedXml   String?
+  xmlPayload  String?
+  qrCode      String?
+  createdAt   DateTime @default(now())
+  journalId   String?
+
+  manufacturing ManufacturingOrder?
+
+  @@index([shopId, status, createdAt])
+  @@index([orderId])
+}
+
+model ManufacturingOrder {
+  id        String   @id @default(uuid())
+  invoiceId String   @unique
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  status    String
+  dueDate   DateTime
+  tasks     ManufacturingTask[]
+
+  @@index([status, dueDate])
+}
+
+model ManufacturingTask {
+  id         String   @id @default(uuid())
+  orderId    String
+  order      ManufacturingOrder @relation(fields: [orderId], references: [id])
+  assignedTo String
+  worker     User     @relation(fields: [assignedTo], references: [id])
+  taskType   String
+  status     String
+
+  @@index([orderId, assignedTo])
+}
+
+// ─── 8. Accounting ───
+model Account {
+  id      String   @id @default(uuid())
+  shopId  String
+  shop    Shop     @relation(fields: [shopId], references: [id])
+  code    String
+  name    String
+  type    String
+  balance Float    @default(0)
+  lines   JournalLine[]
+
+  @@index([shopId, code])
+}
+
+model JournalEntry {
+  id          String        @id @default(uuid())
+  date        DateTime      @default(now())
+  description String
+  lines       JournalLine[]
+}
+
+model JournalLine {
+  id        String   @id @default(uuid())
+  journalId String
+  journal   JournalEntry @relation(fields: [journalId], references: [id])
+  accountId String
+  account   Account      @relation(fields: [accountId], references: [id])
+  debit     Float        @default(0)
+  credit    Float        @default(0)
+
+  @@index([journalId])
+  @@index([accountId])
+}
+
+// ─── 9. Notifications ───
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  titleAr   String?
+  body      String?
+  bodyAr    String?
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
+// ─── 10. User Addresses & Measurements ───
+model UserAddress {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  label           String?
+  street          String
+  district        String?
+  city            String
+  region          String?
+  country         String   @default("Saudi Arabia")
+  buildingNumber  String?
+  apartmentNumber String?
+  lat             Float?
+  lng             Float?
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+model UserMeasurement {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  data      Json
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model OrderMeasurement {
+  id              String   @id @default(uuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id])
+  measurementData Json
+  tailorId        String?
+  notes           String?
+  images          String[]
+  createdAt       DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model ConfirmationLink {
+  id               String    @id @default(uuid())
+  token            String    @unique
+  orderId          String
+  order            Order     @relation(fields: [orderId], references: [id])
+  measurements     Json?
+  customerApproved Boolean?
+  customerNotes    String?
+  approvedAt       DateTime?
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+
+  @@index([token])
+  @@index([orderId])
+}
+
+// ─── 11. Conversations ───
+model Conversation {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id])
+  createdAt DateTime @default(now())
+
+  messages Message[]
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  content        String
+  type           String       @default("TEXT")
+  mediaUrl       String?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+// ─── 12. Audit & System Config ───
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([action, createdAt])
+}
+
+model SystemConfig {
+  id            String   @id @default(uuid())
+  key           String   @unique
+  value         String
+  type          String   @default("string")
+  category      String?
+  label         String?
+  labelAr       String?
+  description   String?
+  descriptionAr String?
+  dependsOn     String?
+  dependsValue  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  @@index([category, isActive])
+}
+
+model SystemModule {
+  id              String   @id @default(uuid())
+  key             String   @unique
+  name            String
+  nameAr          String?
+  description     String?
+  descriptionAr   String?
+  isEnabled       Boolean  @default(true)
+  parentModuleKey String?
+  parent          SystemModule? @relation("ModuleHierarchy", fields: [parentModuleKey], references: [key])
+  children        SystemModule[] @relation("ModuleHierarchy")
+  order           Int      @default(0)
+
+  @@index([parentModuleKey])
+}
+
+// ─── 13. Device Tokens (for Push) ───
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── 14. HR & Employment ───
+model Department {
+  id        String     @id @default(uuid())
+  shopId    String
+  shop      Shop       @relation(fields: [shopId], references: [id])
+  name      String
+  nameAr    String?
+  managerId String?   @unique
+  manager   Employee?  @relation("DepartmentManager", fields: [managerId], references: [id])
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  employees Employee[] @relation("EmployeeDepartment")
+  @@index([shopId])
+  @@index([managerId])
+}
+
+model Employee {
+  id           String    @id @default(uuid())
+  shopId       String
+  shop         Shop      @relation(fields: [shopId], references: [id])
+  userId       String?   @unique
+  user         User?     @relation(fields: [userId], references: [id])
+  departmentId String?
+  department   Department? @relation("EmployeeDepartment", fields: [departmentId], references: [id])
+  name         String
+  nameAr       String?
+  phone        String?
+  email        String?
+  position     String
+  positionAr   String?
+  salary       Float     @default(0)
+  overtimeRate Float     @default(0)
+  hireDate     DateTime  @default(now())
+  isActive     Boolean   @default(true)
+  idNumber     String?
+  nationality  String?
+  createdAt    DateTime  @default(now())
+
+  managedDepartment Department? @relation("DepartmentManager")
+  attendances       Attendance[]
+  leaveRequests     LeaveRequest[]
+  payrolls          Payroll[]
+
+  @@index([shopId])
+  @@index([departmentId])
+  @@index([userId])
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  date       DateTime @default(now())
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     String   @default("PRESENT")
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([employeeId, date])
+  @@index([employeeId])
+}
+
+model LeaveRequest {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  approvedById String?
+  approvedBy  User?    @relation("LeaveApprover", fields: [approvedById], references: [id])
+  type        String   @default("ANNUAL")
+  status      String   @default("PENDING")
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model Payroll {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  processedById String?
+  processedBy User?    @relation("PayrollProcessor", fields: [processedById], references: [id])
+  month       Int
+  year        Int
+  baseSalary  Float    @default(0)
+  overtime    Float    @default(0)
+  deductions  Float    @default(0)
+  bonuses     Float    @default(0)
+  netSalary   Float    @default(0)
+  status      String   @default("PENDING")
+  paidAt      DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId, month, year])
+  @@index([employeeId])
+}
+
+// ─── 15. Procurement & Purchasing ───
+model PurchaseOrder {
+  id              String            @id @default(uuid())
+  shopId          String
+  shop            Shop              @relation(fields: [shopId], references: [id])
+  supplierId      String?
+  supplier        Supplier?         @relation(fields: [supplierId], references: [id])
+  orderNumber     String            @unique
+  status          String            @default("DRAFT")
+  totalAmount     Float             @default(0)
+  taxAmount       Float             @default(0)
+  grandTotal      Float             @default(0)
+  notes           String?
+  createdById     String?
+  createdBy       User?             @relation("PurchaseOrderCreator", fields: [createdById], references: [id])
+  expectedDate    DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime          @default(now())
+
+  items PurchaseOrderItem[]
+
+  @@index([shopId, status])
+  @@index([shopId])
+  @@index([supplierId])
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId       String?
+  product         Product?      @relation(fields: [productId], references: [id])
+  name            String
+  quantity        Int           @default(1)
+  unitPrice       Float         @default(0)
+  totalPrice      Float         @default(0)
+  notes           String?
+
+  @@index([purchaseOrderId])
+}
+
+// ─── 16. Supplier Management ───
+model Supplier {
+  id          String           @id @default(uuid())
+  shopId      String
+  shop        Shop             @relation(fields: [shopId], references: [id])
+  name        String
+  nameAr      String?
+  phone       String?
+  email       String?
+  address     String?
+  city        String?
+  region      String?
+  taxNumber   String?
+  commercialReg String?
+  isActive    Boolean          @default(true)
+  notes       String?
+  createdAt   DateTime         @default(now())
+
+  purchaseOrders PurchaseOrder[]
+  products       SupplierProduct[]
+
+  @@index([shopId])
+  @@index([name])
+}
+
+model SupplierProduct {
+  id         String   @id @default(uuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  price      Float    @default(0)
+  minOrder   Int      @default(1)
+  isActive   Boolean  @default(true)
+
+  supplierId_productId String? @unique
+  @@index([supplierId])
+  @@index([productId])
+}
+
+// ─── 17. Point of Sale (POS) ───
+model POSSession {
+  id          String   @id @default(uuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  cashierId   String
+  cashier     User     @relation(fields: [cashierId], references: [id])
+  status      String   @default("OPEN")
+  openedAt    DateTime @default(now())
+  closedAt    DateTime?
+  openingBalance Float @default(0)
+  closingBalance Float?
+  totalSales  Float    @default(0)
+  totalRefunds Float   @default(0)
+  notes       String?
+
+  orders POSOrder[]
+
+  @@index([shopId, status])
+  @@index([cashierId])
+}
+
+model POSOrder {
+  id          String      @id @default(uuid())
+  sessionId   String
+  session     POSSession  @relation(fields: [sessionId], references: [id])
+  orderId     String?
+  order       Order?      @relation(fields: [orderId], references: [id])
+  orderNumber String      @unique
+  status      String      @default("COMPLETED")
+  totalAmount Float       @default(0)
+  paymentMethod String    @default("CASH")
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId])
+  @@index([orderId])
+}

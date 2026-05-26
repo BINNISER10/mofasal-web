@@ -1,0 +1,60 @@
+{
+  "opencode.general.language": "ar",
+  "opencode.general.autoAcceptPermissions": true,
+  "opencode.terminal.shell": "auto",
+  "opencode.ui.showReasoningSummaries": true,
+  "opencode.ui.expandShellParts": true,
+  "opencode.ui.expandEditParts": true,
+  "opencode.ui.showProgressBar": true,
+
+  "opencode.ai.defaultModel": "gemini-3.1-pro",
+  "opencode.ai.customModels": [
+    {
+      "id": "gemini-3.1-pro",
+      "name": "Gemini 3.1 Pro Preview Custom Tools",
+      "provider": "google",
+      "isActive": true,
+      "priority": 1,
+      "description": "✅ جاهز للعمل | متوافق مع نسختك"
+    }
+  ],
+
+  "opencode.rules": {
+    "primaryLanguage": "python",
+    "allowedLanguages": ["python", "java", "go"],
+    "noSilentCode": true,
+    "arabicOutputOnly": false,
+    "preferArabic": true
+  },
+
+  "opencode.theme": {
+    "mode": "auto",
+    "light": {
+      "background": "#F8FAFC",
+      "secondary": "#FFFFFF",
+      "text": "#1E293B",
+      "accent": "#165DFF"
+    },
+    "dark": {
+      "background": "#111827",
+      "secondary": "#1F2937",
+      "text": "#F9FAFB",
+      "accent": "#165DFF"
+    },
+    "font": {
+      "english": "Inter, Roboto",
+      "arabic": "Tajawal, Cairo"
+    }
+  },
+
+  "opencode.cloud": {
+    "enabled": true,
+    "provider": "google-drive",
+    "account": "itbinniser@gmail.com",
+    "defaultFolder": "G:/My Drive/OPEN CODE/MOFASAL/AUTOCORE SYSTEM FILES",
+    "autoSave": true,
+    "syncOnStart": true
+  },
+
+  "opencode.systemPrompt": "أنت تعمل وفقاً لبروتوكول AUTOCORE CTO v2.5: 1. النموذج المعتمد Gemini 3.1 Pro Preview Custom Tools. 2. أجب باللغة العربية الفصحى الواضحة. 3. بايثون هي لغة البرمجة الأساسية. 4. التزم بمعايير الجودة والتصميم 2026. 5. احفظ كل عملك في المجلد المحدد بحساب itbinniser@gmail.com."
+}
