@@ -35,9 +35,7 @@ export default function MerchantProductsPage() {
           {isRTL ? 'المنتجات' : 'Products'}
           {!loading && <span className="text-sm text-gray-500 dark:text-slate-400 font-normal"> ({products.length})</span>}
         </h2>
-        <Link href="/dashboard/merchant/products/add">
-          <Button variant="primary" size="sm" icon={<Plus size={16} />}>{isRTL ? 'إضافة منتج' : 'Add Product'}</Button>
-        </Link>
+        <Button href="/dashboard/merchant/products/add" variant="primary" size="sm" icon={<Plus size={16} />}>{isRTL ? 'إضافة منتج' : 'Add Product'}</Button>
       </div>
 
       {loading ? (
@@ -46,7 +44,7 @@ export default function MerchantProductsPage() {
         <Card className="p-12 text-center">
           <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4"><ShoppingBag size={28} className="text-gray-400" /></div>
           <p className="text-gray-500 dark:text-slate-400 mb-4">{isRTL ? 'لا توجد منتجات بعد' : 'No products yet'}</p>
-          <Link href="/dashboard/merchant/products/add"><Button variant="primary">{isRTL ? 'أضف منتجك الأول' : 'Add Your First Product'}</Button></Link>
+          <Button href="/dashboard/merchant/products/add" variant="primary">{isRTL ? 'أضف منتجك الأول' : 'Add Your First Product'}</Button>
         </Card>
       ) : (
       <>

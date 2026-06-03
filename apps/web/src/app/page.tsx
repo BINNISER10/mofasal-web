@@ -204,16 +204,12 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-wrap gap-4 mb-10">
-              <Link href="/shops">
-                <Button variant="gold" size="lg">
-                  {isRTL ? 'ابحث عن خياط' : 'Find a Tailor'}
-                </Button>
-              </Link>
-              <Link href="/marketplace">
-                <Button variant="outline" size="lg" className="border-white/40 text-white hover:bg-white/10 hover:text-white">
-                  {isRTL ? 'تصفح الأقمشة' : 'Browse Fabrics'}
-                </Button>
-              </Link>
+              <Button href="/shops" variant="gold" size="lg">
+                {isRTL ? 'ابحث عن خياط' : 'Find a Tailor'}
+              </Button>
+              <Button href="/marketplace" variant="outline" size="lg" className="border-white/40 text-white hover:bg-white/10 hover:text-white">
+                {isRTL ? 'تصفح الأقمشة' : 'Browse Fabrics'}
+              </Button>
             </div>
 
             {/* Social proof */}
@@ -352,11 +348,9 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-10">
-            <Link href="/shops">
-              <button className="inline-flex items-center gap-2 border border-gold-400/50 text-gold-400 hover:bg-gold-400 hover:text-gray-900 font-semibold px-8 py-3.5 rounded-2xl transition-all duration-300">
-                <Sparkles size={18} />
-                {isRTL ? 'تصفح جميع التصاميم' : 'Browse All Designs'}
-              </button>
+            <Link href="/shops" className="inline-flex items-center gap-2 border border-gold-400/50 text-gold-400 hover:bg-gold-400 hover:text-gray-900 font-semibold px-8 py-3.5 rounded-2xl transition-all duration-300">
+              <Sparkles size={18} />
+              {isRTL ? 'تصفح جميع التصاميم' : 'Browse All Designs'}
             </Link>
           </div>
         </div>
@@ -573,17 +567,13 @@ export default function HomePage() {
               : 'Join thousands of satisfied customers. Premium tailoring has never been this easy.'}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/login">
-              <button className="inline-flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-8 py-4 rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-                <Scissors size={18} />
-                {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
-                {isRTL ? <ArrowLeft size={16} /> : <ChevronRight size={16} />}
-              </button>
+            <Link href="/login" className="inline-flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-8 py-4 rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+              <Scissors size={18} />
+              {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
+              {isRTL ? <ArrowLeft size={16} /> : <ChevronRight size={16} />}
             </Link>
-            <Link href="/shops">
-              <button className="inline-flex items-center gap-2 border-2 border-white/40 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/10 transition-all">
-                {isRTL ? 'تصفح المتاجر' : 'Browse Shops'}
-              </button>
+            <Link href="/shops" className="inline-flex items-center gap-2 border-2 border-white/40 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/10 transition-all">
+              {isRTL ? 'تصفح المتاجر' : 'Browse Shops'}
             </Link>
           </div>
         </div>

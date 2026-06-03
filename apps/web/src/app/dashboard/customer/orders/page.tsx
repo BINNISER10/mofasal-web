@@ -49,7 +49,7 @@ export default function CustomerOrdersPage() {
       ) : orders.length === 0 ? (
         <Card className="p-12 text-center">
           <p className="text-gray-500 dark:text-slate-400 mb-4">{isRTL ? 'لا توجد طلبات' : 'No orders found'}</p>
-          <Link href="/dashboard/customer/orders/new"><Button variant="primary">{isRTL ? 'طلب جديد' : 'New Order'}</Button></Link>
+          <Button href="/dashboard/customer/orders/new" variant="primary">{isRTL ? 'طلب جديد' : 'New Order'}</Button>
         </Card>
       ) : (
         <div className="grid gap-4">

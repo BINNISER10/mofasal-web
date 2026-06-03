@@ -262,10 +262,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
       <aside
         className={cn(
-          'fixed top-0 right-0 h-full bg-white dark:bg-slate-900 shadow-jahez-lg z-50 transition-all duration-300 flex flex-col border-l border-gray-100 dark:border-slate-800',
-          isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0',
+          'fixed top-0 h-full bg-white dark:bg-slate-900 shadow-jahez-lg z-50 transition-all duration-300 flex flex-col border-gray-100 dark:border-slate-800',
+          isOpen ? 'translate-x-0' : (isRTL ? 'translate-x-full' : '-translate-x-full'),
           isRTL ? 'right-0 border-l' : 'left-0 border-r',
-          sidebarCollapsed ? 'w-20' : 'w-64'
+          sidebarCollapsed ? 'w-20' : 'w-64',
+          'lg:translate-x-0'
         )}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-800">

@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils/cn';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'gold' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
@@ -9,6 +10,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
   icon?: React.ReactNode;
   fullWidth?: boolean;
+  href?: string;
 }
 
 export function Button({
@@ -20,6 +22,7 @@ export function Button({
   fullWidth = false,
   children,
   disabled,
+  href,
   ...props
 }: ButtonProps) {
   const baseStyles =
@@ -47,6 +50,29 @@ export function Button({
     lg: 'px-7 py-3.5 text-lg gap-2.5',
   };
 
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={cn(
+          baseStyles,
+          variants[variant],
+          sizes[size],
+          fullWidth && 'w-full',
+          className
+        )}
+        {...(props as any)}
+      >
+        {isLoading ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : icon ? (
+          <span className="flex-shrink-0">{icon}</span>
+        ) : null}
+        {children}
+      </Link>
+    );
+  }
+
   return (
     <button
       className={cn(
@@ -68,3 +94,4 @@ export function Button({
     </button>
   );
 }
+

@@ -10,6 +10,7 @@ import { ShoppingBag, Clock, Users, DollarSign, Plus, UserPlus, Package, Trendin
 import { MufasalBarChart, CHART_COLORS } from '@/components/shared/Charts';
 import { formatCurrency } from '@/lib/utils/formatting';
 import DashboardLoading from '../loading';
+import Link from 'next/link';
 
 const weeklyOrders = [
   { name: 'سبت', value: 18 },
@@ -78,7 +79,7 @@ export default function TailorDashboardPage() {
           <Card className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'آخر الطلبات' : 'Recent Orders'}</h3>
-              <a href="/dashboard/tailor/orders" className="text-sm text-primary-700 font-semibold">{isRTL ? 'عرض الكل' : 'View All'}</a>
+              <Link href="/dashboard/tailor/orders" className="text-sm text-primary-700 font-semibold">{isRTL ? 'عرض الكل' : 'View All'}</Link>
             </div>
             {recentOrders.map((order) => (
               <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-slate-700 last:border-0">
@@ -109,13 +110,13 @@ export default function TailorDashboardPage() {
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
-            <Button variant="primary" size="lg" fullWidth icon={<Plus size={18} />}>
+            <Button href="/dashboard/tailor/orders" variant="primary" size="lg" fullWidth icon={<Plus size={18} />}>
               {isRTL ? 'طلب جديد' : 'New Order'}
             </Button>
-            <Button variant="gold" size="lg" fullWidth icon={<UserPlus size={18} />}>
+            <Button href="/dashboard/tailor/staff" variant="gold" size="lg" fullWidth icon={<UserPlus size={18} />}>
               {isRTL ? 'إضافة موظف' : 'Add Staff'}
             </Button>
-            <Button variant="outline" size="lg" fullWidth icon={<Package size={18} />}>
+            <Button href="/dashboard/inventory" variant="outline" size="lg" fullWidth icon={<Package size={18} />}>
               {isRTL ? 'جرد المخزون' : 'Inventory Check'}
             </Button>
           </div>
