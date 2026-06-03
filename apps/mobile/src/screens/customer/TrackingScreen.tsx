@@ -15,8 +15,17 @@ import OrderTrackingTimeline from '../../components/shared/OrderTrackingTimeline
 import Card from '../../components/ui/Card';
 import { OrdersStackParamList } from '../../navigation/stacks/OrdersStack';
 import apiClient from '../../services/api/client';
+import { serviceRequestsApi, TrackingData } from '../../services/api/serviceRequests';
 
 type TrackingRouteProp = RouteProp<OrdersStackParamList, 'Tracking'>;
+
+const SR_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'جارٍ تعيين مندوب',
+  ASSIGNED: 'تم تعيين المندوب',
+  EN_ROUTE: 'المندوب في الطريق إليك',
+  ARRIVED: 'وصل المندوب',
+  COMPLETED: 'اكتمل القياس',
+};
 
 const STATUS_STEPS = [
   'PENDING', 'CONFIRMED', 'MEASURING', 'CUTTING',
@@ -34,10 +43,33 @@ const TrackingScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<TrackingRouteProp>();
   const orderId = route.params?.orderId;
+  const serviceRequestId = (route.params as any)?.serviceRequestId as string | undefined;
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [srTracking, setSrTracking] = useState<TrackingData | null>(null);
+
+  // ─── تتبّع مندوب القياس (polling كل 10 ثوانٍ) ───
+  const fetchSrTracking = useCallback(async () => {
+    if (!serviceRequestId) return;
+    try {
+      const data = await serviceRequestsApi.getTracking(serviceRequestId);
+      setSrTracking(data);
+    } catch {
+      // الإبقاء على آخر بيانات
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [serviceRequestId]);
+
+  useEffect(() => {
+    if (!serviceRequestId) return;
+    fetchSrTracking();
+    const interval = setInterval(fetchSrTracking, 10000);
+    return () => clearInterval(interval);
+  }, [serviceRequestId, fetchSrTracking]);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -52,10 +84,11 @@ const TrackingScreen: React.FC = () => {
   }, [orderId]);
 
   useEffect(() => {
+    if (!orderId) return;
     fetchOrder();
     const interval = setInterval(fetchOrder, 30000); // poll every 30s
     return () => clearInterval(interval);
-  }, [fetchOrder]);
+  }, [orderId, fetchOrder]);
 
   const currentIdx = order ? STATUS_STEPS.indexOf(order.status) : -1;
   const timelineSteps = STATUS_STEPS.map((s, i) => ({
@@ -72,6 +105,92 @@ const TrackingScreen: React.FC = () => {
   const orderDate = order?.created_at
     ? new Date(order.created_at).toLocaleDateString('ar-SA')
     : '';
+
+  // ═══ وضع تتبّع مندوب القياس ═══
+  if (serviceRequestId) {
+    const srStatus = srTracking?.status || 'PENDING';
+    const eta = srTracking?.estimatedArrivalMin;
+    const dist = srTracking?.distanceKm;
+    const rep = srTracking?.representative;
+    const arrived = srStatus === 'ARRIVED' || srStatus === 'COMPLETED';
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.headerBack}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>تتبّع مندوب القياس</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        {loading && !srTracking ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
+        ) : (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchSrTracking(); }} colors={[colors.primary]} />
+            }
+          >
+            {/* بطاقة الحالة + الوصول المقدّر */}
+            <Card style={styles.orderInfoCard}>
+              <View style={styles.orderStatusRow}>
+                <View style={[styles.statusBadge, arrived && { backgroundColor: '#22C55E20' }]}>
+                  <Text style={[styles.statusText, arrived && { color: '#22C55E' }]}>
+                    {SR_STATUS_LABELS[srStatus] || srStatus}
+                  </Text>
+                </View>
+                <Text style={styles.orderDate}>{srTracking?.shop?.nameAr || srTracking?.shop?.name || ''}</Text>
+              </View>
+              {!arrived && eta != null && (
+                <View style={styles.amountRow}>
+                  <Text style={styles.amountVal}>{eta} دقيقة</Text>
+                  <Text style={styles.amountLabel}>الوصول المتوقّع</Text>
+                </View>
+              )}
+              {dist != null && (
+                <View style={styles.amountRow}>
+                  <Text style={styles.amountVal}>{dist} كم</Text>
+                  <Text style={styles.amountLabel}>المسافة المتبقية</Text>
+                </View>
+              )}
+            </Card>
+
+            {/* بطاقة المندوب */}
+            {rep && (
+              <Card style={styles.timelineCard}>
+                <Text style={styles.sectionTitle}>المندوب</Text>
+                <View style={styles.repRow}>
+                  <View style={styles.repAvatar}>
+                    <Text style={styles.repAvatarText}>{(rep.name || 'م').charAt(0)}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.repName}>{rep.name}</Text>
+                    {rep.phone ? <Text style={styles.repPhone}>{rep.phone}</Text> : null}
+                  </View>
+                </View>
+              </Card>
+            )}
+
+            {/* خريطة مبسّطة (إحداثيات) — تُستبدل بخريطة حقيقية لاحقاً */}
+            <Card style={styles.timelineCard}>
+              <Text style={styles.sectionTitle}>الموقع</Text>
+              <View style={styles.mapPlaceholder}>
+                <Text style={styles.mapEmoji}>🗺️</Text>
+                <Text style={styles.mapText}>
+                  {srTracking?.representativeLocation
+                    ? `موقع المندوب: ${srTracking.representativeLocation.lat.toFixed(4)}, ${srTracking.representativeLocation.lng.toFixed(4)}`
+                    : 'بانتظار تحديد موقع المندوب'}
+                </Text>
+                {arrived && <Text style={styles.arrivedText}>وصل المندوب — جاهز لأخذ القياس ✅</Text>}
+              </View>
+            </Card>
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        )}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -237,6 +356,21 @@ const styles = StyleSheet.create({
     color: colors.primary,
     ...fonts.bold,
   },
+  repRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md },
+  repAvatar: {
+    width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  repAvatarText: { color: colors.white, fontSize: fonts.sizes.xl, ...fonts.bold },
+  repName: { fontSize: fonts.sizes.lg, color: colors.textPrimary, ...fonts.bold, textAlign: 'right' },
+  repPhone: { fontSize: fonts.sizes.sm, color: colors.textSecondary, textAlign: 'right', marginTop: 2 },
+  mapPlaceholder: {
+    backgroundColor: colors.surfaceWarm, borderRadius: borderRadius.md, padding: spacing.xl,
+    alignItems: 'center',
+  },
+  mapEmoji: { fontSize: 40, marginBottom: spacing.sm },
+  mapText: { fontSize: fonts.sizes.sm, color: colors.textSecondary, textAlign: 'center' },
+  arrivedText: { fontSize: fonts.sizes.md, color: colors.success, ...fonts.bold, textAlign: 'center', marginTop: spacing.md },
 });
 
 export default TrackingScreen;

@@ -69,4 +69,18 @@ export class AuthController {
       sendSuccess(res, user, 'Profile updated');
     } catch (error) { next(error); }
   }
+
+  static async sendOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AuthService.sendOtp(req.body.phone);
+      sendSuccess(res, result, 'رمز التحقق تم إرساله بنجاح');
+    } catch (error) { next(error); }
+  }
+
+  static async verifyOtp(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AuthService.verifyOtp(req.body.phone, req.body.code);
+      sendSuccess(res, result, 'تم التحقق والدخول بنجاح');
+    } catch (error) { next(error); }
+  }
 }

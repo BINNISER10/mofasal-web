@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -14,35 +16,197 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import PaymentMethodSelector from '../../components/shared/PaymentMethodSelector';
+import { useAuth } from '../../hooks/useAuth';
+import { addressesApi } from '../../services/api/addresses';
+import { productsApi } from '../../services/api/products';
+import { ordersApi, CreateOrderRequest } from '../../services/api/orders';
+import { shopsApi } from '../../services/api/shops';
 
 type PaymentMethod = 'mada' | 'visa' | 'mastercard' | 'apple_pay' | 'google_pay' | 'stc_pay' | 'tamara' | 'tabby' | 'sadad' | 'bank_transfer' | 'cod';
-
-const MOCK_ADDRESSES = [
-  { id: '1', label: 'المنزل', details: 'الرياض، حي النخيل، شارع الأمير محمد بن سلمان، مبنى ٢٣' },
-  { id: '2', label: 'العمل', details: 'الرياض، حي العليا، طريق الملك فهد، برج المملكة' },
-];
 
 const CheckoutScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const [selectedAddress, setSelectedAddress] = useState(MOCK_ADDRESSES[0].id);
+  const { user } = useAuth();
+
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
+  const [addresses, setAddresses] = useState<any[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const subtotal = 840;
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [subtotal, setSubtotal] = useState(0);
+  const [shopId, setShopId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // جلب العناوين وسلة التسوق
+  useEffect(() => {
+    const loadCheckoutData = async () => {
+      try {
+        setLoading(true);
+        
+        // 1. جلب السلة
+        let items: any[] = [];
+        try {
+          const cart = await productsApi.getCart();
+          if (cart && cart.items && cart.items.length > 0) {
+            items = cart.items;
+            setCartItems(cart.items);
+            const sub = cart.items.reduce(
+              (sum: number, it: any) => sum + (it.product?.price || 0) * it.quantity,
+              0
+            );
+            setSubtotal(sub);
+            if (cart.items[0].product?.shopId) {
+              setShopId(cart.items[0].product.shopId);
+            }
+          } else {
+            setSubtotal(0);
+          }
+        } catch (cartErr) {
+          console.warn('Failed to load cart for checkout:', cartErr);
+          setSubtotal(0);
+        }
+
+        // 2. جلب العناوين
+        if (user && user.id) {
+          try {
+            const userAddresses = await addressesApi.list(user.id);
+            if (userAddresses && userAddresses.length > 0) {
+              const mapped = userAddresses.map((addr) => ({
+                id: addr.id,
+                label: addr.label || 'عنوان',
+                details: `${addr.city}، ${addr.street}، ${addr.buildingNumber || ''}`,
+              }));
+              setAddresses(mapped);
+              setSelectedAddress(mapped[0].id);
+            } else {
+              setAddresses([]);
+              setSelectedAddress('');
+            }
+          } catch (addrErr) {
+            console.warn('Failed to load user addresses:', addrErr);
+            setAddresses([]);
+            setSelectedAddress('');
+          }
+        }
+
+        // 3. جلب معرّف المتجر البديل إذا لم يتوفر بالسلع
+        if (items.length === 0 || !items[0].product?.shopId) {
+          try {
+            const shops = await shopsApi.list({ limit: 1 });
+            if (shops && shops.length > 0) {
+              setShopId(shops[0].id);
+            }
+          } catch (shopErr) {
+            console.warn('Failed to fetch default shop ID:', shopErr);
+          }
+        }
+
+      } catch (err) {
+        console.warn('General checkout loading error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCheckoutData();
+  }, [user]);
+
   const vat = calculateVAT(subtotal);
-  const deliveryFee = 30;
+  const deliveryFee = subtotal > 0 ? 30 : 0;
   const total = subtotal + vat + deliveryFee;
 
-  const handlePlaceOrder = () => {
-    if (paymentMethod) {
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      Alert.alert(t('common.validationError') || 'تنبيه', 'يرجى اختيار أو إضافة عنوان التوصيل أولاً.');
+      return;
+    }
+
+    if (!paymentMethod) {
+      Alert.alert(t('common.validationError') || 'تنبيه', 'يرجى اختيار طريقة الدفع.');
+      return;
+    }
+
+    if (!user?.id) return;
+
+    // تحويل طريقة الدفع لعقد خادم Express
+    let backendPaymentMethod = 'CASH';
+    switch (paymentMethod) {
+      case 'mada':
+        backendPaymentMethod = 'MADA';
+        break;
+      case 'visa':
+      case 'mastercard':
+        backendPaymentMethod = 'VISA_MASTERCARD';
+        break;
+      case 'apple_pay':
+        backendPaymentMethod = 'APPLE_PAY';
+        break;
+      case 'stc_pay':
+        backendPaymentMethod = 'STC_PAY';
+        break;
+      case 'tamara':
+        backendPaymentMethod = 'TAMARA';
+        break;
+      case 'tabby':
+        backendPaymentMethod = 'TABBY';
+        break;
+      case 'sadad':
+        backendPaymentMethod = 'SADAD';
+        break;
+      case 'cod':
+      default:
+        backendPaymentMethod = 'CASH';
+        break;
+    }
+
+    try {
+      const itemsPayload = cartItems.map((it: any) => ({
+        name: it.product?.nameAr || it.product?.name || 'منتج',
+        quantity: it.quantity,
+        price: it.product?.price || 0, // استخدام price هنا لتقوم ordersApi.create بتحويلها لـ unitPrice بشكل صحيح
+      }));
+
+      const finalShopId = shopId || '00000000-0000-0000-0000-000000000000'; // معرف وهمي احتياطي
+
+      const payload: CreateOrderRequest = {
+        shopId: finalShopId,
+        serviceType: 'FABRIC',
+        items: itemsPayload,
+        deliveryAddressId: selectedAddress,
+        notes: 'تم الطلب من الجوال',
+        paymentMethod: backendPaymentMethod,
+      };
+
+      const order = await ordersApi.create(payload);
+
+      // تنظيف السلة بالخلفية
+      try {
+        await productsApi.clearCart();
+      } catch (clearErr) {
+        console.warn('Failed to clear cart on server:', clearErr);
+      }
+
       navigation.navigate('Payment' as never, {
-        orderId: 'new',
+        orderId: order.id,
         amount: total,
         method: paymentMethod,
       } as never);
+
+    } catch (error) {
+      console.error('Failed to place order:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'فشل إنشاء الطلب، يرجى إعادة المحاولة.');
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -61,21 +225,34 @@ const CheckoutScreen: React.FC = () => {
         {/* Delivery Address */}
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>{t('delivery.deliveryAddress')}</Text>
-          {MOCK_ADDRESSES.map((addr) => (
-            <TouchableOpacity
-              key={addr.id}
-              style={[styles.addressItem, selectedAddress === addr.id && styles.addressSelected]}
-              onPress={() => setSelectedAddress(addr.id)}
-            >
-              <View style={styles.radioOuter}>
-                {selectedAddress === addr.id && <View style={styles.radioInner} />}
-              </View>
-              <View style={styles.addressInfo}>
-                <Text style={styles.addressLabel}>{addr.label}</Text>
-                <Text style={styles.addressDetails}>{addr.details}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {addresses.length === 0 ? (
+            <View style={styles.noAddressContainer}>
+              <Text style={styles.noAddressText}>لم تقم بإضافة أي عنوان بعد.</Text>
+              <Button
+                title="إضافة عنوان جديد"
+                onPress={() => navigation.navigate('Addresses' as never)}
+                variant="outline"
+                size="sm"
+                style={styles.noAddressBtn}
+              />
+            </View>
+          ) : (
+            addresses.map((addr) => (
+              <TouchableOpacity
+                key={addr.id}
+                style={[styles.addressItem, selectedAddress === addr.id && styles.addressSelected]}
+                onPress={() => setSelectedAddress(addr.id)}
+              >
+                <View style={styles.radioOuter}>
+                  {selectedAddress === addr.id && <View style={styles.radioInner} />}
+                </View>
+                <View style={styles.addressInfo}>
+                  <Text style={styles.addressLabel}>{addr.label}</Text>
+                  <Text style={styles.addressDetails}>{addr.details}</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </Card>
 
         {/* Payment Method */}
@@ -151,6 +328,7 @@ const CheckoutScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.lg, paddingTop: 56, paddingBottom: spacing.md,
@@ -182,6 +360,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg, paddingBottom: 30,
     backgroundColor: colors.white, ...shadows.lg,
   },
+  noAddressContainer: { alignItems: 'center', paddingVertical: spacing.md },
+  noAddressText: { fontSize: fonts.sizes.md, color: colors.textSecondary, marginBottom: spacing.md, textAlign: 'center' },
+  noAddressBtn: { marginTop: spacing.xs, width: '60%' },
 });
 
 export default CheckoutScreen;

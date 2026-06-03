@@ -1,61 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { colors, fonts, borderRadius, shadows, spacing } from '../../utils/theme';
 import { formatCurrency } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
 import ConfirmationSummary from '../../components/shared/ConfirmationSummary';
 import { HomeStackParamList } from '../../navigation/stacks/HomeStack';
+import { ordersApi, Order } from '../../services/api/orders';
 
 type ConfirmationRouteProp = RouteProp<HomeStackParamList, 'Confirmation'>;
-
-const MOCK_MEASUREMENTS = {
-  neck: 40, shoulders: 48, chest: 100, waist: 85, bicep: 32,
-  forearm: 28, wrist: 17, sleeveLength: 62, shirtLength: 78,
-  waistLower: 90, hips: 98, thigh: 55, knee: 38, calf: 36,
-  inseam: 78, outseam: 104, trouserLength: 105,
-};
-
-const MOCK_FABRIC = {
-  name: 'قماش صوف إيطالي فاخر',
-  type: 'صوف',
-  color: 'كحلي غامق',
-  pattern: 'سادة',
-  quantity: 3,
-  price: 540,
-};
-
-const MOCK_PRICE = {
-  subtotal: 800,
-  vat: 120,
-  deliveryFee: 30,
-  grandTotal: 950,
-};
 
 const ConfirmationScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute<ConfirmationRouteProp>();
-  const [confirmed, setConfirmed] = useState(false);
+  const { orderId } = route.params;
+
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showChangeModal, setShowChangeModal] = useState(false);
+  const [changeText, setChangeText] = useState('');
 
-  const handleConfirm = () => {
-    setShowSuccess(true);
-    setTimeout(() => {
-      navigation.navigate('Tracking', { orderId: route.params.orderId || '1' });
-    }, 2500);
+  const fetchOrderDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await ordersApi.getById(orderId);
+      setOrder(data);
+    } catch (error) {
+      console.error('Failed to load order confirmation details:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'تعذر تحميل تفاصيل الطلب للتأكيد.');
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId, navigation, t]);
+
+  useEffect(() => {
+    fetchOrderDetails();
+  }, [fetchOrderDetails]);
+
+  const handleConfirm = async () => {
+    try {
+      setSubmitting(true);
+      await ordersApi.submitConfirmation(orderId, { confirmed: true });
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigation.navigate('Tracking' as never, { orderId } as never);
+      }, 2500);
+    } catch (error) {
+      console.error('Failed to confirm order:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'فشل اعتماد الطلب. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleRequestChanges = () => {
-    setConfirmed(false);
+  const handleRequestChanges = async () => {
+    if (!changeText.trim()) {
+      Alert.alert(t('common.validationError') || 'تنبيه', 'يرجى كتابة التعديلات المطلوبة.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await ordersApi.submitConfirmation(orderId, {
+        confirmed: false,
+        changesRequested: changeText,
+      });
+      setShowChangeModal(false);
+      Alert.alert(t('common.success') || 'نجاح', 'تم إرسال طلب التعديل بنجاح.', [
+        {
+          text: t('common.ok') || 'موافق',
+          onPress: () => {
+            navigation.navigate('Marketplace' as never);
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('Failed to request changes:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'تعذر إرسال طلب التعديل.');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   if (showSuccess) {
     return (
@@ -63,13 +111,33 @@ const ConfirmationScreen: React.FC = () => {
         <View style={styles.successAnimation}>
           <Text style={styles.successCheck}>✓</Text>
         </View>
-        <Text style={styles.successTitle}>{t('confirmation.orderConfirmed')}</Text>
+        <Text style={styles.successTitle}>{t('confirmation.orderConfirmed') || 'تم اعتماد الطلب!'}</Text>
         <Text style={styles.successMessage}>
-          {t('confirmation.successMessage')}
+          {t('confirmation.successMessage') || 'تم قبول مقاساتك وبند الطلب بنجاح. جاري المتابعة للتنفيذ.'}
         </Text>
       </View>
     );
   }
+
+  if (!order) return null;
+
+  // Map fabric from first item in order
+  const firstItem = order.items?.[0];
+  const fabricInfo = firstItem ? {
+    name: firstItem.name,
+    type: firstItem.fabricType || 'قماش ثوب رجالي',
+    color: firstItem.color || 'أبيض كلاسيكي',
+    pattern: firstItem.pattern || 'سادة',
+    quantity: firstItem.quantity || 3.5,
+    price: firstItem.price || 0,
+  } : undefined;
+
+  const priceInfo = {
+    subtotal: order.subtotal || order.totalAmount * 0.85,
+    vat: order.vat || order.totalAmount * 0.15,
+    deliveryFee: order.deliveryFee || 0,
+    grandTotal: order.totalAmount,
+  };
 
   return (
     <View style={styles.container}>
@@ -77,7 +145,7 @@ const ConfirmationScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.headerBack}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('confirmation.title')}</Text>
+        <Text style={styles.headerTitle}>{t('confirmation.title') || 'مراجعة واعتماد الطلب'}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -86,29 +154,64 @@ const ConfirmationScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
       >
         <ConfirmationSummary
-          measurements={MOCK_MEASUREMENTS}
-          fabric={MOCK_FABRIC}
-          price={MOCK_PRICE}
-          deliveryDate="2024-02-01"
+          measurements={order.measurements}
+          fabric={fabricInfo}
+          price={priceInfo}
+          deliveryDate={order.confirmedDeliveryDate || order.scheduledDate}
         />
       </ScrollView>
 
       <View style={styles.footer}>
         <Button
-          title={t('confirmation.requestChanges')}
-          onPress={handleRequestChanges}
+          title={t('confirmation.requestChanges') || 'طلب تعديل'}
+          onPress={() => setShowChangeModal(true)}
           variant="secondary"
           size="lg"
+          disabled={submitting}
           style={styles.footerButton}
         />
         <Button
-          title={t('confirmation.confirmOrder')}
+          title={t('confirmation.confirmOrder') || 'اعتماد الطلب'}
           onPress={handleConfirm}
           variant="primary"
           size="lg"
+          disabled={submitting}
           style={styles.footerButton}
         />
       </View>
+
+      <Modal visible={showChangeModal} onClose={() => setShowChangeModal(false)} title="طلب تعديلات">
+        <View style={styles.modalContent}>
+          <Text style={styles.modalLabel}>يرجى تحديد التغييرات أو التعديلات المطلوبة على المقاسات أو الطلب:</Text>
+          <TextInput
+            style={styles.modalInput}
+            multiline
+            numberOfLines={4}
+            placeholder="مثال: زيادة طول الكم ٢ سم..."
+            placeholderTextColor={colors.textLight}
+            value={changeText}
+            onChangeText={setChangeText}
+            textAlign="right"
+          />
+          <View style={styles.modalActions}>
+            <Button
+              title="إرسال الطلب"
+              onPress={handleRequestChanges}
+              variant="primary"
+              size="md"
+              disabled={submitting}
+              style={{ flex: 1 }}
+            />
+            <Button
+              title="إلغاء"
+              onPress={() => setShowChangeModal(false)}
+              variant="outline"
+              size="md"
+              style={{ flex: 1 }}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -161,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.xxxl,
+    padding: spacing.xxl,
   },
   successAnimation: {
     width: 100,
@@ -191,6 +294,15 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     lineHeight: 26,
   },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  modalContent: { padding: spacing.lg },
+  modalLabel: { fontSize: fonts.sizes.md, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.md },
+  modalInput: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: borderRadius.md,
+    padding: spacing.md, fontSize: 15, color: colors.textPrimary, textAlign: 'right',
+    height: 100, textAlignVertical: 'top', marginBottom: spacing.lg,
+  },
+  modalActions: { flexDirection: 'row', gap: 12 },
 });
 
 export default ConfirmationScreen;

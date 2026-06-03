@@ -1,23 +1,26 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import toast from 'react-hot-toast';
 import { StatsCard } from '@/components/shared/StatsCard';
+import { ordersApi } from '@/lib/api/orders';
 import {
   ShoppingCart, Package, Truck, CheckCircle2, Clock,
-  XCircle, DollarSign, Building2, Plus, Eye, Filter,
+  XCircle, DollarSign, Building2, Plus,
 } from 'lucide-react';
 
-const SUPPLY_ORDERS = [
-  { id: 'B2B-001', tailorShop: 'خياطة الرجال الراقية', items: [{ name: 'قماش صوف إيطالي', qty: 30, unit: 'متر', price: 280 }], total: 8400, status: 'PENDING', date: '2024-03-24', notes: 'ملون كحلي فقط' },
-  { id: 'B2B-002', tailorShop: 'أناقة الخليج', items: [{ name: 'قماش قطن مصري', qty: 50, unit: 'متر', price: 95 }], total: 4750, status: 'CONFIRMED', date: '2024-03-22', notes: '' },
-  { id: 'B2B-003', tailorShop: 'الديوان للأزياء', items: [{ name: 'خيط حرير', qty: 20, unit: 'بكرة', price: 45 }, { name: 'أزرار فضية', qty: 200, unit: 'حبة', price: 3 }], total: 1500, status: 'DELIVERED', date: '2024-03-18', notes: '' },
-  { id: 'B2B-004', tailorShop: 'خياطة النخبة', items: [{ name: 'قماش صوف إيطالي', qty: 25, unit: 'متر', price: 280 }], total: 7000, status: 'ON_WAY', date: '2024-03-25', notes: '' },
-  { id: 'B2B-005', tailorShop: 'بيت الخياطة الحديثة', items: [{ name: 'بطانة حرير', qty: 40, unit: 'متر', price: 120 }], total: 4800, status: 'CANCELLED', date: '2024-03-20', notes: 'إلغاء من المتجر' },
-];
+interface SupplyOrder {
+  id: string;
+  tailorShop: string;
+  items: { name: string; qty: number; unit: string; price: number }[];
+  total: number;
+  status: string;
+  date: string;
+  notes: string;
+}
 
 const STATUS_MAP = {
   PENDING:   { ar: 'قيد الانتظار', en: 'Pending',   variant: 'warning' as const, icon: <Clock size={14} /> },
@@ -27,19 +30,77 @@ const STATUS_MAP = {
   CANCELLED: { ar: 'ملغي',        en: 'Cancelled', variant: 'error' as const,   icon: <XCircle size={14} /> },
 };
 
+function mapStatus(status: string): keyof typeof STATUS_MAP {
+  if (status === 'CONFIRMED') return 'CONFIRMED';
+  if (status === 'DELIVERED') return 'DELIVERED';
+  if (status === 'CANCELLED' || status === 'RETURNED') return 'CANCELLED';
+  if (status === 'PENDING') return 'PENDING';
+  return 'ON_WAY';
+}
+
 type FilterType = 'ALL' | 'PENDING' | 'CONFIRMED' | 'ON_WAY' | 'DELIVERED' | 'CANCELLED';
 
 export default function B2BPage() {
   const { isRTL } = useAppStore();
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [orders, setOrders] = useState<SupplyOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = filter === 'ALL' ? SUPPLY_ORDERS : SUPPLY_ORDERS.filter(o => o.status === filter);
-  const totalRevenue = SUPPLY_ORDERS.filter(o => o.status !== 'CANCELLED').reduce((a, b) => a + b.total, 0);
-  const pendingCount = SUPPLY_ORDERS.filter(o => o.status === 'PENDING').length;
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const res = await ordersApi.list({ limit: '100' });
+        const mapped: SupplyOrder[] = (res.orders || []).map((o: any) => ({
+          id: o.id,
+          tailorShop: o.customerName || o.shopName || (isRTL ? 'عميل' : 'Customer'),
+          items: (o.items || []).map((it: any) => ({
+            name: it.name,
+            qty: it.quantity || 1,
+            unit: isRTL ? 'قطعة' : 'pc',
+            price: it.price || it.unitPrice || 0,
+          })),
+          total: o.grandTotal || o.totalAmount || 0,
+          status: mapStatus(o.status),
+          date: (o.createdAt || '').slice(0, 10),
+          notes: o.notes || '',
+        }));
+        setOrders(mapped);
+      } catch (err) {
+        console.error('Failed to fetch B2B orders', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [isRTL]);
 
-  const handleAccept = (id: string) => toast.success(isRTL ? `تم تأكيد الطلب ${id}` : `Order ${id} confirmed`);
-  const handleReject = (id: string) => toast.error(isRTL ? `تم رفض الطلب ${id}` : `Order ${id} rejected`);
+  const filtered = useMemo(
+    () => (filter === 'ALL' ? orders : orders.filter((o) => o.status === filter)),
+    [orders, filter]
+  );
+  const totalRevenue = orders.filter((o) => o.status !== 'CANCELLED').reduce((a, b) => a + b.total, 0);
+  const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
+
+  const handleAccept = async (id: string) => {
+    try {
+      await ordersApi.updateStatus(id, { status: 'CONFIRMED' });
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: 'CONFIRMED' } : o)));
+      toast.success(isRTL ? 'تم تأكيد الطلب' : 'Order confirmed');
+    } catch {
+      toast.error(isRTL ? 'فشل تأكيد الطلب' : 'Failed to confirm order');
+    }
+  };
+  const handleReject = async (id: string) => {
+    try {
+      await ordersApi.cancel(id, isRTL ? 'رفض من المتجر' : 'Rejected by store');
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: 'CANCELLED' } : o)));
+      toast.success(isRTL ? 'تم رفض الطلب' : 'Order rejected');
+    } catch {
+      toast.error(isRTL ? 'فشل رفض الطلب' : 'Failed to reject order');
+    }
+  };
 
   const FILTER_TABS: { key: FilterType; ar: string; en: string }[] = [
     { key: 'ALL', ar: 'الكل', en: 'All' },
@@ -65,8 +126,8 @@ export default function B2BPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard label={isRTL ? 'إجمالي الإيرادات' : 'Total Revenue'} value={`${totalRevenue.toLocaleString()} ر.س`} icon={<DollarSign size={20} />} trend={18} />
         <StatsCard label={isRTL ? 'انتظار الموافقة' : 'Awaiting Approval'} value={pendingCount.toString()} icon={<Clock size={20} />} />
-        <StatsCard label={isRTL ? 'طلب هذا الشهر' : 'This Month Orders'} value="12" icon={<ShoppingCart size={20} />} trend={5} />
-        <StatsCard label={isRTL ? 'متاجر خياطة' : 'Tailor Shops'} value="8" icon={<Building2 size={20} />} />
+        <StatsCard label={isRTL ? 'إجمالي الطلبات' : 'Total Orders'} value={orders.length.toString()} icon={<ShoppingCart size={20} />} />
+        <StatsCard label={isRTL ? 'مسلّمة' : 'Delivered'} value={orders.filter((o) => o.status === 'DELIVERED').length.toString()} icon={<Building2 size={20} />} />
       </div>
 
       {/* Pending Alert */}
@@ -102,6 +163,11 @@ export default function B2BPage() {
       </div>
 
       {/* Orders */}
+      {loading ? (
+        <Card className="p-8 text-center text-gray-500 dark:text-slate-400">{isRTL ? 'جاري التحميل...' : 'Loading...'}</Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-8 text-center text-gray-500 dark:text-slate-400">{isRTL ? 'لا توجد طلبات توريد' : 'No supply orders found'}</Card>
+      ) : (
       <div className="space-y-3">
         {filtered.map(order => {
           const statusInfo = STATUS_MAP[order.status as keyof typeof STATUS_MAP];
@@ -161,6 +227,7 @@ export default function B2BPage() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

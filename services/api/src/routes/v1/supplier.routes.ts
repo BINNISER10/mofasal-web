@@ -1,8 +1,11 @@
 import { Router } from 'express';
-import { authenticate } from '../../middleware/auth';
+import { authenticate, requirePermission } from '../../middleware/auth';
 import { SupplierController } from '../../controllers/v1/supplier.controller';
 
 const router = Router();
+
+// Supplier management is restricted to roles with the suppliers/procurement permission.
+router.use(authenticate, requirePermission('suppliers', 'procurement'));
 
 router.get('/', authenticate, SupplierController.getSuppliers);
 router.get('/:id', authenticate, SupplierController.getSupplier);

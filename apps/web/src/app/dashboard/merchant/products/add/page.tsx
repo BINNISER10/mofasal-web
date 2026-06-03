@@ -1,21 +1,50 @@
 'use client';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { productsApi } from '@/lib/api/products';
 import toast from 'react-hot-toast';
 import { Upload, X } from 'lucide-react';
 
 export default function AddProductPage() {
   const { isRTL } = useAppStore();
+  const router = useRouter();
   const [images, setImages] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '', nameAr: '', nameEn: '',
     description: '', descriptionAr: '',
     price: '', comparePrice: '', stock: '', minStock: '',
     category: '', unit: 'متر',
   });
+
+  const handleSubmit = async () => {
+    if (!form.nameAr.trim()) { toast.error(isRTL ? 'أدخل اسم المنتج' : 'Enter product name'); return; }
+    if (!form.price || Number(form.price) <= 0) { toast.error(isRTL ? 'أدخل سعراً صحيحاً' : 'Enter valid price'); return; }
+    setSaving(true);
+    try {
+      await productsApi.createJson({
+        name: form.nameEn.trim() || form.nameAr.trim(),
+        nameAr: form.nameAr.trim(),
+        description: form.descriptionAr.trim() || undefined,
+        price: Number(form.price),
+        compareAtPrice: form.comparePrice ? Number(form.comparePrice) : undefined,
+        stockQuantity: form.stock ? Number(form.stock) : 0,
+        unit: form.unit || undefined,
+        images: images.length ? images : undefined,
+        tags: form.category || undefined,
+      });
+      toast.success(isRTL ? 'تم إضافة المنتج' : 'Product added');
+      router.push('/dashboard/merchant/products');
+    } catch (e: any) {
+      toast.error(e?.message || (isRTL ? 'تعذّرت الإضافة' : 'Failed to add'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -63,8 +92,8 @@ export default function AddProductPage() {
       </Card>
 
       <div className="flex gap-3">
-        <Button variant="outline" fullWidth onClick={() => window.history.back()}>{isRTL ? 'إلغاء' : 'Cancel'}</Button>
-        <Button variant="primary" fullWidth onClick={() => toast.success(isRTL ? 'تم إضافة المنتج' : 'Product added')}>{isRTL ? 'إضافة المنتج' : 'Add Product'}</Button>
+        <Button variant="outline" fullWidth onClick={() => router.back()} disabled={saving}>{isRTL ? 'إلغاء' : 'Cancel'}</Button>
+        <Button variant="primary" fullWidth onClick={handleSubmit} isLoading={saving} disabled={saving}>{isRTL ? 'إضافة المنتج' : 'Add Product'}</Button>
       </div>
     </div>
   );

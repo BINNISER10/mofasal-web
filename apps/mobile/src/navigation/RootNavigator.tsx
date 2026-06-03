@@ -6,6 +6,9 @@ import { useAuth } from '../hooks/useAuth';
 import { colors } from '../utils/theme';
 import AuthStack from './stacks/AuthStack';
 import MainTabs from './stacks/MainTabs';
+import RepresentativeTabs from './stacks/RepresentativeTabs';
+import TailorTabs from './stacks/TailorTabs';
+import MerchantTabs from './stacks/MerchantTabs';
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 
@@ -85,6 +88,20 @@ const RootNavigator: React.FC = () => {
     );
   }
 
+  const renderMainTabs = () => {
+    const role = user?.role?.toUpperCase();
+    if (role === 'REPRESENTATIVE') {
+      return <RepresentativeTabs />;
+    }
+    if (role === 'TAILOR' || role === 'TAILOR_SHOP') {
+      return <TailorTabs />;
+    }
+    if (role === 'MERCHANT' || role === 'FABRIC_MERCHANT') {
+      return <MerchantTabs />;
+    }
+    return <MainTabs />;
+  };
+
   return (
     <NavigationContainer
       linking={linking}
@@ -100,7 +117,7 @@ const RootNavigator: React.FC = () => {
         },
       }}
     >
-      {isAuthenticated ? <MainTabs /> : <AuthStack />}
+      {isAuthenticated ? renderMainTabs() : <AuthStack />}
     </NavigationContainer>
   );
 };

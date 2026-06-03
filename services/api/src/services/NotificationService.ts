@@ -133,4 +133,166 @@ export class NotificationService {
       return false;
     }
   }
+
+  // =================== ORDER NOTIFICATIONS ===================
+
+  static async notifyOrderCreated(order: { id: string; orderNumber: string; customerId?: string | null; shopId: string; grandTotal?: number | null }) {
+    const customer = order.customerId
+      ? await prisma.customer.findUnique({ where: { id: order.customerId }, select: { phone: true, name: true } })
+      : null;
+
+    let userId: string | null = null;
+    if (customer?.phone) {
+      const user = await prisma.user.findFirst({ where: { phone: customer.phone }, select: { id: true } });
+      userId = user?.id || null;
+    }
+
+    const total = order.grandTotal?.toFixed(2) ?? '0.00';
+
+    // إشعار العميل
+    if (userId) {
+      await this.sendToUser(userId, 'ORDER_CREATED', {
+        title: 'طلب جديد',
+        titleAr: 'طلب جديد',
+        body: `تم استلام طلبك ${order.orderNumber} بقيمة ${total} ريال`,
+        bodyAr: `تم استلام طلبك ${order.orderNumber} بقيمة ${total} ريال`,
+        data: { orderId: order.id, orderNumber: order.orderNumber, type: 'order' },
+      });
+      // SMS احتياطي
+      if (customer?.phone) {
+        await this.sendSMS(customer.phone, `مفصل: تم استلام طلبك ${order.orderNumber}. سيتم التواصل قريباً.`).catch(() => {});
+      }
+    }
+
+    // إشعار موظفي المحل
+    await this.sendToShopStaff(order.shopId, 'NEW_ORDER', {
+      title: 'طلب جديد',
+      titleAr: 'طلب جديد',
+      body: `طلب جديد ${order.orderNumber} بقيمة ${total} ريال`,
+      bodyAr: `طلب جديد ${order.orderNumber} بقيمة ${total} ريال`,
+      data: { orderId: order.id, orderNumber: order.orderNumber, type: 'order' },
+    });
+  }
+
+  static async notifyOrderStatusChanged(order: { id: string; orderNumber: string; customerId?: string | null; shopId: string; status: string; previousStatus?: string }) {
+    const statusLabels: Record<string, { ar: string; action: string }> = {
+      PENDING: { ar: 'معلّق', action: 'في الانتظار' },
+      CONFIRMED: { ar: 'مؤكّد', action: 'تم تأكيد طلبك' },
+      PROCESSING: { ar: 'قيد المعالجة', action: 'جاري تنفيذ طلبك' },
+      READY: { ar: 'جاهز', action: 'طلبك جاهز للتسليم' },
+      SHIPPED: { ar: 'تم الشحن', action: 'تم شحن طلبك' },
+      DELIVERED: { ar: 'تم التسليم', action: 'تم تسليم طلبك' },
+      COMPLETED: { ar: 'مكتمل', action: 'اكتمل طلبك بنجاح' },
+      CANCELLED: { ar: 'ملغى', action: 'تم إلغاء طلبك' },
+    };
+
+    const label = statusLabels[order.status] ?? { ar: order.status, action: order.status };
+    const customer = order.customerId
+      ? await prisma.customer.findUnique({ where: { id: order.customerId }, select: { phone: true } })
+      : null;
+
+    let userId: string | null = null;
+    if (customer?.phone) {
+      const user = await prisma.user.findFirst({ where: { phone: customer.phone }, select: { id: true } });
+      userId = user?.id || null;
+    }
+
+    if (userId) {
+      await this.sendToUser(userId, 'ORDER_STATUS', {
+        title: 'تحديث الطلب',
+        titleAr: 'تحديث الطلب',
+        body: `${label.action}: ${order.orderNumber} (${label.ar})`,
+        bodyAr: `${label.action}: ${order.orderNumber} (${label.ar})`,
+        data: { orderId: order.id, orderNumber: order.orderNumber, status: order.status, type: 'order' },
+      });
+      if (customer?.phone && ['READY', 'SHIPPED', 'DELIVERED', 'COMPLETED'].includes(order.status)) {
+        await this.sendSMS(customer.phone, `مفصل: ${label.action} ${order.orderNumber}. شكراً لثقتك.`).catch(() => {});
+      }
+    }
+  }
+
+  static async notifyPaymentReceived(order: { id: string; orderNumber: string; customerId?: string | null; grandTotal?: number | null; paymentMethod?: string | null }) {
+    const customer = order.customerId
+      ? await prisma.customer.findUnique({ where: { id: order.customerId }, select: { phone: true } })
+      : null;
+
+    let userId: string | null = null;
+    if (customer?.phone) {
+      const user = await prisma.user.findFirst({ where: { phone: customer.phone }, select: { id: true } });
+      userId = user?.id || null;
+    }
+
+    const method = order.paymentMethod === 'CASH' ? 'نقداً' : 'إلكترونياً';
+    const total = order.grandTotal?.toFixed(2) ?? '0.00';
+
+    if (userId) {
+      await this.sendToUser(userId, 'PAYMENT_RECEIVED', {
+        title: 'تم استلام الدفع',
+        titleAr: 'تم استلام الدفع',
+        body: `تم استلام ${total} ريال ${method} للطلب ${order.orderNumber}`,
+        bodyAr: `تم استلام ${total} ريال ${method} للطلب ${order.orderNumber}`,
+        data: { orderId: order.id, orderNumber: order.orderNumber, type: 'payment' },
+      });
+    }
+  }
+
+  static async notifyMeasurementDispatched(serviceRequest: { id: string; shopId: string; customerId?: string | null; representativeId?: string | null; estimatedArrivalMin?: number | null }) {
+    const customer = serviceRequest.customerId
+      ? await prisma.customer.findUnique({ where: { id: serviceRequest.customerId }, select: { phone: true, name: true } })
+      : null;
+    const rep = serviceRequest.representativeId
+      ? await prisma.user.findUnique({ where: { id: serviceRequest.representativeId }, select: { name: true, phone: true } })
+      : null;
+
+    let userId: string | null = null;
+    if (customer?.phone) {
+      const user = await prisma.user.findFirst({ where: { phone: customer.phone }, select: { id: true } });
+      userId = user?.id || null;
+    }
+
+    const eta = serviceRequest.estimatedArrivalMin ?? 30;
+
+    if (userId) {
+      await this.sendToUser(userId, 'MEASUREMENT_DISPATCHED', {
+        title: 'المندوب في الطريق',
+        titleAr: 'المندوب في الطريق',
+        body: `مندوب القياس ${rep?.name ?? ''} سيصل خلال ${eta} دقيقة`,
+        bodyAr: `مندوب القياس ${rep?.name ?? ''} سيصل خلال ${eta} دقيقة`,
+        data: { serviceRequestId: serviceRequest.id, type: 'service', etaMin: eta },
+      });
+      if (customer?.phone && rep?.phone) {
+        await this.sendSMS(customer.phone, `مفصل: مندوب القياس ${rep.name} في الطريق. ETA: ${eta}د. للتواصل: ${rep.phone}`).catch(() => {});
+      }
+    }
+  }
+
+  static async notifyMeasurementArrived(serviceRequest: { id: string; shopId: string; customerId?: string | null; representativeId?: string | null }) {
+    const customer = serviceRequest.customerId
+      ? await prisma.customer.findUnique({ where: { id: serviceRequest.customerId }, select: { phone: true } })
+      : null;
+
+    let userId: string | null = null;
+    if (customer?.phone) {
+      const user = await prisma.user.findFirst({ where: { phone: customer.phone }, select: { id: true } });
+      userId = user?.id || null;
+    }
+
+    if (userId) {
+      await this.sendToUser(userId, 'MEASUREMENT_ARRIVED', {
+        title: 'وصل المندوب',
+        titleAr: 'وصل المندوب',
+        body: 'مندوب القياس وصل إلى موقعك',
+        bodyAr: 'مندوب القياس وصل إلى موقعك',
+        data: { serviceRequestId: serviceRequest.id, type: 'service' },
+      });
+    }
+
+    await this.sendToShopStaff(serviceRequest.shopId, 'REP_ARRIVED', {
+      title: 'وصول المندوب',
+      titleAr: 'وصول المندوب',
+      body: 'المندوب وصل للعميل وبدأ القياس',
+      bodyAr: 'المندوب وصل للعميل وبدأ القياس',
+      data: { serviceRequestId: serviceRequest.id, type: 'service' },
+    });
+  }
 }

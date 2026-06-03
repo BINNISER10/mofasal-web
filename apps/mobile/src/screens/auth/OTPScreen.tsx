@@ -196,11 +196,6 @@ const OTPScreen: React.FC = () => {
             إعادة الإرسال بعد {resendTimer} ثانية
           </Text>
         )}
-
-        {/* Dev hint */}
-        <View style={styles.devHint}>
-          <Text style={styles.devHintText}>رمز التجربة: 1234</Text>
-        </View>
       </View>
     </KeyboardAvoidingView>
   );

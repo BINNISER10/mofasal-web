@@ -4,6 +4,7 @@ import { ApiError } from '../utils/ApiError';
 import logger from '../utils/logger';
 import socketService from './SocketService';
 import { NotificationService } from './NotificationService';
+import { LedgerService } from './LedgerService';
 import { config } from '../config';
 
 export class PaymentService {
@@ -79,6 +80,11 @@ export class PaymentService {
         await NotificationService.sendToUser(order.customerId, 'PAYMENT_UPDATE', {
           title: 'Payment Successful', body: `Payment of SAR ${data.amount} completed`,
         });
+
+        // ترحيل محاسبي تلقائي عند نجاح الدفع (لا يُعطّل تدفّق الدفع أبداً)
+        LedgerService.postOrderRevenue({ ...order, paymentMethod: data.method }).catch((err) =>
+          logger.error(`Auto ledger posting failed for order ${order.orderNumber}: ${err.message}`)
+        );
 
         return { success: true, transactionId: transaction.id, reference: gatewayResult.reference };
       } else {

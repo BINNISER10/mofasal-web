@@ -8,6 +8,7 @@ import {
   Dimensions,
   FlatList,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +21,8 @@ import ProductCard from '../../components/shared/ProductCard';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { HomeStackParamList } from '../../navigation/stacks/HomeStack';
+import { shopsApi } from '../../services/api/shops';
+import { productsApi } from '../../services/api/products';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BANNER_WIDTH = SCREEN_WIDTH - 32;
@@ -38,7 +41,7 @@ const CATEGORIES = [
   { id: '2', emoji: '👘', label: 'بشت', color: '#481719' },
   { id: '3', emoji: '👔', label: 'بدلة', color: '#1a4a6b' },
   { id: '4', emoji: '✂️', label: 'تعديل', color: '#735B4D' },
-  { id: '5', emoji: '👗', label: 'نسائي', color: '#6b1a4a' },
+  { id: '5', emoji: '�', label: 'قميص', color: '#6b1a4a' },
   { id: '6', emoji: '👦', label: 'أطفال', color: '#1a6b3a' },
   { id: '7', emoji: '🎽', label: 'رياضي', color: '#4a3a6b' },
   { id: '8', emoji: '🧥', label: 'معطف', color: '#3a2a1a' },
@@ -47,7 +50,7 @@ const CATEGORIES = [
 const MOCK_SHOPS = [
   { id: '1', name: 'خياط الرجال', image: 'https://via.placeholder.com/400x300/1B5E20/ffffff?text=خياط+الرجال', rating: 4.8, ratingCount: 124, distance: 1.2, estimatedArrival: 25, isFeatured: true, tags: ['خياطة رجالي', 'توصيل'] },
   { id: '2', name: 'مشغل الأمير', image: 'https://via.placeholder.com/400x300/2E7D32/ffffff?text=مشغل+الأمير', rating: 4.6, ratingCount: 89, distance: 2.5, estimatedArrival: 35, tags: ['أطفال', 'رجالي'] },
-  { id: '3', name: 'خياطة الماسية', image: 'https://via.placeholder.com/400x300/D4AF37/000000?text=الماسية', rating: 4.9, ratingCount: 203, distance: 0.8, estimatedArrival: 15, isFeatured: true, tags: ['خياطة نسائي', 'تعديل'] },
+  { id: '3', name: 'بيت البشوت الماسية', image: 'https://via.placeholder.com/400x300/D4AF37/000000?text=الماسية', rating: 4.9, ratingCount: 203, distance: 0.8, estimatedArrival: 15, isFeatured: true, tags: ['بشوت ومشالح', 'تعديل'] },
   { id: '4', name: 'محل الفخامة', image: 'https://via.placeholder.com/400x300/1B5E20/ffffff?text=الفخامة', rating: 4.5, ratingCount: 67, distance: 3.8, estimatedArrival: 40, tags: ['أقمشة', 'خياطة'] },
 ];
 
@@ -67,14 +70,41 @@ const HomeScreen: React.FC = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
+  const [shops, setShops] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchHomeData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [shopsData, productsData] = await Promise.all([
+        shopsApi.list({ limit: 10 }),
+        productsApi.list({ limit: 4 }),
+      ]);
+      setShops(shopsData.length > 0 ? shopsData : MOCK_SHOPS);
+      setProducts(productsData.length > 0 ? productsData : MOCK_PRODUCTS);
+    } catch (error) {
+      console.error('Failed to load home data from API:', error);
+      setShops(MOCK_SHOPS);
+      setProducts(MOCK_PRODUCTS);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
+    fetchHomeData();
+  }, [fetchHomeData]);
+
+  useEffect(() => {
+    if (loading) return;
     const interval = setInterval(() => {
       const next = (activeBanner + 1) % BANNERS.length;
       setActiveBanner(next);
       flatListRef.current?.scrollToIndex({ index: next, animated: true });
     }, 4000);
     return () => clearInterval(interval);
-  }, [activeBanner]);
+  }, [activeBanner, loading]);
 
   const handleShopPress = useCallback((shopId: string) => {
     navigation.navigate('ShopDetail', { shopId });
@@ -200,7 +230,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           {renderSection(t('home.nearestToYou'))}
           <FlatList
-            data={MOCK_SHOPS}
+            data={shops}
             renderItem={({ item }) => (
               <ShopCard
                 {...item}
@@ -220,7 +250,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           {renderSection(t('home.topRated'))}
           <FlatList
-            data={[...MOCK_SHOPS].sort((a, b) => b.rating - a.rating)}
+            data={[...shops].sort((a, b) => b.rating - a.rating)}
             renderItem={({ item }) => (
               <ShopCard
                 {...item}
@@ -240,7 +270,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           {renderSection(t('home.fabricMarketplace'))}
           <View style={styles.productGrid}>
-            {MOCK_PRODUCTS.map((product) => (
+            {products.map((product) => (
               <ProductCard
                 key={product.id}
                 {...product}
@@ -258,7 +288,10 @@ const HomeScreen: React.FC = () => {
           </Text>
           <Button
             title={t('home.bookNow')}
-            onPress={() => {}}
+            onPress={() => {
+              const defaultShopId = shops[0]?.id || '1';
+              navigation.navigate('ServiceRequest', { shopId: defaultShopId, serviceType: 'ON_SITE_MEASUREMENT' });
+            }}
             variant="primary"
             size="md"
             style={styles.ctaButton}

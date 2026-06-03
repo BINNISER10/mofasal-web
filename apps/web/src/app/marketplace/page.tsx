@@ -43,7 +43,6 @@ interface ProductCard {
 const CATEGORIES = [
   { id: 'all', labelAr: 'الكل', labelEn: 'All' },
   { id: 'mens', labelAr: 'أقمشة رجالية', labelEn: "Men's Fabrics" },
-  { id: 'womens', labelAr: 'أقمشة نسائية', labelEn: "Women's Fabrics" },
   { id: 'kids', labelAr: 'أطفال', labelEn: 'Kids' },
   { id: 'accessories', labelAr: 'إكسسوارات', labelEn: 'Accessories' },
   { id: 'lining', labelAr: 'بطانات', labelEn: 'Lining' },
@@ -53,7 +52,7 @@ const MATERIALS = ['الكل', 'قطن', 'صوف', 'حرير', 'كتان', 'بو
 const ORIGINS = ['الكل', 'إيطالي', 'مصري', 'هندي', 'تركي', 'إماراتي', 'سعودي'];
 
 const SLUG_CATEGORY: Record<string, string> = {
-  mens: "Men's Fabrics", womens: "Women's Fabrics", kids: 'Kids Fabrics',
+  mens: "Men's Fabrics", kids: 'Kids Fabrics',
   accessories: 'Accessories', lining: 'Lining',
 };
 
@@ -270,7 +269,7 @@ export default function MarketplacePage() {
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm overflow-x-auto hide-scrollbar">
           <TrendingUp size={14} className="text-gold-500 flex-shrink-0" />
           <span className="text-gray-500 flex-shrink-0">{isRTL ? 'رائج:' : 'Trending:'}</span>
-          {['صوف إيطالي', 'قطن مصري', 'عباءة فاخرة', 'حرير طبيعي'].map((t) => (
+          {['صوف إيطالي', 'قطن مصري', 'نياقة فاخر', 'دورمى'].map((t) => (
             <button
               key={t}
               onClick={() => setSearch(t)}

@@ -12,7 +12,7 @@ export type HomeStackParamList = {
   OrderNow: { shopId: string };
   ServiceRequest: { shopId: string; serviceType?: string };
   Confirmation: { orderId: string };
-  Tracking: { orderId: string };
+  Tracking: { orderId?: string; serviceRequestId?: string };
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();

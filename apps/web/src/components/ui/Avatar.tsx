@@ -57,7 +57,7 @@ export function Avatar({
   const initials = getInitials(name);
 
   return (
-    <div className={cn('relative inline-flex flex-shrink-0', className)}>
+    <span className={cn('relative inline-flex flex-shrink-0', className)}>
       {src ? (
         <img
           src={src}
@@ -65,7 +65,7 @@ export function Avatar({
           className={cn('rounded-full object-cover', sizes[size])}
         />
       ) : (
-        <div
+        <span
           className={cn(
             'rounded-full flex items-center justify-center font-bold text-white',
             sizes[size]
@@ -73,7 +73,7 @@ export function Avatar({
           style={{ backgroundColor: bgColor }}
         >
           {initials}
-        </div>
+        </span>
       )}
       {showOnline && (
         <span
@@ -83,6 +83,6 @@ export function Avatar({
           )}
         />
       )}
-    </div>
+    </span>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -14,7 +15,8 @@ import { colors, fonts, borderRadius, shadows, spacing } from '../../utils/theme
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
-import LocationPicker from '../../components/shared/LocationPicker';
+import { useAuth } from '../../hooks/useAuth';
+import { addressesApi, UserAddress } from '../../services/api/addresses';
 
 interface Address {
   id: string;
@@ -28,60 +30,134 @@ interface Address {
   isDefault: boolean;
 }
 
-const MOCK_ADDRESSES: Address[] = [
-  { id: '1', label: 'المنزل', type: 'home', details: 'الرياض، حي النخيل، شارع الأمير محمد بن سلمان، مبنى ٢٣', buildingNo: '٢٣', street: 'شارع الأمير محمد بن سلمان', district: 'حي النخيل', city: 'الرياض', isDefault: true },
-  { id: '2', label: 'العمل', type: 'work', details: 'الرياض، حي العليا، طريق الملك فهد، برج المملكة', buildingNo: '١٢٣٤', street: 'طريق الملك فهد', district: 'حي العليا', city: 'الرياض', isDefault: false },
-];
-
 const AddressesScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const [addresses, setAddresses] = useState<Address[]>(MOCK_ADDRESSES);
+  const { user } = useAuth();
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newAddress, setNewAddress] = useState({
     label: '', type: 'home', buildingNo: '', street: '', district: '', city: '',
   });
 
+  const loadAddresses = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      const data = await addressesApi.list(user.id);
+      const mapped = data.map((apiAddr) => {
+        const details = [
+          apiAddr.buildingNumber ? `مبنى ${apiAddr.buildingNumber}` : '',
+          apiAddr.street,
+          apiAddr.district,
+          apiAddr.city,
+        ].filter(Boolean).join('، ');
+
+        return {
+          id: apiAddr.id,
+          label: apiAddr.label || 'عنوان',
+          type: 'home',
+          details: details || `${apiAddr.city}, ${apiAddr.street}`,
+          buildingNo: apiAddr.buildingNumber || '',
+          street: apiAddr.street,
+          district: apiAddr.district || '',
+          city: apiAddr.city,
+          isDefault: apiAddr.isDefault,
+        };
+      });
+      setAddresses(mapped);
+    } catch (error) {
+      console.error('Error loading addresses:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'تعذر تحميل العناوين.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, t]);
+
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
+
   const handleAddAddress = () => {
     setShowAddForm(true);
   };
 
-  const handleSaveAddress = () => {
-    setShowAddForm(false);
+  const handleSaveAddress = async () => {
+    if (!newAddress.street.trim() || !newAddress.city.trim()) {
+      Alert.alert(t('common.validationError') || 'تنبيه', 'يرجى إدخال الشارع والمدينة.');
+      return;
+    }
+
+    if (!user?.id) return;
+
+    try {
+      setSaving(true);
+      await addressesApi.create(user.id, {
+        label: newAddress.label || undefined,
+        buildingNumber: newAddress.buildingNo || undefined,
+        street: newAddress.street,
+        district: newAddress.district || undefined,
+        city: newAddress.city,
+        country: 'السعودية',
+        isDefault: addresses.length === 0,
+      });
+
+      setNewAddress({
+        label: '', type: 'home', buildingNo: '', street: '', district: '', city: '',
+      });
+      setShowAddForm(false);
+      await loadAddresses();
+    } catch (error) {
+      console.error('Error creating address:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'تعذر حفظ العنوان الجديد.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSetDefault = (id: string) => {
-    setAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.id === id })),
-    );
+  const handleSetDefault = async (id: string) => {
+    if (!user?.id) return;
+    try {
+      setSaving(true);
+      await addressesApi.update(user.id, id, { isDefault: true });
+      await loadAddresses();
+    } catch (error) {
+      console.error('Error setting default address:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'تعذر تعيين العنوان كافتراضي.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert(t('profile.deleteAddress'), 'هل أنت متأكد؟', [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => setAddresses((prev) => prev.filter((a) => a.id !== id)) },
-    ]);
-  };
-
-  if (addresses.length === 0 && !showAddForm) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.headerBack}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('profile.myAddresses')}</Text>
-          <View style={{ width: 40 }} />
-        </View>
-        <EmptyState
-          icon="📍"
-          title={t('profile.noAddresses')}
-          actionLabel={t('profile.addAddress')}
-          onAction={handleAddAddress}
-        />
-      </View>
+    Alert.alert(
+      t('profile.deleteAddress') || 'حذف العنوان',
+      'هل أنت متأكد من رغبتك في حذف هذا العنوان؟',
+      [
+        { text: t('common.cancel') || 'إلغاء', style: 'cancel' },
+        {
+          text: t('common.delete') || 'حذف',
+          style: 'destructive',
+          onPress: async () => {
+            if (!user?.id) return;
+            try {
+              setSaving(true);
+              await addressesApi.delete(user.id, id);
+              await loadAddresses();
+            } catch (error) {
+              console.error('Error deleting address:', error);
+              Alert.alert(t('common.error') || 'خطأ', 'تعذر حذف العنوان.');
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ]
     );
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -89,115 +165,145 @@ const AddressesScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.headerBack}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('profile.myAddresses')}</Text>
-        <TouchableOpacity onPress={handleAddAddress}>
+        <Text style={styles.headerTitle}>{t('profile.myAddresses') || 'عناويني'}</Text>
+        <TouchableOpacity onPress={handleAddAddress} disabled={saving}>
           <Text style={styles.headerAdd}>+</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {addresses.map((addr) => (
-          <Card key={addr.id} style={styles.addressCard}>
-            <View style={styles.addressHeader}>
-              <View style={styles.addressLabelRow}>
-                <Text style={styles.addressLabel}>{addr.label}</Text>
-                {addr.isDefault && (
-                  <View style={styles.defaultBadge}>
-                    <Text style={styles.defaultText}>{t('profile.defaultAddress')}</Text>
-                  </View>
-                )}
-              </View>
-              <View style={styles.addressActions}>
-                <TouchableOpacity onPress={() => handleSetDefault(addr.id)}>
-                  <Text style={styles.actionText}>{t('profile.setDefault')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(addr.id)}>
-                  <Text style={[styles.actionText, styles.deleteText]}>{t('common.delete')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <Text style={styles.addressDetails}>{addr.details}</Text>
-          </Card>
-        ))}
-
-        {showAddForm && (
-          <Card style={styles.formCard}>
-            <Text style={styles.formTitle}>{t('profile.addAddress')}</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.addressLabel')}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="مثال: المنزل"
-                placeholderTextColor={colors.textLight}
-                value={newAddress.label}
-                onChangeText={(v) => setNewAddress((p) => ({ ...p, label: v }))}
-                textAlign="right"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.buildingNo')}</Text>
-              <TextInput
-                style={styles.input}
-                value={newAddress.buildingNo}
-                onChangeText={(v) => setNewAddress((p) => ({ ...p, buildingNo: v }))}
-                textAlign="right"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.street')}</Text>
-              <TextInput
-                style={styles.input}
-                value={newAddress.street}
-                onChangeText={(v) => setNewAddress((p) => ({ ...p, street: v }))}
-                textAlign="right"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.district')}</Text>
-              <TextInput
-                style={styles.input}
-                value={newAddress.district}
-                onChangeText={(v) => setNewAddress((p) => ({ ...p, district: v }))}
-                textAlign="right"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('profile.cityAddress')}</Text>
-              <TextInput
-                style={styles.input}
-                value={newAddress.city}
-                onChangeText={(v) => setNewAddress((p) => ({ ...p, city: v }))}
-                textAlign="right"
-              />
-            </View>
-
-            <Button
-              title={t('profile.saveAddress')}
-              onPress={handleSaveAddress}
-              variant="primary"
-              size="md"
-              fullWidth
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {addresses.length === 0 && !showAddForm ? (
+            <EmptyState
+              icon="📍"
+              title={t('profile.noAddresses') || 'لا توجد عناوين مسجلة'}
+              actionLabel={t('profile.addAddress') || 'إضافة عنوان جديد'}
+              onAction={handleAddAddress}
             />
-          </Card>
-        )}
+          ) : (
+            addresses.map((addr) => (
+              <Card key={addr.id} style={styles.addressCard}>
+                <View style={styles.addressHeader}>
+                  <View style={styles.addressLabelRow}>
+                    <Text style={styles.addressLabel}>{addr.label}</Text>
+                    {addr.isDefault && (
+                      <View style={styles.defaultBadge}>
+                        <Text style={styles.defaultText}>{t('profile.defaultAddress') || 'الافتراضي'}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.addressActions}>
+                    {!addr.isDefault && (
+                      <TouchableOpacity onPress={() => handleSetDefault(addr.id)} disabled={saving}>
+                        <Text style={styles.actionText}>{t('profile.setDefault') || 'تعيين كافتراضي'}</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => handleDelete(addr.id)} disabled={saving}>
+                      <Text style={[styles.actionText, styles.deleteText]}>{t('common.delete') || 'حذف'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <Text style={styles.addressDetails}>{addr.details}</Text>
+              </Card>
+            ))
+          )}
 
-        <Button
-          title={t('profile.addAddress')}
-          onPress={handleAddAddress}
-          variant="outline"
-          size="lg"
-          fullWidth
-          style={styles.addButton}
-        />
-      </ScrollView>
+          {showAddForm && (
+            <Card style={styles.formCard}>
+              <Text style={styles.formTitle}>{t('profile.addAddress') || 'إضافة عنوان جديد'}</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.addressLabel') || 'اسم العنوان'}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="مثال: المنزل، العمل"
+                  placeholderTextColor={colors.textLight}
+                  value={newAddress.label}
+                  onChangeText={(v) => setNewAddress((p) => ({ ...p, label: v }))}
+                  textAlign="right"
+                  editable={!saving}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.buildingNo') || 'رقم المبنى'}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="مثال: ١٢٣٤"
+                  value={newAddress.buildingNo}
+                  onChangeText={(v) => setNewAddress((p) => ({ ...p, buildingNo: v }))}
+                  textAlign="right"
+                  editable={!saving}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.street') || 'اسم الشارع'}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="مثال: طريق الملك فهد"
+                  value={newAddress.street}
+                  onChangeText={(v) => setNewAddress((p) => ({ ...p, street: v }))}
+                  textAlign="right"
+                  editable={!saving}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.district') || 'اسم الحي'}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="مثال: حي العليا"
+                  value={newAddress.district}
+                  onChangeText={(v) => setNewAddress((p) => ({ ...p, district: v }))}
+                  textAlign="right"
+                  editable={!saving}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t('profile.cityAddress') || 'المدينة'}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="مثال: الرياض"
+                  value={newAddress.city}
+                  onChangeText={(v) => setNewAddress((p) => ({ ...p, city: v }))}
+                  textAlign="right"
+                  editable={!saving}
+                />
+              </View>
+
+              <Button
+                title={saving ? (t('common.saving') || 'جاري الحفظ...') : (t('profile.saveAddress') || 'حفظ العنوان')}
+                onPress={handleSaveAddress}
+                variant="primary"
+                size="md"
+                disabled={saving}
+                fullWidth
+              />
+            </Card>
+          )}
+
+          {!showAddForm && addresses.length > 0 && (
+            <Button
+              title={t('profile.addAddress') || 'إضافة عنوان جديد'}
+              onPress={handleAddAddress}
+              variant="outline"
+              size="lg"
+              fullWidth
+              style={styles.addButton}
+              disabled={saving}
+            />
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -219,7 +325,7 @@ const styles = StyleSheet.create({
   addressLabel: { fontSize: fonts.sizes.lg, color: colors.textPrimary, ...fonts.bold },
   defaultBadge: { backgroundColor: colors.primary + '15', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   defaultText: { fontSize: 10, color: colors.primary, ...fonts.bold },
-  addressActions: { flexDirection: 'row', gap: 12 },
+  addressActions: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   actionText: { fontSize: fonts.sizes.sm, color: colors.primary, ...fonts.medium },
   deleteText: { color: colors.error },
   addressDetails: { fontSize: fonts.sizes.md, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
@@ -232,6 +338,7 @@ const styles = StyleSheet.create({
     padding: spacing.md, fontSize: 15, color: colors.textPrimary, textAlign: 'right',
   },
   addButton: { marginTop: spacing.md },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
 
 export default AddressesScreen;

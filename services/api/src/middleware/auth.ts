@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { ApiError } from '../utils/ApiError';
 import prisma from '../config/database';
+import { resolvePermissions } from '../config/permissions';
 
 export interface JwtPayload {
   userId: string;
@@ -74,6 +75,35 @@ export const authorize = (...roles: string[]) => {
       return next(ApiError.forbidden('Insufficient permissions'));
     }
     next();
+  };
+};
+
+export const requirePermission = (...permissions: string[]) => {
+  return async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      return next(ApiError.unauthorized());
+    }
+    if (req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN') {
+      return next();
+    }
+    try {
+      const role = await prisma.role.findFirst({
+        where: {
+          name: req.user.role,
+          ...(req.user.shopId ? { shopId: req.user.shopId } : {}),
+        },
+        select: { permissions: true },
+      });
+      // DB permissions override, with code-level defaults as a safe fallback
+      // so a legitimate role is never locked out before permissions are seeded.
+      const perms = resolvePermissions(req.user.role, role?.permissions as Record<string, unknown>);
+      if (perms.all === true || permissions.some((p) => perms[p] === true)) {
+        return next();
+      }
+      return next(ApiError.forbidden('Insufficient permissions'));
+    } catch (error) {
+      next(error);
+    }
   };
 };
 

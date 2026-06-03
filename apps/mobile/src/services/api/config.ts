@@ -1,8 +1,9 @@
-// Local dev: http://10.0.2.2:8000/api/v1 (Android emulator)
-// Local dev: http://localhost:8000/api/v1 (iOS simulator)
+// خادم Express الموحّد (Node.js + Prisma) — المنفذ 4001
+// Local dev: http://10.0.2.2:4001/api/v1 (Android emulator)
+// Local dev: http://localhost:4001/api/v1 (iOS simulator)
 // Production: https://api.mufasal.com/api/v1
 export const API_BASE_URL = __DEV__
-  ? 'http://10.0.2.2:8000/api/v1'
+  ? 'http://10.0.2.2:4001/api/v1'
   : 'https://api.mufasal.com/api/v1';
 
 export const API_TIMEOUT = 30000;
@@ -17,10 +18,10 @@ export const ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
-    REFRESH_TOKEN: '/auth/refresh',
-    ME: '/users/me',
-    OTP_SEND: '/auth/otp/send',
-    OTP_VERIFY: '/auth/otp/verify',
+    REFRESH_TOKEN: '/auth/refresh-token',
+    ME: '/auth/profile',
+    OTP_SEND: '/auth/send-verification',
+    OTP_VERIFY: '/auth/verify-phone',
   },
   SHOPS: {
     LIST: '/shops',

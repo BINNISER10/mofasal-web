@@ -1,8 +1,11 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../../middleware/auth';
+import { authenticate, requirePermission } from '../../middleware/auth';
 import { HRController } from '../../controllers/v1/hr.controller';
 
 const router = Router();
+
+// HR endpoints are management-only (shop owners/staff/admins). Customers are blocked.
+router.use(authenticate, requirePermission('hr', 'staff'));
 
 router.get('/employees', authenticate, HRController.getEmployees);
 router.get('/employees/:id', authenticate, HRController.getEmployee);

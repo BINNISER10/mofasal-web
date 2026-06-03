@@ -80,6 +80,16 @@ export const productsApi = {
     return { product };
   },
 
+  // إنشاء منتج بصيغة JSON (يطابق مخطط Express productSchema)
+  createJson: async (data: {
+    name: string; nameAr?: string; description?: string; price: number;
+    compareAtPrice?: number; stockQuantity?: number; unit?: string;
+    images?: string[]; tags?: string; categoryId?: string;
+  }): Promise<ProductResponse> => {
+    const product = await apiClient.post<Product>('/products', data);
+    return { product };
+  },
+
   update: async (id: string, data: FormData | Partial<Product>): Promise<ProductResponse> => {
     const product = await apiClient.put<Product>(`/products/${id}`, data);
     return { product };
@@ -88,9 +98,13 @@ export const productsApi = {
   delete: (id: string) =>
     apiClient.delete<{ message: string }>(`/products/${id}`),
 
-  updateStock: async (id: string, stock: number): Promise<ProductResponse> => {
-    const product = await apiClient.patch<Product>(`/products/${id}/stock`, { stock });
-    return { product };
+  adjustStock: async (
+    id: string,
+    type: 'IN' | 'OUT',
+    quantity: number,
+    notes?: string
+  ): Promise<{ id: string; type: string; quantity: number }> => {
+    return apiClient.post(`/products/${id}/stock`, { type, quantity, notes });
   },
 
   toggleVisibility: async (id: string): Promise<ProductResponse> => {

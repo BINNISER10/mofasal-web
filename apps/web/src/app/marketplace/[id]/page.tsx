@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/shared/Navbar';
 import { Footer } from '@/components/shared/Footer';
@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { productsApi } from '@/lib/api/products';
 import {
   Star, Heart, Share2, ShoppingCart, ChevronLeft, ChevronRight,
   Package, Truck, Shield, RotateCcw, Check, Plus, Minus,
@@ -79,8 +80,8 @@ const mockProducts: Record<string, any> = {
       { color: '#c9a87c', label: 'بيج داكن' },
     ],
     reviews: [
-      { name: 'نورة السالم', rating: 5, comment: 'ممتاز للصيف، خفيف ومريح جداً.', date: '2024-03-12' },
-      { name: 'منى العتيبي', rating: 4, comment: 'جودة جيدة والتوصيل كان سريعاً.', date: '2024-03-01' },
+      { name: 'عبدالله السالم', rating: 5, comment: 'ممتاز للصيف، خفيف ومريح جداً.', date: '2024-03-12' },
+      { name: 'ماجد العتيبي', rating: 4, comment: 'جودة جيدة والتوصيل كان سريعاً.', date: '2024-03-01' },
     ],
     relatedProducts: [
       { id: '1', name: 'قماش صوف إيطالي', price: 185, rating: 4.9, color: '#1a1a2e' },
@@ -100,7 +101,35 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'reviews'>('desc');
 
   const productId = String(params.id);
-  const product = mockProducts[productId] ?? mockProducts['1'];
+  const fallback = mockProducts[productId] ?? mockProducts['1'];
+  const [product, setProduct] = useState<any>(fallback);
+
+  useEffect(() => {
+    let active = true;
+    productsApi.getById(productId)
+      .then((res) => {
+        if (!active) return;
+        const api: any = res.product;
+        if (!api || !api.id) return;
+        setProduct({
+          ...fallback,
+          id: api.id,
+          name: api.nameAr || api.name || fallback.name,
+          nameEn: api.nameEn || api.name || fallback.nameEn,
+          merchant: api.shop?.nameAr || api.shop?.name || fallback.merchant,
+          merchantId: api.shopId || fallback.merchantId,
+          merchantCity: api.shop?.city || fallback.merchantCity,
+          price: api.price ?? fallback.price,
+          category: api.category?.nameAr || api.category?.name || fallback.category,
+          inStock: (api.stockQuantity ?? 0) > 0,
+          stockMeters: api.stockQuantity ?? fallback.stockMeters,
+          description: api.description || fallback.description,
+        });
+      })
+      .catch(() => { /* الإبقاء على القالب الاحتياطي عند فشل الاتصال */ });
+    return () => { active = false; };
+  }, [productId]);
+
   const ChevronBack = isRTL ? ChevronRight : ChevronLeft;
   const ArrowIcon = isRTL ? ArrowRight : ArrowLeft;
 

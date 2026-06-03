@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AreaChart,
   Area,
@@ -115,7 +115,17 @@ export function MufasalAreaChart({
   prefix = '',
   suffix = '',
 }: AreaChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const gradId = `grad-${color.replace('#', '')}`;
+
+  if (!mounted) {
+    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+  }
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -169,6 +179,15 @@ export function MufasalDualAreaChart({
   label2 = '',
   prefix = '',
 }: DualBarChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+  }
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -203,6 +222,15 @@ export function MufasalBarChart({
   label2 = '',
   prefix = '',
 }: DualBarChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+  }
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={4}>
@@ -221,6 +249,15 @@ export function MufasalBarChart({
 }
 
 export function MufasalPieChart({ data, height = 260, innerRadius = 55 }: PieChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+  }
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
@@ -263,6 +300,15 @@ export function MufasalLineChart({
   label = '',
   prefix = '',
 }: AreaChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+  }
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>

@@ -1,13 +1,15 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { ordersApi } from '@/lib/api/orders';
 import { ShoppingBag, Clock, Users, DollarSign, Plus, UserPlus, Package, TrendingUp } from 'lucide-react';
 import { MufasalBarChart, CHART_COLORS } from '@/components/shared/Charts';
 import { formatCurrency } from '@/lib/utils/formatting';
+import DashboardLoading from '../loading';
 
 const weeklyOrders = [
   { name: 'سبت', value: 18 },
@@ -19,16 +21,56 @@ const weeklyOrders = [
   { name: 'جمعة', value: 12 },
 ];
 
+const FALLBACK_ORDERS = [
+  { id: '#ORD-1284', customer: 'أحمد محمد', status: 'PENDING', amount: 1200, time: 'منذ 30 دقيقة' },
+  { id: '#ORD-1283', customer: 'سعد عبدالله', status: 'TAKING_MEASUREMENTS', amount: 850, time: 'منذ ساعتين' },
+  { id: '#ORD-1282', customer: 'خالد عمر', status: 'SEWING_ASSEMBLY', amount: 2300, time: 'منذ 5 ساعات' },
+  { id: '#ORD-1281', customer: 'فيصل علي', status: 'ON_WAY_TO_CUSTOMER', amount: 540, time: 'منذ يوم' },
+];
+
 export default function TailorDashboardPage() {
   const { isRTL } = useAppStore();
+  const [mounted, setMounted] = useState(false);
+  const [stats, setStats] = useState({ today: 12, pending: 5, revenue: 4500 });
+  const [recentOrders, setRecentOrders] = useState<any[]>(FALLBACK_ORDERS);
+
+  useEffect(() => {
+    setMounted(true);
+    let active = true;
+    ordersApi.list({ limit: '50' })
+      .then((res) => {
+        if (!active || !res.orders?.length) return;
+        const orders: any[] = res.orders;
+        const today = new Date().toDateString();
+        const todayCount = orders.filter((o) => new Date(o.createdAt).toDateString() === today).length;
+        const pending = orders.filter((o) => o.status === 'PENDING').length;
+        const revenue = orders
+          .filter((o) => new Date(o.createdAt).toDateString() === today)
+          .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+        setStats({ today: todayCount, pending, revenue });
+        setRecentOrders(orders.slice(0, 4).map((o) => ({
+          id: `#${o.orderNumber || o.id?.slice(0, 6)}`,
+          customer: o.customerName || o.customer?.name || '—',
+          status: o.status || 'PENDING',
+          amount: o.totalAmount || 0,
+          time: o.createdAt ? new Date(o.createdAt).toLocaleDateString('ar') : '',
+        })));
+      })
+      .catch(() => { /* الإبقاء على القالب الاحتياطي */ });
+    return () => { active = false; };
+  }, []);
+
+  if (!mounted) {
+    return <DashboardLoading />;
+  }
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'طلبات اليوم' : "Today's Orders"} value="12" trend={8.5} color="primary" />
-        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'قيد الانتظار' : 'Pending Orders'} value="5" trend={-3.2} color="gold" />
+        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'طلبات اليوم' : "Today's Orders"} value={String(stats.today)} trend={8.5} color="primary" />
+        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'قيد الانتظار' : 'Pending Orders'} value={String(stats.pending)} trend={-3.2} color="gold" />
         <StatsCard icon={<Users size={22} />} label={isRTL ? 'الموظفين' : 'Staff on Duty'} value="8" color="info" />
-        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات اليوم' : "Today's Revenue"} value={formatCurrency(4500)} trend={15.3} color="success" />
+        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات اليوم' : "Today's Revenue"} value={formatCurrency(stats.revenue)} trend={15.3} color="success" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -38,12 +80,7 @@ export default function TailorDashboardPage() {
               <h3 className="font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'آخر الطلبات' : 'Recent Orders'}</h3>
               <a href="/dashboard/tailor/orders" className="text-sm text-primary-700 font-semibold">{isRTL ? 'عرض الكل' : 'View All'}</a>
             </div>
-            {[
-              { id: '#ORD-1284', customer: 'أحمد محمد', status: 'PENDING', amount: 1200, time: 'منذ 30 دقيقة' },
-              { id: '#ORD-1283', customer: 'سارة أحمد', status: 'TAKING_MEASUREMENTS', amount: 850, time: 'منذ ساعتين' },
-              { id: '#ORD-1282', customer: 'خالد عمر', status: 'SEWING_ASSEMBLY', amount: 2300, time: 'منذ 5 ساعات' },
-              { id: '#ORD-1281', customer: 'فاطمة علي', status: 'ON_WAY_TO_CUSTOMER', amount: 540, time: 'منذ يوم' },
-            ].map((order) => (
+            {recentOrders.map((order) => (
               <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-slate-700 last:border-0">
                 <div>
                   <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">{order.customer}</p>

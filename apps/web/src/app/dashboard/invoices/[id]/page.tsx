@@ -1,10 +1,11 @@
 'use client';
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { paymentsApi } from '@/lib/api/payments';
 import { formatCurrency } from '@/lib/utils/formatting';
 import {
   ArrowRight, Download, Share2, Printer, QrCode,
@@ -52,7 +53,30 @@ export default function InvoicePage() {
   const router = useRouter();
   const { isRTL } = useAppStore();
   const invoiceRef = useRef<HTMLDivElement>(null);
-  const inv = mockInvoice;
+  const [inv, setInv] = useState<any>(mockInvoice);
+
+  useEffect(() => {
+    let active = true;
+    paymentsApi.getInvoice(String(id))
+      .then((res) => {
+        if (!active) return;
+        const api: any = res.invoice;
+        if (!api || !api.id) return;
+        setInv({
+          ...mockInvoice,
+          ...api,
+          invoiceNumber: api.invoiceNumber || mockInvoice.invoiceNumber,
+          subtotal: api.amount ?? mockInvoice.subtotal,
+          vatAmount: api.vatAmount ?? mockInvoice.vatAmount,
+          total: api.totalAmount ?? api.total ?? mockInvoice.total,
+          items: Array.isArray(api.items) && api.items.length ? api.items : mockInvoice.items,
+          seller: api.seller || mockInvoice.seller,
+          buyer: api.buyer || mockInvoice.buyer,
+        });
+      })
+      .catch(() => { /* الإبقاء على القالب الاحتياطي */ });
+    return () => { active = false; };
+  }, [id]);
 
   return (
     <div className="max-w-3xl mx-auto p-4 pb-24">
@@ -167,7 +191,7 @@ export default function InvoicePage() {
                 <span className="col-span-2 text-center">{isRTL ? 'سعر الوحدة' : 'Unit Price'}</span>
                 <span className="col-span-2 text-end">{isRTL ? 'الإجمالي' : 'Total'}</span>
               </div>
-              {inv.items.map((item, i) => (
+              {inv.items.map((item: any, i: number) => (
                 <div key={i} className="grid grid-cols-12 gap-2 px-3 py-3 border-b border-gray-50 dark:border-slate-700 last:border-0 text-sm">
                   <span className="col-span-6 text-gray-700 dark:text-slate-300">{item.description}</span>
                   <span className="col-span-2 text-center text-gray-600 dark:text-slate-400">{item.qty}</span>

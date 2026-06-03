@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import ProductCard from '../../components/shared/ProductCard';
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
 import Slider from '@react-native-community/slider';
+import { productsApi } from '../../services/api/products';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -36,6 +38,7 @@ const MOCK_PRODUCTS = Array.from({ length: 8 }, (_, i) => ({
   price: [180, 95, 250, 140, 200, 160, 120, 220][i],
   merchantName: 'متجر الأقمشة',
   rating: [4.7, 4.5, 4.8, 4.3, 4.6, 4.4, 4.2, 4.9][i],
+  inStock: true,
 }));
 
 const MarketplaceScreen: React.FC = () => {
@@ -45,9 +48,83 @@ const MarketplaceScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showFilter, setShowFilter] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 500]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // جلب الأقسام عند تحميل الصفحة
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const cats = await productsApi.getCategories();
+        setDbCategories(cats);
+      } catch (err) {
+        console.warn('Failed to fetch categories, using UI fallbacks:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      let categoryId: string | undefined = undefined;
+      if (selectedCategory !== 'all') {
+        const matched = dbCategories.find(
+          (c) =>
+            c.slug?.toLowerCase() === selectedCategory.toLowerCase() ||
+            c.name?.toLowerCase() === selectedCategory.toLowerCase()
+        );
+        if (matched) {
+          categoryId = matched.id;
+        }
+      }
+
+      const params = {
+        categoryId,
+        search: searchQuery || undefined,
+        minPrice: priceRange[0] || undefined,
+        maxPrice: priceRange[1] || undefined,
+      };
+
+      const rawProducts = await productsApi.list(params);
+      if (rawProducts && rawProducts.length > 0) {
+        const mapped = rawProducts.map((p: any) => ({
+          id: p.id,
+          name: p.nameAr || p.name,
+          image: p.images && p.images.length > 0 ? p.images[0] : 'https://via.placeholder.com/200x200/D4AF37/000000?text=قماش',
+          price: p.price,
+          merchantName: p.shop?.name || 'متجر الأقمشة',
+          rating: p.rating || 4.5,
+          inStock: p.stockQuantity > 0,
+        }));
+        setProducts(mapped);
+      } else {
+        setProducts(MOCK_PRODUCTS);
+      }
+    } catch (error) {
+      console.warn('Failed to load products from API, falling back to mocks:', error);
+      setProducts(MOCK_PRODUCTS);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCategory, searchQuery, priceRange, dbCategories]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleProductPress = (productId: string) => {
     navigation.navigate('ProductDetail' as never, { productId } as never);
+  };
+
+  const handleAddToCart = async (productId: string) => {
+    try {
+      await productsApi.addToCart(productId, 1);
+      // يمكن إضافة تنبيه نجاح هنا
+    } catch (error) {
+      console.warn('Failed to add item to cart on server:', error);
+    }
   };
 
   return (
@@ -59,7 +136,6 @@ const MarketplaceScreen: React.FC = () => {
           onPress={() => navigation.navigate('Cart' as never)}
         >
           <Text style={styles.cartIcon}>🛒</Text>
-          <View style={styles.cartBadge}><Text style={styles.cartBadgeText}>2</Text></View>
         </TouchableOpacity>
       </View>
 
@@ -80,20 +156,27 @@ const MarketplaceScreen: React.FC = () => {
         onSelect={setSelectedCategory}
       />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.productGrid}>
-          {MOCK_PRODUCTS.map((product) => (
-            <ProductCard
-              key={product.id}
-              {...product}
-              onPress={handleProductPress}
-            />
-          ))}
+      {loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      </ScrollView>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.productGrid}>
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                {...product}
+                onPress={handleProductPress}
+                onAddToCart={handleAddToCart}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      )}
 
       {/* Filter Modal */}
       <Modal visible={showFilter} onClose={() => setShowFilter(false)} title="تصفية">
@@ -113,7 +196,10 @@ const MarketplaceScreen: React.FC = () => {
         </View>
         <Button
           title="تطبيق"
-          onPress={() => setShowFilter(false)}
+          onPress={() => {
+            setShowFilter(false);
+            fetchProducts();
+          }}
           variant="primary"
           size="lg"
           fullWidth
@@ -148,23 +234,6 @@ const styles = StyleSheet.create({
   },
   cartIcon: {
     fontSize: 24,
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -6,
-    backgroundColor: colors.error,
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  cartBadgeText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: '700',
   },
   searchRow: {
     flexDirection: 'row',
@@ -208,6 +277,11 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     marginBottom: spacing.xxl,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

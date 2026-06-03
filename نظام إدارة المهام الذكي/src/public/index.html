@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة المهام الذكي</title>
+  <!-- Google Fonts: Tajawal & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Core stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="glass-bg"></div>
+  
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-logo">
+        <div class="logo-icon"><i class="fa-solid fa-list-check"></i></div>
+        <div>
+          <h1>نظام إدارة المهام الذكي</h1>
+          <p class="subtitle">بيئة عمل ذكية ومنظمة لإدارة أعمالك</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="themeToggle" class="btn-icon" title="تبديل المظهر">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Dashboard Grid -->
+    <section class="stats-dashboard">
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="fa-solid fa-tasks"></i></div>
+        <div class="stat-info">
+          <h3>المهام الكلية</h3>
+          <span id="totalTasksCount" class="stat-value">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div>
+        <div class="stat-info">
+          <h3>المهام النشطة</h3>
+          <span id="activeTasksCount" class="stat-value">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon emerald"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="stat-info">
+          <h3>المهام المكتملة</h3>
+          <span id="completedTasksCount" class="stat-value">0</span>
+        </div>
+      </div>
+      <div class="stat-card progress-card">
+        <div class="stat-info">
+          <h3>نسبة الإنجاز</h3>
+          <div class="progress-details">
+            <span id="completionPercent" class="stat-value">0%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Layout -->
+    <main class="main-layout">
+      <!-- Right/Top side: Task creation form -->
+      <section class="form-section card-wrapper">
+        <h2 class="section-title"><i class="fa-solid fa-plus-circle"></i> إضافة مهمة جديدة</h2>
+        <form id="taskForm" class="task-form">
+          <div class="form-group">
+            <label for="taskTitle">عنوان المهمة</label>
+            <input type="text" id="taskTitle" name="title" placeholder="ما هي مهمتك القادمة؟" required>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="taskDueDate">تاريخ الاستحقاق</label>
+              <input type="date" id="taskDueDate" name="dueDate">
+            </div>
+            <div class="form-group">
+              <label for="taskPriority">الأولوية</label>
+              <select id="taskPriority" name="priority">
+                <option value="منخفضة">منخفضة</option>
+                <option value="متوسطة" selected>متوسطة</option>
+                <option value="عالية">عالية</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="taskDescription">الوصف (اختياري)</label>
+            <textarea id="taskDescription" name="description" rows="3" placeholder="تفاصيل إضافية حول المهمة..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fa-solid fa-plus"></i> إضافة المهمة
+          </button>
+        </form>
+      </section>
+
+      <!-- Left/Bottom side: Tasks lists and filters -->
+      <section class="list-section card-wrapper">
+        <!-- Controls & Filters Toolbar -->
+        <div class="toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="searchBar" placeholder="البحث عن مهمة...">
+          </div>
+          
+          <div class="filter-groups">
+            <!-- Status Filter -->
+            <div class="filter-group">
+              <span class="filter-label">الحالة:</span>
+              <div class="btn-group" id="statusFilters">
+                <button class="btn btn-tab active" data-filter="all">الكل</button>
+                <button class="btn btn-tab" data-filter="active">النشطة</button>
+                <button class="btn btn-tab" data-filter="completed">المكتملة</button>
+              </div>
+            </div>
+
+            <!-- Priority Filter -->
+            <div class="filter-group">
+              <span class="filter-label">الأولوية:</span>
+              <div class="btn-group" id="priorityFilters">
+                <button class="btn btn-tab active" data-priority="all">الكل</button>
+                <button class="btn btn-tab" data-priority="منخفضة">منخفضة</button>
+                <button class="btn btn-tab" data-priority="متوسطة">متوسطة</button>
+                <button class="btn btn-tab" data-priority="عالية">عالية</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <button id="clearCompletedBtn" class="btn btn-outline-danger btn-sm hide">
+              <i class="fa-solid fa-broom"></i> تنظيف المكتمل
+            </button>
+          </div>
+        </div>
+
+        <!-- Tasks Container -->
+        <div id="tasksContainer" class="tasks-list">
+          <!-- Tasks will be rendered dynamically here -->
+          <div class="loading-state">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <p>جاري تحميل المهام...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-box">
+      <header class="modal-header">
+        <h2><i class="fa-solid fa-pen-to-square"></i> تعديل المهمة</h2>
+        <button id="closeModalBtn" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </header>
+      <form id="editTaskForm" class="task-form">
+        <input type="hidden" id="editTaskId">
+        <div class="form-group">
+          <label for="editTaskTitle">عنوان المهمة</label>
+          <input type="text" id="editTaskTitle" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editTaskDueDate">تاريخ الاستحقاق</label>
+            <input type="date" id="editTaskDueDate">
+          </div>
+          <div class="form-group">
+            <label for="editTaskPriority">الأولوية</label>
+            <select id="editTaskPriority">
+              <option value="منخفضة">منخفضة</option>
+              <option value="متوسطة">متوسطة</option>
+              <option value="عالية">عالية</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editTaskDescription">الوصف (اختياري)</label>
+          <textarea id="editTaskDescription" rows="4"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancelEditBtn" class="btn btn-secondary">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Core Javascript Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -55,6 +55,8 @@ model Shop {
   purchaseOrders    PurchaseOrder[]
   suppliers         Supplier[]
   posSessions       POSSession[]
+  coupons           Coupon[]
+  loyaltyBalances   LoyaltyBalance[]
 
   @@index([subscriptionPlan])
   @@index([city])
@@ -293,10 +295,24 @@ model ServiceRequest {
   preferredTime String?
   notes         String?
   status        String   @default("PENDING")
+
+  // ─── التوزيع والتتبّع اللحظي (مندوب القياس) ───
+  representativeId    String?   // معرّف User للمندوب المعيَّن
+  lat                 Float?    // موقع العميل
+  lng                 Float?
+  repLat              Float?    // الموقع اللحظي للمندوب (تتبّع)
+  repLng              Float?
+  distanceKm          Float?    // المسافة المقدّرة وقت التعيين
+  estimatedArrivalMin Int?      // الوصول المقدّر بالدقائق
+  assignedAt          DateTime?
+  arrivedAt           DateTime?
+
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
 
   @@index([shopId, status])
   @@index([customerId])
+  @@index([representativeId, status])
 }
 
 // ─── 3. Orders & Sales ───
@@ -330,6 +346,8 @@ model Order {
   orderMeasurements OrderMeasurement[]
   confirmationLinks ConfirmationLink[]
   posOrders         POSOrder[]
+  couponUsages      CouponUsage[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@index([shopId, status, createdAt])
   @@index([customerId])
@@ -357,10 +375,12 @@ model Customer {
   measurements Json?
   createdAt    DateTime  @default(now())
 
-  invoices     Invoice[]
-  behaviorLogs UserBehaviorLog[]
-  aiProfile    AIProfile?
-  orders       Order[]
+  invoices       Invoice[]
+  behaviorLogs   UserBehaviorLog[]
+  aiProfile      AIProfile?
+  orders         Order[]
+  couponUsages   CouponUsage[]
+  loyaltyBalance LoyaltyBalance?
 
   @@index([shopId, phone])
 }
@@ -582,6 +602,9 @@ model OrderMeasurement {
   tailorId        String?
   notes           String?
   images          String[]
+  garmentType     String?   // نوع القطعة (THOBE, BISHT, PANTS, ALTERATION)
+  customerType    String?   // نوع الزبون (MAN, CHILD)
+  customerAge     Int?      // عمر الطفل (للتحقق وتحديد النطاقات تلقائياً)
   createdAt       DateTime @default(now())
 
   @@index([orderId])
@@ -915,4 +938,84 @@ model POSOrder {
 
   @@index([sessionId])
   @@index([orderId])
+}
+
+// ─── 18. Coupons & Discounts ───
+model Coupon {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  shopId           String
+  shop             Shop     @relation(fields: [shopId], references: [id])
+  type             String   @default("PERCENTAGE") // PERCENTAGE | FIXED
+  value            Float    @default(0)
+  minOrderAmount   Float    @default(0)
+  maxDiscount      Float?
+  maxUses          Int?
+  usedCount        Int      @default(0)
+  maxUsesPerUser   Int      @default(1)
+  startDate        DateTime @default(now())
+  endDate          DateTime?
+  applicableTo     String   @default("ALL") // ALL | THOBES | SUITS | FABRICS
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  usages           CouponUsage[]
+
+  @@index([shopId, isActive])
+  @@index([code])
+}
+
+model CouponUsage {
+  id          String   @id @default(uuid())
+  couponId    String
+  coupon      Coupon   @relation(fields: [couponId], references: [id])
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id])
+  usedAt      DateTime @default(now())
+  discountAmount Float?
+
+  @@index([couponId])
+  @@index([customerId])
+  @@index([orderId])
+  @@unique([couponId, customerId, orderId])
+}
+
+// ─── 19. Loyalty & Rewards ───
+model LoyaltyBalance {
+  id             String   @id @default(uuid())
+  customerId     String   @unique
+  customer       Customer @relation(fields: [customerId], references: [id])
+  shopId         String?
+  shop           Shop?    @relation(fields: [shopId], references: [id])
+  points         Int      @default(0)
+  lifetimePoints Int      @default(0)
+  tier           String   @default("BRONZE") // BRONZE | SILVER | GOLD | PLATINUM
+  referralCode   String?  @unique
+  referredById   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  transactions LoyaltyTransaction[]
+
+  @@index([shopId])
+  @@index([tier])
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    LoyaltyBalance @relation(fields: [customerId], references: [customerId])
+  type        String   // EARN | REDEEM | WELCOME_BONUS | REFERRAL | BIRTHDAY | MANUAL
+  points      Int
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id])
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([customerId])
+  @@index([type])
+  @@index([createdAt])
 }

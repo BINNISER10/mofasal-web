@@ -1,8 +1,11 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../../middleware/auth';
+import { authenticate, authorize, requirePermission } from '../../middleware/auth';
 import { ProcurementController } from '../../controllers/v1/procurement.controller';
 
 const router = Router();
+
+// Procurement is management-only; customers/representatives are blocked.
+router.use(authenticate, requirePermission('procurement'));
 
 router.get('/', authenticate, ProcurementController.getPurchaseOrders);
 router.get('/:id', authenticate, ProcurementController.getPurchaseOrder);

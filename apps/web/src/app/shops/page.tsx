@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { shopsApi } from '@/lib/api/shops';
+import { trackBehavior } from '@/lib/api/ai';
+import { RecommendedForYou } from '@/components/shared/RecommendedForYou';
 import {
   Search,
   MapPin,
@@ -21,12 +23,12 @@ import {
 } from 'lucide-react';
 
 const CITIES = ['الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام', 'الخبر', 'أبها', 'تبوك'];
-const CATEGORIES = ['الكل', 'خياطة رجالية', 'خياطة نسائية', 'أطفال', 'بدل رسمية', 'عبايات', 'تعديلات'];
+const CATEGORIES = ['الكل', 'خياطة رجالية', 'أطفال', 'بدل رسمية', 'بشوت ومشالح', 'تعديلات'];
 const SORT_OPTIONS = [
+  { value: 'smart', labelAr: 'الترتيب الذكي', labelEn: 'Smart' },
   { value: 'rating', labelAr: 'الأعلى تقييماً', labelEn: 'Top Rated' },
-  { value: 'orders', labelAr: 'الأكثر طلباً', labelEn: 'Most Orders' },
+  { value: 'popular', labelAr: 'الأكثر طلباً', labelEn: 'Most Orders' },
   { value: 'newest', labelAr: 'الأحدث', labelEn: 'Newest' },
-  { value: 'price_asc', labelAr: 'السعر: الأقل', labelEn: 'Price: Low to High' },
 ];
 
 interface ShopCardData {
@@ -53,7 +55,7 @@ function ShopCard({ shop, isRTL }: { shop: ShopCardData; isRTL: boolean }) {
   const bg = colors[shop.id.charCodeAt(0) % colors.length];
 
   return (
-    <Link href={`/shops/${shop.id}`} className="block">
+    <Link href={`/shops/${shop.id}`} className="block" onClick={() => trackBehavior('VIEW_SHOP', { shopId: shop.id })}>
     <Card className="overflow-hidden hover:shadow-mufasal-hover hover:-translate-y-1 transition-all duration-300 cursor-pointer">
       {/* Shop Banner */}
       <div className="h-32 relative flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${bg}22, ${bg}44)` }}>
@@ -151,7 +153,7 @@ export default function ShopsPage() {
   const [search, setSearch] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('الكل');
-  const [sortBy, setSortBy] = useState('rating');
+  const [sortBy, setSortBy] = useState('smart');
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -159,11 +161,11 @@ export default function ShopsPage() {
 
   useEffect(() => {
     setLoading(true);
-    shopsApi.list({ limit: '50' })
+    shopsApi.list({ limit: '50', sort: sortBy })
       .then((res) => setShops(res.shops.map(mapShop)))
       .catch(() => setShops([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [sortBy]);
 
   const filtered = useMemo(() => {
     let result = shops.filter((s) => {
@@ -175,11 +177,8 @@ export default function ShopsPage() {
       if (openOnly && !s.isOpen) return false;
       return true;
     });
-    if (sortBy === 'rating') result = [...result].sort((a, b) => b.rating - a.rating);
-    if (sortBy === 'orders') result = [...result].sort((a, b) => b.orderCount - a.orderCount);
-    if (sortBy === 'price_asc') result = [...result].sort((a, b) => a.minPrice - b.minPrice);
     return result;
-  }, [search, selectedCity, selectedCategory, sortBy, minRating, verifiedOnly, openOnly, shops]);
+  }, [search, selectedCity, selectedCategory, minRating, verifiedOnly, openOnly, shops]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -348,6 +347,9 @@ export default function ShopsPage() {
             </div>
           </div>
         )}
+
+        {/* Recommended for you */}
+        <RecommendedForYou />
 
         {/* Results Grid */}
         {loading ? (

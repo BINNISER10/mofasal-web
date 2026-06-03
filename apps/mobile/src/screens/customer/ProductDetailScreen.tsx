@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -16,40 +18,106 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import RatingStars from '../../components/shared/RatingStars';
 import { MarketplaceStackParamList } from '../../navigation/stacks/MarketplaceStack';
+import { productsApi } from '../../services/api/products';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type ProductDetailRouteProp = RouteProp<MarketplaceStackParamList, 'ProductDetail'>;
 
+const MOCK_FALLBACK_PRODUCT = {
+  id: '1',
+  name: 'قماش صوف إيطالي فاخر',
+  description: 'قماش صوف إيطالي عالي الجودة، مناسب للبدلات الرسمية والثياب الفاخرة. نسيج ناعم ومتين مع لمسة نهائية أنيقة.',
+  images: [
+    'https://via.placeholder.com/400x400/1B5E20/ffffff?text=قماش+صوف+1',
+    'https://via.placeholder.com/400x400/2E7D32/ffffff?text=قماش+صوف+2',
+  ],
+  price: 180,
+  unit: 'المتر',
+  merchantName: 'متجر الأقمشة الفاخرة',
+  rating: 4.7,
+  ratingCount: 89,
+  composition: 'صوف ١٠٠٪',
+  weight: '٢٨٠ جم/م²',
+  width: '١٥٠ سم',
+  inStock: true,
+  colors: ['كحلي', 'أسود', 'رمادي', 'بني'],
+};
+
 const ProductDetailScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const route = useRoute<ProductDetailRouteProp>();
+  const { productId } = route.params;
+
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const product = {
-    id: '1',
-    name: 'قماش صوف إيطالي فاخر',
-    description: 'قماش صوف إيطالي عالي الجودة، مناسب للبدلات الرسمية والثياب الفاخرة. نسيج ناعم ومتين مع لمسة نهائية أنيقة.',
-    images: [
-      'https://via.placeholder.com/400x400/1B5E20/ffffff?text=قماش+صوف+1',
-      'https://via.placeholder.com/400x400/2E7D32/ffffff?text=قماش+صوف+2',
-    ],
-    price: 180,
-    unit: 'المتر',
-    merchantName: 'متجر الأقمشة الفاخرة',
-    rating: 4.7,
-    ratingCount: 89,
-    composition: 'صوف ١٠٠٪',
-    weight: '٢٨٠ جم/م²',
-    width: '١٥٠ سم',
-    inStock: true,
-    colors: ['كحلي', 'أسود', 'رمادي', 'بني'],
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      try {
+        setLoading(true);
+        const data = await productsApi.getById(productId);
+        if (data) {
+          const mapped = {
+            id: data.id,
+            name: data.nameAr || data.name,
+            description: data.descriptionAr || data.description || 'لا يوجد وصف متاح.',
+            images: data.images && data.images.length > 0 ? data.images : ['https://via.placeholder.com/400x400/1B5E20/ffffff?text=قماش'],
+            price: data.price,
+            unit: data.unit === 'meter' ? 'المتر' : 'القطعة',
+            merchantName: data.shop?.name || 'متجر الأقمشة الفاخرة',
+            rating: data.rating || 4.7,
+            ratingCount: data.ratingCount || 89,
+            composition: data.composition || 'صوف ١٠٠٪',
+            weight: data.weight || '٢٨٠ جم/م²',
+            width: data.width || '١٥٠ سم',
+            inStock: data.stockQuantity > 0,
+            colors: data.colors || ['كحلي', 'أسود', 'رمادي', 'بني'],
+          };
+          setProduct(mapped);
+        } else {
+          setProduct(MOCK_FALLBACK_PRODUCT);
+        }
+      } catch (error) {
+        console.warn('Failed to load product details from API, using fallback:', error);
+        setProduct(MOCK_FALLBACK_PRODUCT);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductDetails();
+  }, [productId]);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    try {
+      await productsApi.addToCart(product.id, quantity);
+      Alert.alert('نجاح', t('cart.addedToCart'));
+    } catch (error) {
+      console.warn('Failed to add to cart on server:', error);
+      Alert.alert('خطأ', 'فشل إضافة المنتج إلى السلة، يرجى المحاولة لاحقاً.');
+    }
   };
 
-  const handleAddToCart = () => {
-    // Add to cart logic
-  };
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!product) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>المنتج غير موجود.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -139,6 +207,7 @@ const ProductDetailScreen: React.FC = () => {
           variant="primary"
           size="lg"
           style={styles.addButton}
+          disabled={!product.inStock}
         />
       </View>
     </View>
@@ -147,6 +216,8 @@ const ProductDetailScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.white },
+  errorText: { fontSize: fonts.sizes.lg, color: colors.error, textAlign: 'center', marginTop: 100 },
   imageContainer: { position: 'relative' },
   mainImage: { width: SCREEN_WIDTH, height: SCREEN_WIDTH * 0.9, resizeMode: 'cover' },
   backButton: {

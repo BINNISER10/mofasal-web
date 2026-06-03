@@ -14,13 +14,15 @@ export class ProductController {
 
   static async getProducts(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { categoryId, shopId, merchantId, search, minPrice, maxPrice, tags, page, limit } = req.query;
+      const { categoryId, shopId, merchantId, search, minPrice, maxPrice, tags, page, limit, sort } = req.query;
+      const allowedSort = ['smart', 'newest', 'price_asc', 'price_desc'];
       const result = await ProductService.getProducts({
         categoryId: categoryId as string, shopId: (shopId || merchantId) as string, search: search as string,
         minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
         maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
         tags: tags as string, page: page ? parseInt(page as string) : 1,
         limit: limit ? parseInt(limit as string) : 20,
+        sort: allowedSort.includes(sort as string) ? (sort as any) : undefined,
       });
       sendPaginated(res, result.products, result.total, result.page, result.limit);
     } catch (error) { next(error); }

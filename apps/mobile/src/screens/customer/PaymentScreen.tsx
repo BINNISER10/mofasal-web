@@ -8,6 +8,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import { formatCurrency } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { MarketplaceStackParamList } from '../../navigation/stacks/MarketplaceStack';
+import { paymentsApi } from '../../services/api/payments';
 
 type PaymentRouteProp = RouteProp<MarketplaceStackParamList, 'Payment'>;
 
@@ -23,7 +25,7 @@ const PaymentScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute<PaymentRouteProp>();
-  const { amount, method } = route.params;
+  const { amount, method, orderId } = route.params;
 
   const [cardNumber, setCardNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
@@ -33,12 +35,81 @@ const PaymentScreen: React.FC = () => {
   const [processing, setProcessing] = useState(false);
 
   const handlePayment = async () => {
-    setProcessing(true);
-    // Simulate payment processing
-    await new Promise((r) => setTimeout(r, 2000));
-    setProcessing(false);
-    // Show success and navigate
-    navigation.navigate('Marketplace' as never);
+    if (!orderId) return;
+
+    // Convert method to match Express backend validation enum (MADA, VISA_MASTERCARD, APPLE_PAY, etc.)
+    let backendPaymentMethod = 'CASH';
+    switch (method) {
+      case 'mada':
+        backendPaymentMethod = 'MADA';
+        break;
+      case 'visa':
+      case 'mastercard':
+        backendPaymentMethod = 'VISA_MASTERCARD';
+        break;
+      case 'apple_pay':
+        backendPaymentMethod = 'APPLE_PAY';
+        break;
+      case 'stc_pay':
+        backendPaymentMethod = 'STC_PAY';
+        break;
+      case 'tamara':
+        backendPaymentMethod = 'TAMARA';
+        break;
+      case 'tabby':
+        backendPaymentMethod = 'TABBY';
+        break;
+      case 'sadad':
+        backendPaymentMethod = 'SADAD';
+        break;
+      case 'cod':
+      default:
+        backendPaymentMethod = 'CASH';
+        break;
+    }
+
+    try {
+      setProcessing(true);
+
+      const splitExpiry = expiryDate.split('/');
+      const expiryMonth = splitExpiry[0] || '';
+      const expiryYear = splitExpiry[1] || '';
+
+      const payload = {
+        orderId,
+        method: backendPaymentMethod as any,
+        amount,
+        cardDetails: method === 'mada' || method === 'visa' || method === 'mastercard' ? {
+          cardNumber: cardNumber.replace(/\s?/g, ''),
+          expiryMonth,
+          expiryYear,
+          cvv,
+          cardHolder,
+        } : undefined,
+        stcPayPhone: method === 'stc_pay' ? stcPhone : undefined,
+      };
+
+      const result = await paymentsApi.process(payload as any);
+
+      if (result && result.success) {
+        Alert.alert(t('payment.success') || 'نجاح', 'تمت عملية الدفع بنجاح!', [
+          {
+            text: t('common.ok') || 'موافق',
+            onPress: () => {
+              // Navigate to Marketplace or Orders
+              navigation.navigate('Marketplace' as never);
+            },
+          },
+        ]);
+      } else {
+        Alert.alert(t('common.error') || 'خطأ', result?.message || 'فشلت عملية الدفع. يرجى المحاولة مرة أخرى.');
+      }
+    } catch (error) {
+      console.error('Payment processing failed:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'حدث خطأ أثناء معالجة عملية الدفع.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const renderMadaForm = () => (

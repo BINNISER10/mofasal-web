@@ -11,14 +11,25 @@ export class MeasurementService {
 
   static async addOrderMeasurement(orderId: string, data: {
     measurementData: any; tailorId?: string; notes?: string; images?: string[];
+    garmentType?: string; customerType?: string; customerAge?: number;
   }) {
     return prisma.orderMeasurement.create({
-      data: { orderId, measurementData: data.measurementData, tailorId: data.tailorId, notes: data.notes, images: data.images || [] },
+      data: {
+        orderId,
+        measurementData: data.measurementData,
+        tailorId: data.tailorId,
+        notes: data.notes,
+        images: data.images || [],
+        garmentType: data.garmentType,
+        customerType: data.customerType,
+        customerAge: data.customerAge,
+      },
     });
   }
 
   static async updateOrderMeasurement(measurementId: string, data: {
     measurementData?: any; notes?: string; images?: string[];
+    garmentType?: string; customerType?: string; customerAge?: number;
   }) {
     return prisma.orderMeasurement.update({
       where: { id: measurementId },
@@ -68,11 +79,44 @@ export class MeasurementService {
       });
 
       if (link.measurements) {
-        await prisma.orderMeasurement.upsert({
-          where: { id: link.orderId } as any,
-          create: { orderId: link.orderId, measurementData: link.measurements },
-          update: { measurementData: link.measurements },
+        const mData = (link.measurements as any) || {};
+        const meta = mData._meta || {};
+        const garmentType = meta.garmentType || null;
+        const customerType = meta.customerType || null;
+        const customerAge = meta.age ? parseInt(meta.age) : (meta.customerAge ? parseInt(meta.customerAge) : null);
+
+        const existing = await prisma.orderMeasurement.findFirst({
+          where: { orderId: link.orderId },
         });
+
+        if (existing) {
+          await prisma.orderMeasurement.update({
+            where: { id: existing.id },
+            data: {
+              measurementData: link.measurements,
+              garmentType,
+              customerType,
+              customerAge,
+            },
+          });
+        } else {
+          await prisma.orderMeasurement.create({
+            data: {
+              orderId: link.orderId,
+              measurementData: link.measurements,
+              garmentType,
+              customerType,
+              customerAge,
+            },
+          });
+        }
+
+        if (meta.fabricSource === 'catalog' && meta.fabricNote) {
+          const { OrderService } = require('./OrderService');
+          OrderService.createB2BSubOrderForFabric(link.orderId, meta.fabricNote).catch((e: any) => {
+            console.error('Failed to create B2B sub-order on confirmation approval:', e);
+          });
+        }
       }
     }
 

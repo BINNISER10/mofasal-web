@@ -3,13 +3,46 @@ import prisma from '../../config/database';
 import { AuthRequest } from '../../middleware/auth';
 import { sendSuccess, sendCreated } from '../../utils/response';
 import { ApiError } from '../../utils/ApiError';
+import { ServiceRequestService } from '../../services/ServiceRequestService';
 
 export class ServiceRequestController {
   static async create(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const data = { ...req.body, customerId: req.user!.id, status: 'PENDING' };
-      const service = await prisma.serviceRequest.create({ data });
+      const service = await ServiceRequestService.create({ ...req.body, customerId: req.user!.id });
       sendCreated(res, service, 'Service request created');
+    } catch (error) { next(error); }
+  }
+
+  // توزيع تلقائي لأقرب مندوب متاح
+  static async dispatch(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await ServiceRequestService.dispatchNearest(req.params.id);
+      sendSuccess(res, result, 'تم تعيين المندوب');
+    } catch (error) { next(error); }
+  }
+
+  // تحديث الموقع اللحظي للمندوب (تتبّع)
+  static async updateLocation(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { lat, lng } = req.body;
+      const updated = await ServiceRequestService.updateRepLocation(req.params.id, lat, lng);
+      sendSuccess(res, updated, 'تم تحديث الموقع');
+    } catch (error) { next(error); }
+  }
+
+  // تعليم وصول المندوب
+  static async arrive(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const updated = await ServiceRequestService.markArrived(req.params.id);
+      sendSuccess(res, updated, 'تم تسجيل الوصول');
+    } catch (error) { next(error); }
+  }
+
+  // بيانات التتبّع اللحظي للعميل
+  static async tracking(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const data = await ServiceRequestService.getTracking(req.params.id);
+      sendSuccess(res, data);
     } catch (error) { next(error); }
   }
 

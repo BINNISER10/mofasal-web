@@ -13,7 +13,8 @@ export class ShopController {
 
   static async getShops(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { page, limit, city, region, serviceType, minRating, lat, lng, maxDistance, search, isOpen } = req.query;
+      const { page, limit, city, region, serviceType, minRating, lat, lng, maxDistance, search, isOpen, sort } = req.query;
+      const allowedSort = ['smart', 'rating', 'distance', 'popular', 'newest'];
       const result = await ShopService.getShops({
         page: page ? parseInt(page as string) : 1, limit: limit ? parseInt(limit as string) : 20,
         city: city as string, region: region as string, serviceType: serviceType as string,
@@ -21,6 +22,7 @@ export class ShopController {
         lat: lat ? parseFloat(lat as string) : undefined, lng: lng ? parseFloat(lng as string) : undefined,
         maxDistance: maxDistance ? parseFloat(maxDistance as string) : undefined,
         search: search as string, isOpen: isOpen === 'true' ? true : isOpen === 'false' ? false : undefined,
+        sort: allowedSort.includes(sort as string) ? (sort as any) : undefined,
       });
       sendPaginated(res, result.shops, result.total, result.page, result.limit);
     } catch (error) { next(error); }

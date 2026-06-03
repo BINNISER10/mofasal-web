@@ -32,7 +32,9 @@ export const notificationsApi = {
     const response = await apiClient.get(ENDPOINTS.NOTIFICATIONS.LIST, {
       params,
     });
-    return response.data as AppNotification[];
+    const data = response.data as any;
+    if (Array.isArray(data)) return data as AppNotification[];
+    return (data?.items as AppNotification[]) || [];
   },
 
   markRead: async (id: string): Promise<void> => {
@@ -40,6 +42,6 @@ export const notificationsApi = {
   },
 
   markAllRead: async (): Promise<void> => {
-    await apiClient.post(ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ);
+    await apiClient.patch(ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ);
   },
 };

@@ -60,10 +60,17 @@ export interface ShopListParams {
   tags?: string[];
 }
 
+// استخراج عناصر القائمة من استجابة Express المرقّمة {items,total,page,limit}
+function toList<T>(data: any): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && Array.isArray(data.items)) return data.items as T[];
+  return [];
+}
+
 export const shopsApi = {
   list: async (params?: ShopListParams): Promise<Shop[]> => {
     const response = await apiClient.get(ENDPOINTS.SHOPS.LIST, { params });
-    return response.data as Shop[];
+    return toList<Shop>(response.data);
   },
 
   getById: async (id: string): Promise<Shop> => {
@@ -72,10 +79,11 @@ export const shopsApi = {
   },
 
   search: async (query: string, params?: ShopListParams): Promise<Shop[]> => {
-    const response = await apiClient.get(ENDPOINTS.SHOPS.SEARCH, {
-      params: { ...params, q: query },
+    // Express: GET /shops?search= (لا يوجد مسار /search منفصل)
+    const response = await apiClient.get(ENDPOINTS.SHOPS.LIST, {
+      params: { ...params, search: query },
     });
-    return response.data as Shop[];
+    return toList<Shop>(response.data);
   },
 
   getNearby: async (
@@ -83,14 +91,15 @@ export const shopsApi = {
     lng: number,
     radius?: number,
   ): Promise<Shop[]> => {
-    const response = await apiClient.get(ENDPOINTS.SHOPS.NEARBY, {
-      params: { lat, lng, radius: radius || 50 },
+    // Express: GET /shops?lat=&lng=&radius=
+    const response = await apiClient.get(ENDPOINTS.SHOPS.LIST, {
+      params: { lat, lng, radius: radius || 50, sortBy: 'nearest' },
     });
-    return response.data as Shop[];
+    return toList<Shop>(response.data);
   },
 
   getReviews: async (shopId: string): Promise<ShopReview[]> => {
     const response = await apiClient.get(ENDPOINTS.SHOPS.REVIEWS(shopId));
-    return response.data as ShopReview[];
+    return toList<ShopReview>(response.data);
   },
 };

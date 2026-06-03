@@ -1,11 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { OrderTrackingAnimation } from '@/components/shared/OrderTrackingAnimation';
 import { useAppStore } from '@/lib/stores/appStore';
+import { ordersApi } from '@/lib/api/orders';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils/formatting';
 import { ArrowRight, Package, User, MapPin, CreditCard, Ruler, Scissors, Calendar, Truck, CheckCircle2, Clock } from 'lucide-react';
 
@@ -43,6 +44,32 @@ export default function CustomerOrderTrackingPage() {
   const params = useParams();
   const { isRTL } = useAppStore();
   const [showDetails, setShowDetails] = useState(false);
+  const orderId = String(params.id);
+  const [order, setOrder] = useState<any>(mockOrder);
+
+  useEffect(() => {
+    let active = true;
+    ordersApi.getById(orderId)
+      .then((res) => {
+        if (!active) return;
+        const api: any = res.order;
+        if (!api || !api.id) return;
+        setOrder({
+          ...mockOrder,
+          ...api,
+          orderNumber: api.orderNumber || mockOrder.orderNumber,
+          shopName: api.shop?.nameAr || api.shop?.name || mockOrder.shopName,
+          totalAmount: api.subtotal ?? api.totalAmount ?? mockOrder.totalAmount,
+          vatAmount: api.vatAmount ?? mockOrder.vatAmount,
+          grandTotal: api.totalAmount ?? mockOrder.grandTotal,
+          measurements: api.measurements || mockOrder.measurements,
+          trackingDates: api.trackingDates || mockOrder.trackingDates,
+          deliveryAddress: typeof api.deliveryAddress === 'string' ? api.deliveryAddress : mockOrder.deliveryAddress,
+        });
+      })
+      .catch(() => { /* الإبقاء على القالب الاحتياطي عند فشل الاتصال أو عدم المصادقة */ });
+    return () => { active = false; };
+  }, [orderId]);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -50,7 +77,7 @@ export default function CustomerOrderTrackingPage() {
         <a href="/dashboard/customer/orders" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"><ArrowRight size={20} className="text-gray-500 dark:text-slate-400" /></a>
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'تتبع الطلب' : 'Order Tracking'}</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? `طلب #${mockOrder.orderNumber}` : `Order #${mockOrder.orderNumber}`}</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? `طلب #${order.orderNumber}` : `Order #${order.orderNumber}`}</p>
         </div>
         <Badge variant="gold" size="md">{isRTL ? 'قيد الخياطة' : 'In Production'}</Badge>
       </div>
@@ -58,8 +85,8 @@ export default function CustomerOrderTrackingPage() {
       {/* Interactive Tracking Animation */}
       <Card className="p-6">
         <OrderTrackingAnimation
-          currentStatus={mockOrder.status}
-          dates={mockOrder.trackingDates}
+          currentStatus={order.status}
+          dates={order.trackingDates}
           locale={isRTL ? 'ar' : 'en'}
           className="py-4"
         />
@@ -71,15 +98,15 @@ export default function CustomerOrderTrackingPage() {
         <div className="relative pr-6">
           <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700" />
           {[
-            { status: 'PENDING', label: isRTL ? 'تم استلام الطلب' : 'Order Received', time: mockOrder.trackingDates.PENDING },
-            { status: 'CONFIRMED', label: isRTL ? 'تم تأكيد الطلب' : 'Order Confirmed', time: mockOrder.trackingDates.CONFIRMED },
-            { status: 'STAFF_ON_WAY', label: isRTL ? 'الموظف في الطريق لأخذ المقاسات' : 'Staff on way for measurements', time: mockOrder.trackingDates.STAFF_ON_WAY },
-            { status: 'TAKING_MEASUREMENTS', label: isRTL ? 'تم أخذ المقاسات' : 'Measurements taken', time: mockOrder.trackingDates.TAKING_MEASUREMENTS },
-            { status: 'CUTTING_FABRIC', label: isRTL ? 'جاري قص القماش' : 'Cutting fabric', time: mockOrder.trackingDates.CUTTING_FABRIC },
-            { status: 'SEWING_ASSEMBLY', label: isRTL ? 'جاري الخياطة والتجميع' : 'Sewing & assembly', time: mockOrder.trackingDates.SEWING_ASSEMBLY },
+            { status: 'PENDING', label: isRTL ? 'تم استلام الطلب' : 'Order Received', time: order.trackingDates.PENDING },
+            { status: 'CONFIRMED', label: isRTL ? 'تم تأكيد الطلب' : 'Order Confirmed', time: order.trackingDates.CONFIRMED },
+            { status: 'STAFF_ON_WAY', label: isRTL ? 'الموظف في الطريق لأخذ المقاسات' : 'Staff on way for measurements', time: order.trackingDates.STAFF_ON_WAY },
+            { status: 'TAKING_MEASUREMENTS', label: isRTL ? 'تم أخذ المقاسات' : 'Measurements taken', time: order.trackingDates.TAKING_MEASUREMENTS },
+            { status: 'CUTTING_FABRIC', label: isRTL ? 'جاري قص القماش' : 'Cutting fabric', time: order.trackingDates.CUTTING_FABRIC },
+            { status: 'SEWING_ASSEMBLY', label: isRTL ? 'جاري الخياطة والتجميع' : 'Sewing & assembly', time: order.trackingDates.SEWING_ASSEMBLY },
           ].map((step, i) => {
-            const isActive = step.status === mockOrder.status;
-            const isCompleted = new Date(step.time) < new Date(mockOrder.trackingDates.SEWING_ASSEMBLY);
+            const isActive = step.status === order.status;
+            const isCompleted = new Date(step.time) < new Date(order.trackingDates.SEWING_ASSEMBLY);
             return (
               <div key={step.status} className="relative flex items-start gap-4 pb-6 last:pb-0">
                 <div className={`relative z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
@@ -106,21 +133,21 @@ export default function CustomerOrderTrackingPage() {
         {showDetails && (
           <div className="mt-4 space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'المتجر' : 'Shop'}</p><p className="font-semibold text-sm dark:text-slate-200">{mockOrder.shopName}</p></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'القماش' : 'Fabric'}</p><p className="font-semibold text-sm dark:text-slate-200">{mockOrder.fabricName}</p></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'التوصيل' : 'Delivery'}</p><p className="font-semibold text-sm dark:text-slate-200">{formatDate(mockOrder.estimatedDeliveryDate)}</p></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'طريقة الدفع' : 'Payment'}</p><p className="font-semibold text-sm dark:text-slate-200">{mockOrder.paymentMethod}</p></div>
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'المتجر' : 'Shop'}</p><p className="font-semibold text-sm dark:text-slate-200">{order.shopName}</p></div>
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'القماش' : 'Fabric'}</p><p className="font-semibold text-sm dark:text-slate-200">{order.fabricName}</p></div>
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'التوصيل' : 'Delivery'}</p><p className="font-semibold text-sm dark:text-slate-200">{formatDate(order.estimatedDeliveryDate)}</p></div>
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'طريقة الدفع' : 'Payment'}</p><p className="font-semibold text-sm dark:text-slate-200">{order.paymentMethod}</p></div>
               <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'حالة الدفع' : 'Payment Status'}</p><Badge variant="success" size="sm">{isRTL ? 'مدفوع' : 'Paid'}</Badge></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'الإجمالي' : 'Total'}</p><p className="font-semibold text-sm text-primary-700">{formatCurrency(mockOrder.grandTotal)}</p></div>
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'الإجمالي' : 'Total'}</p><p className="font-semibold text-sm text-primary-700">{formatCurrency(order.grandTotal)}</p></div>
             </div>
 
             <div className="p-4 bg-green-50 rounded-xl">
               <h4 className="text-sm font-bold text-green-800 mb-3 flex items-center gap-2"><Ruler size={16} />{isRTL ? 'المقاسات' : 'Measurements'}</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {Object.entries(mockOrder.measurements).map(([key, val]) => (
+                {Object.entries(order.measurements).map(([key, val]) => (
                   <div key={key} className="text-center p-2 bg-white dark:bg-slate-800 rounded-lg">
                     <p className="text-xs text-gray-500 dark:text-slate-400">{key}</p>
-                    <p className="text-sm font-bold text-gray-800 dark:text-slate-200">{val} <span className="text-xs text-gray-400 dark:text-slate-500">سم</span></p>
+                    <p className="text-sm font-bold text-gray-800 dark:text-slate-200">{String(val)} <span className="text-xs text-gray-400 dark:text-slate-500">سم</span></p>
                   </div>
                 ))}
               </div>
@@ -128,19 +155,19 @@ export default function CustomerOrderTrackingPage() {
 
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <span className="text-sm text-gray-600 dark:text-slate-400">{isRTL ? 'سعر القماش' : 'Fabric price'}</span>
-              <span className="font-semibold dark:text-slate-200">{formatCurrency(mockOrder.fabricPrice)}</span>
+              <span className="font-semibold dark:text-slate-200">{formatCurrency(order.fabricPrice)}</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <span className="text-sm text-gray-600 dark:text-slate-400">{isRTL ? 'رسوم الخياطة' : 'Tailoring fee'}</span>
-              <span className="font-semibold dark:text-slate-200">{formatCurrency(mockOrder.totalAmount)}</span>
+              <span className="font-semibold dark:text-slate-200">{formatCurrency(order.totalAmount)}</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <span className="text-sm text-gray-600 dark:text-slate-400">{isRTL ? 'ضريبة القيمة المضافة' : 'VAT'}</span>
-              <span className="font-semibold dark:text-slate-200">{formatCurrency(mockOrder.vatAmount)}</span>
+              <span className="font-semibold dark:text-slate-200">{formatCurrency(order.vatAmount)}</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
               <span className="text-sm font-bold text-primary-800">{isRTL ? 'الإجمالي الكلي' : 'Grand Total'}</span>
-              <span className="text-lg font-bold text-primary-700">{formatCurrency(mockOrder.grandTotal)}</span>
+              <span className="text-lg font-bold text-primary-700">{formatCurrency(order.grandTotal)}</span>
             </div>
           </div>
         )}
@@ -153,7 +180,7 @@ export default function CustomerOrderTrackingPage() {
           <div className="text-center">
             <MapPin size={32} className="mx-auto mb-2 text-primary-400" />
             <p className="text-sm dark:text-slate-400">{isRTL ? 'خريطة التتبع المباشر' : 'Live tracking map'}</p>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">{mockOrder.deliveryAddress}</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">{order.deliveryAddress}</p>
           </div>
         </div>
       </Card>

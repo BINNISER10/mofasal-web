@@ -1,9 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
-import { useRouter } from 'next/navigation';
+import { shopsApi } from '@/lib/api/shops';
+import { ordersApi } from '@/lib/api/orders';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Store,
   Scissors,
@@ -30,7 +32,7 @@ const STEPS = [
 
 const mockShops = [
   { id: 1, nameAr: 'خياطة الرجال الراقية', rating: 4.9, city: 'الرياض', delivery: 7, minPrice: 450, category: 'رجالي' },
-  { id: 2, nameAr: 'أتيليه الأناقة للنساء', rating: 4.8, city: 'جدة', delivery: 5, minPrice: 380, category: 'نسائي' },
+  { id: 2, nameAr: 'بيت البشوت الفاخر', rating: 4.8, city: 'جدة', delivery: 5, minPrice: 380, category: 'رجالي' },
   { id: 3, nameAr: 'خياطة الأطفال السعيدة', rating: 4.7, city: 'الرياض', delivery: 4, minPrice: 220, category: 'أطفال' },
   { id: 4, nameAr: 'بيت الثوب التقليدي', rating: 4.9, city: 'مكة', delivery: 6, minPrice: 300, category: 'رجالي' },
 ];
@@ -39,9 +41,9 @@ const mockServices = [
   { id: 'thobe', nameAr: 'ثوب رجالي', price: 350, days: 5, icon: '👘' },
   { id: 'suit', nameAr: 'بدلة رسمية', price: 850, days: 10, icon: '🤵' },
   { id: 'shirt', nameAr: 'قميص رسمي', price: 180, days: 3, icon: '👔' },
-  { id: 'abaya', nameAr: 'عباءة نسائية', price: 420, days: 6, icon: '🥻' },
-  { id: 'dress', nameAr: 'فستان', price: 550, days: 7, icon: '👗' },
-  { id: 'kids', nameAr: 'ملابس أطفال', price: 150, days: 4, icon: '👕' },
+  { id: 'bisht', nameAr: 'بشت / مشلح', price: 800, days: 6, icon: '�' },
+  { id: 'thobe_winter', nameAr: 'ثوب شتوي', price: 420, days: 7, icon: '🧥' },
+  { id: 'kids', nameAr: 'ثوب أطفال', price: 150, days: 4, icon: '👕' },
 ];
 
 const PAYMENT_METHODS = [
@@ -53,7 +55,7 @@ const PAYMENT_METHODS = [
 ];
 
 interface OrderState {
-  shopId: number | null;
+  shopId: string | number | null;
   serviceId: string | null;
   measurements: { [key: string]: string };
   fabricChoice: 'shop' | 'marketplace' | null;
@@ -83,23 +85,95 @@ const MEASUREMENT_FIELDS_AR = [
   { key: 'neck', label: 'محيط الرقبة (سم)', placeholder: '38' },
 ];
 
-export default function NewOrderPage() {
+function NewOrderPageContent() {
   const { isRTL } = useAppStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [order, setOrder] = useState<OrderState>(initialOrder);
   const [search, setSearch] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [shops, setShops] = useState<any[]>(mockShops);
+  const [services, setServices] = useState<any[]>(mockServices);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedShop = mockShops.find((s) => s.id === order.shopId);
-  const selectedService = mockServices.find((s) => s.id === order.serviceId);
+  useEffect(() => {
+    const queryShopId = searchParams.get('shop');
+    const queryFabricId = searchParams.get('fabric');
+    const queryServiceId = searchParams.get('service');
+
+    if (queryShopId) {
+      setOrder(prev => ({ ...prev, shopId: queryShopId }));
+      setStep(2);
+    }
+    if (queryServiceId) {
+      setOrder(prev => ({ ...prev, serviceId: queryServiceId }));
+      setStep(3);
+    }
+    if (queryFabricId) {
+      setOrder(prev => ({ ...prev, fabricChoice: 'marketplace' }));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+    shopsApi.list({ limit: '50' })
+      .then((res) => {
+        if (!active || !res.shops?.length) return;
+        setShops(res.shops.map((s: any) => ({
+          id: s.id,
+          nameAr: s.nameAr || s.name,
+          rating: s.rating || 0,
+          city: s.city || '',
+          delivery: s.deliveryDays || 7,
+          minPrice: s.minOrderAmount || 0,
+          category: 'رجالي',
+        })));
+      })
+      .catch(() => { /* الإبقاء على الاحتياطي */ });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!order.shopId) {
+      setServices(mockServices);
+      return;
+    }
+    setLoadingServices(true);
+    shopsApi.getServices(String(order.shopId))
+      .then((resServices) => {
+        if (resServices && resServices.length > 0) {
+          setServices(resServices.map((s: any) => ({
+            id: s.id,
+            nameAr: s.nameAr || s.name,
+            price: s.price,
+            days: s.duration || 5,
+            icon: s.serviceType === 'TAILORING' ? '👘' : '🧵',
+          })));
+        } else {
+          setServices(mockServices);
+        }
+      })
+      .catch(() => {
+        setServices(mockServices);
+      })
+      .finally(() => {
+        setLoadingServices(false);
+      });
+  }, [order.shopId]);
+
+  const selectedShop = shops.find((s) => s.id === order.shopId);
+  const selectedService = services.find((s) => s.id === order.serviceId) || mockServices.find((s) => s.id === order.serviceId);
 
   const canProceed = () => {
     if (step === 1) return order.shopId !== null;
     if (step === 2) return order.serviceId !== null;
     if (step === 3) return Object.values(order.measurements).filter(Boolean).length >= 4;
     if (step === 4) return order.fabricChoice !== null && order.deliveryAddress.length > 3;
-    if (step === 5) return order.paymentMethod !== null;
+    if (step === 5) return order.paymentMethod !== null && !submitting;
     return false;
   };
 
@@ -113,8 +187,48 @@ export default function NewOrderPage() {
     else router.push('/dashboard/customer/orders');
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const measurements: any = {};
+      Object.entries(order.measurements).forEach(([key, val]) => {
+        const num = parseFloat(val);
+        if (!isNaN(num)) {
+          measurements[key] = num;
+        }
+      });
+
+      const requestData = {
+        shopId: String(order.shopId),
+        measurements,
+        items: [
+          {
+            name: selectedService?.nameAr || 'خدمة تفصيل',
+            quantity: 1,
+            price: selectedService?.price || 0,
+            type: 'tailoring' as const,
+          }
+        ],
+        deliveryAddress: {
+          label: 'عنوان العميل',
+          street: order.deliveryAddress,
+          district: '',
+          city: selectedShop?.city || '',
+        },
+        deliveryMethod: 'DELIVERY',
+        notes: order.notes || undefined,
+      };
+
+      const res = await ordersApi.create(requestData);
+      setCreatedOrder(res.order);
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || (isRTL ? 'حدث خطأ أثناء إنشاء الطلب' : 'An error occurred while creating the order'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -134,7 +248,7 @@ export default function NewOrderPage() {
         <div className="bg-primary-50 rounded-2xl p-4 text-left text-sm space-y-2">
           <div className="flex justify-between">
             <span className="text-gray-500 dark:text-slate-400">{isRTL ? 'رقم الطلب' : 'Order ID'}</span>
-            <span className="font-bold text-primary-700">#ORD-{Math.floor(Math.random() * 9000) + 1000}</span>
+            <span className="font-bold text-primary-700">#{createdOrder?.orderNumber || createdOrder?.id || 'ORD-NEW'}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500 dark:text-slate-400">{isRTL ? 'المتجر' : 'Shop'}</span>
@@ -216,7 +330,7 @@ export default function NewOrderPage() {
               />
             </div>
             <div className="space-y-3">
-              {mockShops
+              {shops
                 .filter((s) => !search || s.nameAr.includes(search))
                 .map((shop) => (
                   <div
@@ -266,22 +380,28 @@ export default function NewOrderPage() {
               <p className="text-sm text-gray-500 dark:text-slate-400">{selectedShop?.nameAr}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {mockServices.map((service) => (
-                <div
-                  key={service.id}
-                  onClick={() => setOrder({ ...order, serviceId: service.id })}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-center ${
-                    order.serviceId === service.id
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                      : 'border-gray-100 dark:border-slate-700 hover:border-primary-200 hover:bg-gray-50 dark:hover:bg-slate-700/50'
-                  }`}
-                >
-                  <div className="text-2xl mb-2">{service.icon}</div>
-                  <p className="font-semibold text-sm text-gray-800 dark:text-slate-200">{service.nameAr}</p>
-                  <p className="text-primary-700 text-sm font-bold mt-1">﷼{service.price}</p>
-                  <p className="text-gray-400 dark:text-slate-500 text-xs">{service.days} {isRTL ? 'أيام' : 'days'}</p>
-                </div>
-              ))}
+              {loadingServices ? (
+                <div className="col-span-2 text-center py-8 text-gray-500">{isRTL ? 'جاري تحميل الخدمات...' : 'Loading services...'}</div>
+              ) : services.length === 0 ? (
+                <div className="col-span-2 text-center py-8 text-gray-500">{isRTL ? 'لا توجد خدمات متاحة لهذا المتجر' : 'No services available for this shop'}</div>
+              ) : (
+                services.map((service) => (
+                  <div
+                    key={service.id}
+                    onClick={() => setOrder({ ...order, serviceId: service.id })}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all text-center ${
+                      order.serviceId === service.id
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-100 dark:border-slate-700 hover:border-primary-200 hover:bg-gray-50 dark:hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{service.icon}</div>
+                    <p className="font-semibold text-sm text-gray-800 dark:text-slate-200">{service.nameAr}</p>
+                    <p className="text-primary-700 text-sm font-bold mt-1">﷼{service.price}</p>
+                    <p className="text-gray-400 dark:text-slate-500 text-xs">{service.days} {isRTL ? 'أيام' : 'days'}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -444,9 +564,15 @@ export default function NewOrderPage() {
         )}
       </Card>
 
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl text-sm font-semibold">
+          {error}
+        </div>
+      )}
+
       {/* Navigation Buttons */}
       <div className="flex items-center justify-between gap-3">
-        <Button variant="outline" onClick={handleBack} icon={isRTL ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}>
+        <Button variant="outline" onClick={handleBack} disabled={submitting} icon={isRTL ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}>
           {step === 1 ? (isRTL ? 'إلغاء' : 'Cancel') : (isRTL ? 'السابق' : 'Back')}
         </Button>
         <div className="flex-1 text-center text-xs text-gray-400 dark:text-slate-500">
@@ -455,14 +581,24 @@ export default function NewOrderPage() {
         <Button
           variant={step === 5 ? 'gold' : 'primary'}
           onClick={handleNext}
-          disabled={!canProceed()}
+          disabled={!canProceed() || submitting}
           icon={step === 5 ? <CheckCircle2 size={16} /> : isRTL ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         >
           {step === 5
-            ? isRTL ? 'تأكيد الطلب' : 'Confirm Order'
+            ? submitting
+              ? (isRTL ? 'جاري الإرسال...' : 'Submitting...')
+              : (isRTL ? 'تأكيد الطلب' : 'Confirm Order')
             : isRTL ? 'التالي' : 'Next'}
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function NewOrderPage() {
+  return (
+    <React.Suspense fallback={<div className="text-center py-20 text-gray-500">Loading...</div>}>
+      <NewOrderPageContent />
+    </React.Suspense>
   );
 }

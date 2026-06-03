@@ -70,20 +70,20 @@ export function Footer() {
                 : 'Your complete platform for premium tailoring and fabric marketplace. Connecting you with skilled tailors and quality fabrics.'}
             </p>
             <div className="flex gap-3">
-              <button className="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-3 rounded-xl transition-colors">
+              <a href="#" className="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-3 rounded-xl transition-colors">
                 <Apple size={20} />
-                <div className="text-right">
-                  <p className="text-xs text-gray-400">{isRTL ? 'حمل من' : 'Download on'}</p>
-                  <p className="text-sm font-semibold">App Store</p>
-                </div>
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-3 rounded-xl transition-colors">
+                <span className="text-right">
+                  <span className="block text-xs text-gray-400">{isRTL ? 'حمل من' : 'Download on'}</span>
+                  <span className="block text-sm font-semibold">App Store</span>
+                </span>
+              </a>
+              <a href="#" className="flex-1 flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-3 rounded-xl transition-colors">
                 <Smartphone size={20} />
-                <div className="text-right">
-                  <p className="text-xs text-gray-400">{isRTL ? 'حمل من' : 'Get it on'}</p>
-                  <p className="text-sm font-semibold">Google Play</p>
-                </div>
-              </button>
+                <span className="text-right">
+                  <span className="block text-xs text-gray-400">{isRTL ? 'حمل من' : 'Get it on'}</span>
+                  <span className="block text-sm font-semibold">Google Play</span>
+                </span>
+              </a>
             </div>
           </div>
 

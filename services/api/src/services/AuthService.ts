@@ -7,6 +7,7 @@ import { ApiError } from '../utils/ApiError';
 import { JwtPayload } from '../middleware/auth';
 import redisService from './RedisService';
 import { NotificationService } from './NotificationService';
+import logger from '../utils/logger';
 
 export class AuthService {
   static async register(data: { name: string; phone?: string; email?: string; password: string }) {
@@ -164,5 +165,73 @@ export class AuthService {
     });
     const role = await prisma.role.findUnique({ where: { id: user.roleId } });
     return { ...user, role: role?.name || 'UNKNOWN' };
+  }
+
+  static async sendOtp(phone: string) {
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    await redisService.set(`otp:${phone}`, code, 300);
+    logger.info(`[OTP Sent] Phone: ${phone}, Code: ${code}`);
+
+    const { SmsService } = await import('./integrations/SmsService');
+    await SmsService.sendVerificationCode(phone, code);
+
+    return { sent: true };
+  }
+
+  static async verifyOtp(phone: string, code: string) {
+    const storedCode = await redisService.get(`otp:${phone}`);
+    if (!storedCode || storedCode !== code) {
+      throw ApiError.badRequest('رمز التحقق غير صحيح أو منتهي الصلاحية');
+    }
+
+    await redisService.del(`otp:${phone}`);
+
+    let user = await prisma.user.findFirst({
+      where: { phone },
+      include: { role: { select: { name: true } } },
+    });
+
+    if (!user) {
+      const shop = await prisma.shop.findFirst({ orderBy: { createdAt: 'asc' } });
+      if (!shop) throw ApiError.internal('No shop configured');
+
+      let role = await prisma.role.findFirst({ where: { name: 'CUSTOMER' } });
+      if (!role) {
+        role = await prisma.role.create({
+          data: { shopId: shop.id, name: 'CUSTOMER', permissions: { orders: true } },
+        });
+      }
+
+      const randomPassword = Math.random().toString(36).substring(2, 10);
+      const hashedPassword = await bcrypt.hash(randomPassword, 12);
+
+      user = await prisma.user.create({
+        data: {
+          shopId: shop.id,
+          name: 'عميل جديد',
+          phone,
+          password: hashedPassword,
+          roleId: role.id,
+          status: 'ACTIVE',
+          phoneVerified: true,
+        },
+        include: { role: { select: { name: true } } },
+      });
+    } else {
+      if (!user.phoneVerified) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { phoneVerified: true },
+        });
+      }
+    }
+
+    const tokens = this.generateTokens(user.id, user.role.name);
+
+    const { password: _, roleId: __, ...userWithoutSensitive } = user;
+    return {
+      user: { ...userWithoutSensitive, role: user.role.name },
+      ...tokens,
+    };
   }
 }

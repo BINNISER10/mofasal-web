@@ -32,6 +32,11 @@ import hrRoutes from './routes/v1/hr.routes';
 import procurementRoutes from './routes/v1/procurement.routes';
 import supplierRoutes from './routes/v1/supplier.routes';
 import posRoutes from './routes/v1/pos.routes';
+import reportRoutes from './routes/v1/reports.routes';
+import accountingRoutes from './routes/v1/accounting.routes';
+import aiRoutes from './routes/v1/ai.routes';
+import couponRoutes from './routes/v1/coupon.routes';
+import loyaltyRoutes from './routes/v1/loyalty.routes';
 
 const app = express();
 const server = http.createServer(app);
@@ -91,6 +96,11 @@ app.use(`${apiPrefix}/hr`, hrRoutes);
 app.use(`${apiPrefix}/procurement`, procurementRoutes);
 app.use(`${apiPrefix}/suppliers`, supplierRoutes);
 app.use(`${apiPrefix}/pos`, posRoutes);
+app.use(`${apiPrefix}/reports`, reportRoutes);
+app.use(`${apiPrefix}/accounting`, accountingRoutes);
+app.use(`${apiPrefix}/ai`, aiRoutes);
+app.use(`${apiPrefix}/coupons`, couponRoutes);
+app.use(`${apiPrefix}/loyalty`, loyaltyRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

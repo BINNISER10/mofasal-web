@@ -1,22 +1,23 @@
 import apiClient, { setAuthToken, setRefreshToken } from './client';
 import { ENDPOINTS } from './config';
 
-// ─── FastAPI Request Schemas ──────────────────────────────────────────────────
+// ─── Request Schemas (Express contract) ───────────────────────────────────────
 
 export interface LoginRequest {
-  email: string;
+  email?: string;
+  phone?: string;
   password: string;
 }
 
 export interface RegisterRequest {
   name_ar: string;
-  email: string;
+  email?: string;
   phone: string;
   password: string;
-  role: 'CUSTOMER' | 'SHOP_OWNER' | 'TAILOR' | 'ADMIN';
+  role: 'CUSTOMER' | 'TAILOR' | 'TAILOR_SHOP' | 'MERCHANT';
 }
 
-// ─── FastAPI Response Schemas ─────────────────────────────────────────────────
+// ─── Normalized Response Schemas (consumed by screens) ─────────────────────────
 
 export interface TokenResponse {
   access_token: string;
@@ -35,34 +36,87 @@ export interface UserProfile {
   avatar_url?: string;
 }
 
+// ─── Express raw shapes ────────────────────────────────────────────────────────
+
+interface ExpressUser {
+  id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  status?: string;
+  avatar?: string;
+}
+
+interface ExpressAuthData {
+  user: ExpressUser;
+  // Express generateTokens يُرجع snake_case
+  access_token: string;
+  refresh_token: string;
+  expires_in?: string | number;
+}
+
+// تحويل مستخدم Express إلى UserProfile الذي تتوقعه الشاشات
+function mapUser(u: ExpressUser): UserProfile {
+  return {
+    id: u.id,
+    name_ar: u.name || '',
+    email: u.email || '',
+    phone: u.phone || '',
+    role: u.role || 'CUSTOMER',
+    is_active: u.status ? u.status === 'ACTIVE' : true,
+    avatar_url: u.avatar,
+  };
+}
+
 // ─── Auth API ─────────────────────────────────────────────────────────────────
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<TokenResponse> => {
+    // client.ts يفكّ غلاف {success,data} تلقائياً
     const response = await apiClient.post(ENDPOINTS.AUTH.LOGIN, data);
-    const token = response.data as TokenResponse;
-    await setAuthToken(token.access_token);
-    await setRefreshToken(token.refresh_token);
-    return token;
+    const d = response.data as ExpressAuthData;
+    await setAuthToken(d.access_token);
+    await setRefreshToken(d.refresh_token);
+    return {
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+      user_id: d.user?.id,
+      role: d.user?.role || 'CUSTOMER',
+    };
   },
 
   register: async (data: RegisterRequest): Promise<TokenResponse> => {
-    const response = await apiClient.post(ENDPOINTS.AUTH.REGISTER, data);
-    const token = response.data as TokenResponse;
-    await setAuthToken(token.access_token);
-    await setRefreshToken(token.refresh_token);
-    return token;
+    // Express يتوقّع الحقل name (لا name_ar)
+    const payload = {
+      name: data.name_ar,
+      email: data.email,
+      phone: data.phone,
+      password: data.password,
+      role: data.role,
+    };
+    const response = await apiClient.post(ENDPOINTS.AUTH.REGISTER, payload);
+    const d = response.data as ExpressAuthData;
+    await setAuthToken(d.access_token);
+    await setRefreshToken(d.refresh_token);
+    return {
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+      user_id: d.user?.id,
+      role: d.user?.role || 'CUSTOMER',
+    };
   },
 
   getMe: async (): Promise<UserProfile> => {
     const response = await apiClient.get(ENDPOINTS.AUTH.ME);
-    return response.data as UserProfile;
+    // قد تُرجع الاستجابة المستخدم مباشرة أو ضمن { user }
+    const raw = response.data as any;
+    const user: ExpressUser = raw?.user ?? raw;
+    return mapUser(user);
   },
 
-  // Phone-based OTP login: phone → email mapping (for future SMS integration)
-  loginWithPhone: async (phone: string): Promise<TokenResponse> => {
-    // Converts +966XXXXXXXXX → email format for API compatibility
-    const email = `${phone.replace('+', '')}@mofasal.app`;
-    return authApi.login({ email, password: 'otp_placeholder' });
+  // تسجيل دخول بالهاتف (مؤقتاً عبر كلمة مرور؛ OTP الكامل في المرحلة 2)
+  loginWithPhone: async (phone: string, password = 'otp_placeholder'): Promise<TokenResponse> => {
+    return authApi.login({ phone, password });
   },
 };

@@ -76,7 +76,7 @@ export class S3Service {
     try {
       const s3 = getClient();
       const result = await s3.send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix }));
-      return (result.Contents || []).map(obj => obj.Key || '');
+      return (result.Contents || []).map((obj: any) => obj.Key || '');
     } catch (error) {
       logger.error('S3 list failed', error);
       return [];

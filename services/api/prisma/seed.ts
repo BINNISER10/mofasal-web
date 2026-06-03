@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
+import { DEFAULT_ROLE_PERMISSIONS } from '../src/config/permissions';
 
 const prisma = new PrismaClient();
 
@@ -60,15 +61,27 @@ async function main() {
   });
 
   const roleAdmin = await prisma.role.create({
-    data: { shopId: shop.id, name: 'ADMIN', permissions: { all: true } },
+    data: { shopId: shop.id, name: 'ADMIN', permissions: DEFAULT_ROLE_PERMISSIONS.ADMIN },
+  });
+
+  await prisma.role.create({
+    data: { shopId: shop.id, name: 'TAILOR_SHOP', permissions: DEFAULT_ROLE_PERMISSIONS.TAILOR_SHOP },
   });
 
   const roleTailor = await prisma.role.create({
-    data: { shopId: shop.id, name: 'TAILOR', permissions: { orders: true, products: true } },
+    data: { shopId: shop.id, name: 'TAILOR', permissions: DEFAULT_ROLE_PERMISSIONS.TAILOR },
+  });
+
+  await prisma.role.create({
+    data: { shopId: shop.id, name: 'MERCHANT', permissions: DEFAULT_ROLE_PERMISSIONS.MERCHANT },
+  });
+
+  await prisma.role.create({
+    data: { shopId: shop.id, name: 'REPRESENTATIVE', permissions: DEFAULT_ROLE_PERMISSIONS.REPRESENTATIVE },
   });
 
   const roleCustomer = await prisma.role.create({
-    data: { shopId: shop.id, name: 'CUSTOMER', permissions: { orders: true } },
+    data: { shopId: shop.id, name: 'CUSTOMER', permissions: DEFAULT_ROLE_PERMISSIONS.CUSTOMER },
   });
 
   const adminUser = await prisma.user.upsert({

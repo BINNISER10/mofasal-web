@@ -119,4 +119,20 @@ export const shopsApi = {
     const shop = await apiClient.patch<Shop>(`/shops/${id}/commission`, { commission });
     return { shop };
   },
+
+  getServices: async (shopId: string): Promise<ShopServiceItem[]> => {
+    return apiClient.get<ShopServiceItem[]>(`/shops/${shopId}/services`);
+  },
 };
+
+export interface ShopServiceItem {
+  id: string;
+  shopId: string;
+  serviceType: string;
+  name: string;
+  nameAr?: string;
+  description?: string;
+  price: number;
+  duration?: number;
+  isActive: boolean;
+}

@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { shopsApi } from '@/lib/api/shops';
+import { productsApi } from '@/lib/api/products';
 import {
   Search, SlidersHorizontal, Star, MapPin, Scissors,
   Package, X, ChevronDown, Filter, TrendingUp, Clock,
@@ -15,7 +17,7 @@ import {
 
 const mockShops = [
   { id: '1', name: 'خياطة الرجال الراقية', city: 'الرياض', rating: 4.9, reviews: 312, specialties: ['بدل', 'ثياب'], price: '500-2000', delivery: 3, verified: true, type: 'shop' as const },
-  { id: '2', name: 'أتيليه النخبة', city: 'جدة', rating: 4.8, reviews: 198, specialties: ['فساتين', 'عبايات'], price: '300-1500', delivery: 4, verified: true, type: 'shop' as const },
+  { id: '2', name: 'أتيليه النخبة', city: 'جدة', rating: 4.8, reviews: 198, specialties: ['بشوت', 'ثياب'], price: '300-1500', delivery: 4, verified: true, type: 'shop' as const },
   { id: '3', name: 'خياطة الخليج', city: 'الدمام', rating: 4.7, reviews: 145, specialties: ['بشوت', 'ثياب'], price: '400-1800', delivery: 5, verified: false, type: 'shop' as const },
   { id: '4', name: 'تيلور هاوس', city: 'الرياض', rating: 4.6, reviews: 89, specialties: ['بدل', 'قمصان'], price: '600-2500', delivery: 3, verified: true, type: 'shop' as const },
 ];
@@ -27,7 +29,7 @@ const mockProducts = [
   { id: '4', name: 'قطيفة مخملية ملكية', merchant: 'بيت القطيفة', price: 210, rating: 4.6, reviews: 63, category: 'مخمل', color: '#4a0080', type: 'product' as const },
 ];
 
-const TRENDING = ['بدلة رجالية', 'قماش صوف', 'عباية فاخرة', 'ثوب أبيض', 'قماش كتان'];
+const TRENDING = ['بدلة رجالية', 'قماش صوف', 'بشت فاخر', 'ثوب أبيض', 'قماش كتان'];
 const CITIES = ['الكل', 'الرياض', 'جدة', 'الدمام', 'مكة', 'المدينة'];
 const SORT_OPTIONS = [
   { value: 'relevance', labelAr: 'الأكثر صلة' },
@@ -50,15 +52,74 @@ function SearchContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>(['بدلة رسمية', 'قماش صوف', 'خياط جدة']);
+  const [shops, setShops] = useState<any[]>(mockShops);
+  const [products, setProducts] = useState<any[]>(mockProducts);
 
-  const filteredShops = mockShops.filter(s =>
-    (!query || s.name.includes(query) || s.specialties.some(sp => sp.includes(query))) &&
+  useEffect(() => {
+    let active = true;
+    
+    const shopParams: Record<string, string> = { limit: '50' };
+    if (city !== 'الكل') shopParams.city = city;
+    if (minRating > 0) shopParams.minRating = minRating.toString();
+    if (query) shopParams.search = query;
+
+    shopsApi.list(shopParams)
+      .then((res) => {
+        if (!active) return;
+        if (!res.shops?.length) {
+          setShops([]);
+          return;
+        }
+        setShops(res.shops.map((s: any) => ({
+          id: s.id,
+          name: s.nameAr || s.name,
+          city: s.city || '',
+          rating: s.rating || 0,
+          reviews: s.reviewCount || 0,
+          specialties: s.specialties || [],
+          price: s.minOrderAmount ? String(s.minOrderAmount) : '—',
+          delivery: s.deliveryDays || 0,
+          verified: s.isVerified || false,
+          type: 'shop' as const,
+        })));
+      })
+      .catch(() => { /* الإبقاء على الاحتياطي */ });
+
+    const productParams: Record<string, string> = { limit: '50' };
+    if (query) productParams.search = query;
+
+    productsApi.list(productParams)
+      .then((res) => {
+        if (!active) return;
+        if (!res.products?.length) {
+          setProducts([]);
+          return;
+        }
+        setProducts(res.products.map((p: any) => ({
+          id: p.id,
+          name: p.nameAr || p.name,
+          merchant: p.shop?.nameAr || p.shop?.name || p.merchantName || '',
+          price: p.price || 0,
+          rating: p.rating || 0,
+          reviews: p.reviewCount || 0,
+          category: p.category?.nameAr || p.category?.name || p.category || '',
+          color: '#735B4D',
+          type: 'product' as const,
+        })));
+      })
+      .catch(() => { /* الإبقاء على الاحتياطي */ });
+
+    return () => { active = false; };
+  }, [query, city, minRating]);
+
+  const filteredShops = shops.filter(s =>
+    (!query || s.name.includes(query) || (s.specialties || []).some((sp: string) => sp.includes(query))) &&
     (city === 'الكل' || s.city === city) &&
     s.rating >= minRating
   );
 
-  const filteredProducts = mockProducts.filter(p =>
-    (!query || p.name.includes(query) || p.category.includes(query)) &&
+  const filteredProducts = products.filter(p =>
+    (!query || p.name.includes(query) || (p.category || '').includes(query)) &&
     p.rating >= minRating
   );
 
@@ -223,7 +284,7 @@ function SearchContent() {
                               <span className="text-xs text-gray-400">({shop.reviews})</span>
                             </div>
                             <div className="flex flex-wrap gap-1 mt-1.5">
-                              {shop.specialties.map(sp => (
+                              {(shop.specialties || []).map((sp: string) => (
                                 <span key={sp} className="text-[10px] px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">{sp}</span>
                               ))}
                             </div>

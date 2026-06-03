@@ -24,7 +24,7 @@ const monthlyRevenue = [
 
 const categoryBreakdown = [
   { name: 'خياطة رجالي', value: 45, color: CHART_COLORS.primary },
-  { name: 'خياطة نسائي', value: 28, color: CHART_COLORS.secondary },
+  { name: 'بشوت ومشالح', value: 28, color: CHART_COLORS.secondary },
   { name: 'أقمشة', value: 18, color: CHART_COLORS.gold },
   { name: 'أطفال', value: 9, color: CHART_COLORS.green },
 ];

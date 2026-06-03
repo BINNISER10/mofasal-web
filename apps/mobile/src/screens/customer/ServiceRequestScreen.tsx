@@ -9,8 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { serviceRequestsApi, ServiceRequestType } from '../../services/api/serviceRequests';
 import { colors, fonts, borderRadius, shadows, spacing } from '../../utils/theme';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
@@ -41,9 +43,28 @@ const LOCATION_TYPES = [
   { id: 'other', label: 'أخرى', icon: '📍' },
 ];
 
+// تحويل النوع المحلي إلى عقد Express
+const SERVICE_TYPE_MAP: Record<ServiceType, ServiceRequestType> = {
+  on_site_measurement: 'ON_SITE_MEASUREMENT',
+  in_shop_measurement: 'IN_SHOP_MEASUREMENT',
+  tailoring: 'TAILORING',
+  alteration: 'ALTERATION',
+  consultation: 'CONSULTATION',
+};
+const LOCATION_TYPE_MAP: Record<string, 'HOME' | 'WORK' | 'OTHER' | 'SHOP_VISIT'> = {
+  home: 'HOME',
+  work: 'WORK',
+  rest_house: 'OTHER',
+  other: 'OTHER',
+};
+
+type ServiceRequestRoute = RouteProp<{ ServiceRequest: { shopId: string; serviceType?: string } }, 'ServiceRequest'>;
+
 const ServiceRequestScreen: React.FC = () => {
   const { t } = useTranslation();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const route = useRoute<ServiceRequestRoute>();
+  const shopId = route.params?.shopId;
 
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
@@ -52,6 +73,7 @@ const ServiceRequestScreen: React.FC = () => {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const totalSteps = 4;
 
@@ -64,8 +86,47 @@ const ServiceRequestScreen: React.FC = () => {
     else navigation.goBack();
   };
 
-  const handleSubmit = () => {
-    navigation.goBack();
+  const handleSubmit = async () => {
+    if (!shopId || !selectedService) {
+      Alert.alert('تنبيه', 'يرجى اختيار الخدمة');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // 1) إنشاء طلب الخدمة
+      const request = await serviceRequestsApi.create({
+        shopId,
+        serviceType: SERVICE_TYPE_MAP[selectedService],
+        locationType: locationType ? LOCATION_TYPE_MAP[locationType] : undefined,
+        customAddress: selectedLocation?.address,
+        lat: selectedLocation?.latitude,
+        lng: selectedLocation?.longitude,
+        preferredTime: scheduledTime || undefined,
+        notes: notes || undefined,
+      });
+
+      // 2) إن كانت خدمة قياس منزلي، نوزّع أقرب مندوب تلقائياً
+      const isOnSite = selectedService === 'on_site_measurement';
+      if (isOnSite) {
+        try {
+          await serviceRequestsApi.dispatch(request.id);
+        } catch {
+          // لا يوجد مندوب متاح الآن — يبقى الطلب PENDING ويُعيّن لاحقاً
+        }
+      }
+
+      // 3) الانتقال لشاشة التتبّع
+      Alert.alert('تم بنجاح', isOnSite ? 'تم إرسال طلبك وجارٍ تعيين مندوب القياس' : 'تم إرسال طلبك بنجاح', [
+        {
+          text: 'تتبّع الطلب',
+          onPress: () => navigation.navigate('Tracking', { serviceRequestId: request.id }),
+        },
+      ]);
+    } catch (e: any) {
+      Alert.alert('تعذّر إرسال الطلب', e?.response?.data?.error?.message || 'حدث خطأ، حاول مجدداً');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const renderProgress = () => (
@@ -222,6 +283,8 @@ const ServiceRequestScreen: React.FC = () => {
             variant="primary"
             size="lg"
             fullWidth
+            loading={submitting}
+            disabled={submitting}
           />
         )}
       </View>

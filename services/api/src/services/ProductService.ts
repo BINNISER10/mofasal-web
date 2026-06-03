@@ -1,6 +1,30 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 
+type ProductSort = 'smart' | 'newest' | 'price_asc' | 'price_desc';
+
+const PRODUCT_CANDIDATE_CAP = 500;
+
+function clamp01(value: number): number {
+  if (value < 0) return 0;
+  if (value > 1) return 1;
+  return value;
+}
+
+function computeProductScore(product: { stockQuantity?: number; createdAt?: Date; shop?: { rating?: number } | null }): number {
+  const stockScore = (product.stockQuantity || 0) > 0 ? 1 : 0;
+  const shopRatingScore = clamp01((product.shop?.rating || 0) / 5);
+
+  let recencyScore = 0;
+  if (product.createdAt) {
+    const ageDays = (Date.now() - new Date(product.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+    recencyScore = clamp01(1 - ageDays / 90);
+  }
+
+  const score = stockScore * 0.4 + shopRatingScore * 0.4 + recencyScore * 0.2;
+  return Math.round(score * 1000) / 1000;
+}
+
 export class ProductService {
   static async createProduct(data: {
     shopId?: string; name: string; nameAr?: string; description?: string; categoryId?: string;
@@ -24,11 +48,12 @@ export class ProductService {
 
   static async getProducts(filters: {
     categoryId?: string; shopId?: string; search?: string; minPrice?: number; maxPrice?: number;
-    tags?: string; isActive?: boolean; page?: number; limit?: number; visibility?: string;
+    tags?: string; isActive?: boolean; page?: number; limit?: number; visibility?: string; sort?: ProductSort;
   }) {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const skip = (page - 1) * limit;
+    const sort: ProductSort = filters.sort || 'smart';
 
     const where: any = { isActive: true };
     if (filters.categoryId) where.categoryId = filters.categoryId;
@@ -48,16 +73,34 @@ export class ProductService {
       ];
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip,
-        take: limit,
-        include: { category: true, variants: true, shop: { select: { id: true, name: true, logo: true } } },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.product.count({ where }),
-    ]);
+    const include = { category: true, variants: true, shop: { select: { id: true, name: true, logo: true, rating: true } } };
+
+    if (sort !== 'smart') {
+      const orderBy =
+        sort === 'price_asc' ? { price: 'asc' as const }
+        : sort === 'price_desc' ? { price: 'desc' as const }
+        : { createdAt: 'desc' as const };
+
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({ where, skip, take: limit, include, orderBy }),
+        prisma.product.count({ where }),
+      ]);
+      return { products, total, page, limit };
+    }
+
+    const candidates = await prisma.product.findMany({
+      where,
+      take: PRODUCT_CANDIDATE_CAP,
+      include,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const scored = candidates
+      .map((product) => ({ ...product, score: computeProductScore(product as any) }))
+      .sort((a, b) => b.score - a.score);
+
+    const total = scored.length;
+    const products = scored.slice(skip, skip + limit);
 
     return { products, total, page, limit };
   }

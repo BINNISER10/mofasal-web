@@ -43,7 +43,14 @@ apiClient.interceptors.request.use(
 );
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // فكّ غلاف Express الموحّد {success, message, data}
+    const body = response.data as any;
+    if (body && typeof body === 'object' && 'success' in body && 'data' in body) {
+      response.data = body.data;
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
@@ -68,18 +75,25 @@ apiClient.interceptors.response.use(
         const refreshToken = await EncryptedStorage.getItem('refresh_token');
         if (!refreshToken) throw new Error('No refresh token');
 
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refresh_token: refreshToken,
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
+          refreshToken,
         });
 
-        const { access_token, refresh_token: newRefreshToken } = response.data;
-        await EncryptedStorage.setItem('auth_token', access_token);
+        // axios خام (بدون interceptor)، لذا نفكّ الغلاف يدوياً
+        // Express يُرجع access_token / refresh_token (snake_case)
+        const payload = (response.data?.data ?? response.data) as {
+          access_token: string;
+          refresh_token: string;
+        };
+        const accessToken = payload.access_token;
+        const newRefreshToken = payload.refresh_token;
+        await EncryptedStorage.setItem('auth_token', accessToken);
         await EncryptedStorage.setItem('refresh_token', newRefreshToken);
 
-        processQueue(null, access_token);
+        processQueue(null, accessToken);
 
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         }
         return apiClient(originalRequest);
       } catch (refreshError) {

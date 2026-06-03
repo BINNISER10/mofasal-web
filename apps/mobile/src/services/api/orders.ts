@@ -88,7 +88,21 @@ export interface Order {
 
 export const ordersApi = {
   create: async (data: CreateOrderRequest): Promise<Order> => {
-    const response = await apiClient.post(ENDPOINTS.ORDERS.CREATE, data);
+    // تحويل لعقد Express: items[{name,quantity,unitPrice}] + totalAmount
+    const items = (data.items || []).map((it) => ({
+      name: it.name,
+      quantity: it.quantity,
+      unitPrice: it.price,
+    }));
+    const totalAmount = items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+    const payload = {
+      shopId: data.shopId,
+      items: items.length ? items : undefined,
+      totalAmount,
+      customerNotes: data.notes,
+      paymentMethod: data.paymentMethod,
+    };
+    const response = await apiClient.post(ENDPOINTS.ORDERS.CREATE, payload);
     return response.data as Order;
   },
 
@@ -98,7 +112,9 @@ export const ordersApi = {
     limit?: number;
   }): Promise<Order[]> => {
     const response = await apiClient.get(ENDPOINTS.ORDERS.LIST, { params });
-    return response.data as Order[];
+    const data = response.data as any;
+    if (Array.isArray(data)) return data as Order[];
+    return (data?.items as Order[]) || [];
   },
 
   getById: async (id: string): Promise<Order> => {

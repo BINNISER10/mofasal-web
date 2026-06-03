@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { colors, fonts, borderRadius, shadows, spacing } from '../../utils/theme';
 import Card from '../ui/Card';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface Location {
   latitude: number;
@@ -28,32 +31,120 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   initialLocation,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
     initialLocation || null,
   );
 
-  const handleSearch = () => {
-    // Mock geocoding - in real app, use Google Maps Geocoding API
-    if (searchQuery.trim()) {
-      const mockLocation: Location = {
-        latitude: 24.7136,
-        longitude: 46.6753,
+  const [region, setRegion] = useState({
+    latitude: initialLocation?.latitude || 24.7136,
+    longitude: initialLocation?.longitude || 46.6753,
+    latitudeDelta: 0.015,
+    longitudeDelta: 0.015,
+  });
+
+  const isWeb = Platform.OS === 'web';
+
+  const reverseGeocode = async (lat: number, lon: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
+        {
+          headers: {
+            'User-Agent': 'MofasalApp/1.0',
+            'Accept-Language': 'ar,en',
+          },
+        }
+      );
+      const data = await response.json();
+      return data.display_name || `موقع محدد (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+    } catch {
+      return `موقع محدد (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'MofasalApp/1.0',
+            'Accept-Language': 'ar,en',
+          },
+        }
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        const address = data[0].display_name || searchQuery;
+        const newLoc = { latitude: lat, longitude: lon, address };
+        setSelectedLocation(newLoc);
+        onLocationSelected(newLoc);
+        setRegion({
+          latitude: lat,
+          longitude: lon,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
+        });
+      }
+    } catch (err) {
+      // Fallback
+      const mockLocation = {
+        latitude: region.latitude,
+        longitude: region.longitude,
         address: searchQuery,
       };
       setSelectedLocation(mockLocation);
       onLocationSelected(mockLocation);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleMapPress = () => {
-    // In real app, this would open interactive map
-    const mockLocation: Location = {
-      latitude: 24.7136 + (Math.random() - 0.5) * 0.1,
-      longitude: 46.6753 + (Math.random() - 0.5) * 0.1,
-      address: 'Riyadh, Saudi Arabia',
+  const handleMapPress = async (e: any) => {
+    if (isWeb) return;
+    const { coordinate } = e.nativeEvent;
+    const lat = coordinate.latitude;
+    const lon = coordinate.longitude;
+
+    const tempLoc = {
+      latitude: lat,
+      longitude: lon,
+      address: 'جاري تحديد العنوان...',
     };
-    setSelectedLocation(mockLocation);
-    onLocationSelected(mockLocation);
+    setSelectedLocation(tempLoc);
+
+    const address = await reverseGeocode(lat, lon);
+    const newLoc = { latitude: lat, longitude: lon, address };
+    setSelectedLocation(newLoc);
+    onLocationSelected(newLoc);
+    
+    setRegion(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lon,
+    }));
+  };
+
+  const handleWebMapPress = () => {
+    const lat = 24.7136 + (Math.random() - 0.5) * 0.05;
+    const lon = 46.6753 + (Math.random() - 0.5) * 0.05;
+    const newLoc = {
+      latitude: lat,
+      longitude: lon,
+      address: 'الرياض، المملكة العربية السعودية (موقع محاكي)',
+    };
+    setSelectedLocation(newLoc);
+    onLocationSelected(newLoc);
+    setRegion(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lon,
+    }));
   };
 
   return (
@@ -69,19 +160,45 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           returnKeyType="search"
           textAlign="right"
         />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchIcon}>🔍</Text>
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearch} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Text style={styles.searchIcon}>🔍</Text>
+          )}
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.mapPlaceholder} onPress={handleMapPress}>
-        <Text style={styles.mapIcon}>🗺️</Text>
-        <Text style={styles.mapText}>
-          {selectedLocation
-            ? 'اضغط لتغيير الموقع'
-            : 'اختر الموقع على الخريطة'}
-        </Text>
-      </TouchableOpacity>
+      {!isWeb ? (
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            region={region}
+            onRegionChangeComplete={(r) => setRegion(r)}
+            onPress={handleMapPress}
+          >
+            {selectedLocation && (
+              <Marker
+                coordinate={{
+                  latitude: selectedLocation.latitude,
+                  longitude: selectedLocation.longitude,
+                }}
+                title="موقع التوصيل"
+                description={selectedLocation.address}
+              />
+            )}
+          </MapView>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.mapPlaceholder} onPress={handleWebMapPress}>
+          <Text style={styles.mapIcon}>🗺️</Text>
+          <Text style={styles.mapText}>
+            {selectedLocation
+              ? 'اضغط لتغيير الموقع (محاكاة خريطة الويب)'
+              : 'اختر الموقع على الخريطة (محاكاة خريطة الويب)'}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {selectedLocation && (
         <View style={styles.selectedInfo}>
@@ -122,9 +239,23 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchIcon: {
     fontSize: 18,
+  },
+  mapContainer: {
+    height: 200,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
   mapPlaceholder: {
     height: 180,
@@ -135,6 +266,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderStyle: 'dashed',
+    marginBottom: spacing.md,
   },
   mapIcon: {
     fontSize: 40,
@@ -154,7 +286,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     textAlign: 'right',
-    fontFamily: 'monospace',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   address: {
     fontSize: 14,

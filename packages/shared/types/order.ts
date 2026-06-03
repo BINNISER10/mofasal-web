@@ -57,6 +57,9 @@ export interface OrderMeasurement {
   tailorId?: string;
   notes?: string;
   images?: string[];
+  garmentType?: string;
+  customerType?: string;
+  customerAge?: number;
 }
 
 export interface OrderStatusHistory {

@@ -32,7 +32,9 @@ router.post('/', authenticate, validate(createOrderSchema), OrderController.crea
 router.get('/', authenticate, OrderController.getAll);
 router.get('/stats', authenticate, OrderController.getStats);
 router.get('/:id', authenticate, OrderController.getById);
+router.get('/:id/tracking', authenticate, OrderController.getTracking);
 router.patch('/:id/status', authenticate, validate(statusSchema), OrderController.updateStatus);
+router.post('/:id/cancel', authenticate, OrderController.cancel);
 
 
 

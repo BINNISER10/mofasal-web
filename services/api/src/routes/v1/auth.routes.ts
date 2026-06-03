@@ -39,6 +39,15 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
 
+const otpSendSchema = z.object({
+  phone: z.string().regex(/^(\+966|0)?5\d{8}$/, 'Invalid Saudi phone number'),
+});
+
+const otpVerifySchema = z.object({
+  phone: z.string().regex(/^(\+966|0)?5\d{8}$/, 'Invalid Saudi phone number'),
+  code: z.string().length(4, 'OTP must be 4 digits'),
+});
+
 router.post('/register', validate(registerSchema), AuthController.register);
 router.post('/login', validate(loginSchema), AuthController.login);
 router.post('/verify-phone', authenticate, validate(verifySchema), AuthController.verifyPhone);
@@ -46,6 +55,8 @@ router.post('/send-verification', authenticate, AuthController.sendVerificationC
 router.post('/forgot-password', validate(forgotSchema), AuthController.forgotPassword);
 router.post('/reset-password', validate(resetSchema), AuthController.resetPassword);
 router.post('/refresh-token', validate(refreshSchema), AuthController.refreshToken);
+router.post('/otp/send', validate(otpSendSchema), AuthController.sendOtp);
+router.post('/otp/verify', validate(otpVerifySchema), AuthController.verifyOtp);
 router.get('/profile', authenticate, AuthController.getProfile);
 router.put('/profile', authenticate, AuthController.updateProfile);
 

@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, borderRadius, shadows, spacing } from '../../utils/theme';
 import { formatCurrency, calculateVAT } from '../../utils/helpers';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
+import { productsApi } from '../../services/api/products';
 
 interface CartItem {
   id: string;
+  productId: string;
   name: string;
   price: number;
   quantity: number;
@@ -23,32 +27,85 @@ interface CartItem {
   merchantName?: string;
 }
 
-const MOCK_CART_ITEMS: CartItem[] = [
-  { id: '1', name: 'قماش صوف إيطالي', price: 180, quantity: 3, merchantName: 'متجر الأقمشة' },
-  { id: '2', name: 'حرير طبيعي', price: 250, quantity: 2, merchantName: 'متجر الحرير' },
-];
-
 const CartScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const [items, setItems] = useState<CartItem[]>(MOCK_CART_ITEMS);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCartData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const cart = await productsApi.getCart();
+      if (cart && cart.items && cart.items.length > 0) {
+        const mapped = cart.items.map((item: any) => ({
+          id: item.id,
+          productId: item.productId,
+          name: item.product?.nameAr || item.product?.name || 'منتج',
+          price: item.product?.price || 0,
+          quantity: item.quantity,
+          merchantName: item.product?.shop?.name || 'متجر الأقمشة',
+          image: item.product?.images && item.product.images.length > 0 ? item.product.images[0] : undefined,
+        }));
+        setItems(mapped);
+      } else {
+        setItems([]);
+      }
+    } catch (error) {
+      console.error('Failed to load cart from API:', error);
+      Alert.alert(t('common.error') || 'خطأ', 'تعذر تحميل سلة التسوق الخاصة بك.');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchCartData();
+    }, [fetchCartData])
+  );
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const vat = calculateVAT(subtotal);
-  const deliveryFee = 30;
+  const deliveryFee = items.length > 0 ? 30 : 0;
   const total = subtotal + vat + deliveryFee;
 
-  const updateQuantity = (id: string, change: number) => {
-    setItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id
-            ? { ...item, quantity: Math.max(1, item.quantity + change) }
-            : item,
-        )
-        .filter((item) => item.quantity > 0),
-    );
+  const updateQuantity = async (id: string, change: number) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+    const newQty = item.quantity + change;
+
+    try {
+      if (newQty <= 0) {
+        await productsApi.removeFromCart(id);
+        setItems((prev) => prev.filter((i) => i.id !== id));
+      } else {
+        await productsApi.updateCartItem(id, newQty);
+        setItems((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, quantity: newQty } : i))
+        );
+      }
+    } catch (error) {
+      console.warn('Failed to update cart item quantity on server:', error);
+      // التعديل محلياً كـ Fallback
+      if (newQty <= 0) {
+        setItems((prev) => prev.filter((i) => i.id !== id));
+      } else {
+        setItems((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, quantity: newQty } : i))
+        );
+      }
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -155,6 +212,7 @@ const CartScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.lg, paddingTop: 56, paddingBottom: spacing.md,

@@ -1,8 +1,11 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../../middleware/auth';
+import { authenticate, requirePermission } from '../../middleware/auth';
 import { POSController } from '../../controllers/v1/pos.controller';
 
 const router = Router();
+
+// POS is for shop staff/owners and merchants only.
+router.use(authenticate, requirePermission('pos'));
 
 router.post('/sessions', authenticate, POSController.openSession);
 router.post('/sessions/:id/close', authenticate, POSController.closeSession);

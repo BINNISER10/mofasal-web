@@ -187,6 +187,13 @@ const menuItems: MenuItem[] = [
     roles: ['merchant'],
   },
   {
+    label: 'Accounting',
+    labelAr: 'المحاسبة',
+    icon: <FileText size={20} />,
+    href: '/dashboard/merchant/accounting',
+    roles: ['merchant'],
+  },
+  {
     label: 'Measurements',
     labelAr: 'المقاسات',
     icon: <Scissors size={20} />,
