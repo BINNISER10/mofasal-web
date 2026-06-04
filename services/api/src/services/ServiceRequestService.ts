@@ -1,8 +1,6 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 import { NotificationService } from './NotificationService';
-import logger from '../utils/logger';
-
 /**
  * منطق طلبات الخدمة وتوزيع مندوب القياس + التتبّع اللحظي.
  * المندوب = User يملك دوراً باسم REPRESENTATIVE (أو ينتمي لنفس المحل).
@@ -119,14 +117,7 @@ export class ServiceRequestService {
       },
     });
 
-    // إشعار العميل بتعيين المندوب
-    NotificationService.notifyMeasurementDispatched({
-      id: updated.id,
-      shopId: updated.shopId,
-      customerId: updated.customerId,
-      representativeId: chosen.id,
-      estimatedArrivalMin,
-    }).catch((err) => logger.error('Measurement dispatch notification failed', err));
+    await NotificationService.notifyMeasurementDispatched(request.customerId, estimatedArrivalMin);
 
     return { request: updated, representative: chosen };
   }
@@ -163,13 +154,9 @@ export class ServiceRequestService {
       where: { id: requestId },
       data: { status: 'ARRIVED', arrivedAt: new Date(), estimatedArrivalMin: 0 },
     });
-    // إشعار وصول المندوب
-    NotificationService.notifyMeasurementArrived({
-      id: updated.id,
-      shopId: updated.shopId,
-      customerId: updated.customerId,
-      representativeId: updated.representativeId,
-    }).catch((err) => logger.error('Measurement arrival notification failed', err));
+
+    await NotificationService.notifyMeasurementArrived(request.customerId);
+
     return updated;
   }
 

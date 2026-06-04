@@ -5,6 +5,12 @@ import { sendSuccess, sendCreated } from '../../utils/response';
 import { ApiError } from '../../utils/ApiError';
 import { ServiceRequestService } from '../../services/ServiceRequestService';
 
+interface ServiceRequestWhereClause {
+  customerId?: string;
+  shopId?: string;
+  status?: string;
+}
+
 export class ServiceRequestController {
   static async create(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -48,7 +54,7 @@ export class ServiceRequestController {
 
   static async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const where: any = {};
+      const where: ServiceRequestWhereClause = {};
       if (req.user!.role === 'CUSTOMER') where.customerId = req.user!.id;
       const services = await prisma.serviceRequest.findMany({
         where,

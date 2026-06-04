@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'gold' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
+  variant?: 'primary' | 'gold' | 'outline' | 'ghost' | 'danger' | 'secondary';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   icon?: React.ReactNode;
@@ -30,18 +30,16 @@ export function Button({
 
   const variants = {
     primary:
-      'bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900 shadow-md hover:shadow-lg focus:ring-primary-500',
-    gold: 'bg-gold-600 text-white hover:bg-gold-700 active:bg-gold-800 shadow-md hover:shadow-gold focus:ring-gold-400',
+      'bg-[#00373E] text-white hover:bg-[#002F35] active:bg-[#002228] shadow-md shadow-[#00373E]/20 hover:shadow-lg hover:shadow-[#00373E]/30 focus:ring-[#00373E]/50',
+    gold: 'bg-[#D4AF37] text-[#00373E] hover:bg-[#B8960A] active:bg-[#9A7F08] shadow-md shadow-[#D4AF37]/20 hover:shadow-lg hover:shadow-[#D4AF37]/30 focus:ring-[#D4AF37]/50 font-bold',
     outline:
-      'border-2 border-primary-700 text-primary-700 hover:bg-primary-50 active:bg-primary-100 focus:ring-primary-500',
+      'border-2 border-[#00373E] text-[#00373E] hover:bg-[#00373E]/5 active:bg-[#00373E]/10 focus:ring-[#00373E]/50',
     ghost:
-      'text-gray-700 hover:bg-gray-100 active:bg-gray-200 focus:ring-gray-400',
+      'text-[#735B4D] hover:bg-[#F2E8D4]/50 active:bg-[#F2E8D4] focus:ring-[#735B4D]/30',
     danger:
-      'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-md focus:ring-red-500',
-    success:
-      'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-md focus:ring-green-500',
-    warning:
-      'bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700 shadow-md focus:ring-yellow-400',
+      'bg-[#481719] text-white hover:bg-[#3D1315] active:bg-[#320F11] shadow-md shadow-[#481719]/20 focus:ring-[#481719]/50',
+    secondary:
+      'bg-[#735B4D] text-white hover:bg-[#624D41] active:bg-[#513F35] shadow-md shadow-[#735B4D]/20 focus:ring-[#735B4D]/50',
   };
 
   const sizes = {
@@ -94,4 +92,3 @@ export function Button({
     </button>
   );
 }
-

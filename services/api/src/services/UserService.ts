@@ -1,14 +1,50 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 
+interface UserWhereClause {
+  role?: { name: string };
+  status?: string;
+  OR?: object[];
+}
+
+interface UserUpdateData {
+  name?: string;
+  email?: string;
+  roleId?: string;
+  status?: string;
+  avatar?: string;
+}
+
+interface AddressCreateData {
+  label?: string;
+  street: string;
+  address?: string;
+  city: string;
+  district?: string;
+  latitude?: number;
+  longitude?: number;
+  isDefault?: boolean;
+}
+
+interface MeasurementData {
+  chest?: number;
+  waist?: number;
+  hips?: number;
+  shoulders?: number;
+  arms?: number;
+  legs?: number;
+  neck?: number;
+  [key: string]: number | undefined;
+}
+
 export class UserService {
   static async getUsers(filters: { role?: string; status?: string; page?: number; limit?: number; search?: string }) {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (filters.role) where.role = filters.role;
+    const where: UserWhereClause = {};
+    if (filters.role) where.role = { name: filters.role };
     if (filters.status) where.status = filters.status;
     if (filters.search) {
       where.OR = [
@@ -44,7 +80,7 @@ export class UserService {
   }
 
   static async updateUser(id: string, data: { name?: string; email?: string; role?: string; status?: string; avatar?: string }) {
-    const updateData: any = {};
+    const updateData: UserUpdateData = {};
     if (data.name) updateData.name = data.name;
     if (data.email) updateData.email = data.email;
     if (data.status) updateData.status = data.status;
@@ -63,7 +99,7 @@ export class UserService {
   }
 
   static async deleteUser(id: string) {
-    await prisma.user.update({ where: { id }, data: { status: 'BANNED' as any } });
+    await prisma.user.update({ where: { id }, data: { status: 'BANNED' } });
     return { message: 'User deactivated' };
   }
 
@@ -71,14 +107,14 @@ export class UserService {
     return prisma.userAddress.findMany({ where: { userId }, orderBy: { isDefault: 'desc' } });
   }
 
-  static async createAddress(userId: string, data: any) {
+  static async createAddress(userId: string, data: AddressCreateData) {
     if (data.isDefault) {
       await prisma.userAddress.updateMany({ where: { userId, isDefault: true }, data: { isDefault: false } });
     }
     return prisma.userAddress.create({ data: { ...data, userId } });
   }
 
-  static async updateAddress(userId: string, addressId: string, data: any) {
+  static async updateAddress(userId: string, addressId: string, data: Partial<AddressCreateData>) {
     const address = await prisma.userAddress.findFirst({ where: { id: addressId, userId } });
     if (!address) throw ApiError.notFound('Address not found');
 
@@ -99,11 +135,11 @@ export class UserService {
     return prisma.userMeasurement.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
   }
 
-  static async createMeasurement(userId: string, data: { name: string; data: any }) {
+  static async createMeasurement(userId: string, data: { name: string; data: MeasurementData }) {
     return prisma.userMeasurement.create({ data: { userId, name: data.name, data: data.data } });
   }
 
-  static async updateMeasurement(userId: string, measurementId: string, data: { name?: string; data?: any }) {
+  static async updateMeasurement(userId: string, measurementId: string, data: { name?: string; data?: MeasurementData }) {
     const measurement = await prisma.userMeasurement.findFirst({ where: { id: measurementId, userId } });
     if (!measurement) throw ApiError.notFound('Measurement not found');
     return prisma.userMeasurement.update({ where: { id: measurementId }, data });

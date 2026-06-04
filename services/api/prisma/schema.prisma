@@ -334,6 +334,8 @@ model Order {
   isConfirmed     Boolean        @default(false)
   confirmedDate   DateTime?
   confirmationToken String?
+  staffId         String?
+  assignedStaff   Employee?      @relation("OrderAssignedStaff", fields: [staffId], references: [id])
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -352,6 +354,7 @@ model Order {
   @@index([shopId, status, createdAt])
   @@index([customerId])
   @@index([orderNumber])
+  @@index([staffId])
 }
 
 model OrderItem {
@@ -760,6 +763,7 @@ model Employee {
   attendances       Attendance[]
   leaveRequests     LeaveRequest[]
   payrolls          Payroll[]
+  assignedOrders    Order[]     @relation("OrderAssignedStaff")
 
   @@index([shopId])
   @@index([departmentId])

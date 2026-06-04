@@ -132,11 +132,12 @@ export class ConfigService {
     return results;
   }
 
-  private static parseValue(config: any) {
-    let parsedValue: any = config.value;
+  private static parseValue(config: { value: string; type: string; key: string; description?: string | null; createdAt?: Date | null; updatedAt?: Date | null; [key: string]: unknown }) {
+    let parsedValue: string | number | boolean | Record<string, unknown>;
     if (config.type === 'number') parsedValue = Number(config.value);
     else if (config.type === 'boolean') parsedValue = config.value === 'true' || config.value === '1';
-    else if (config.type === 'json') { try { parsedValue = JSON.parse(config.value); } catch { /* keep string */ } }
+    else if (config.type === 'json') { try { parsedValue = JSON.parse(config.value); } catch { parsedValue = config.value; } }
+    else parsedValue = config.value;
 
     return { ...config, parsedValue };
   }

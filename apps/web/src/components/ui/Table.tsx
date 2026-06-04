@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils/cn';
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
 
 interface Column<T> {
   key: string;
@@ -9,6 +9,11 @@ interface Column<T> {
   render?: (item: T) => React.ReactNode;
   sortable?: boolean;
   width?: string;
+}
+
+interface FilterOption {
+  label: string;
+  value: string;
 }
 
 interface TableProps<T> {
@@ -22,7 +27,11 @@ interface TableProps<T> {
   onPageChange?: (page: number) => void;
   searchable?: boolean;
   onSearch?: (query: string) => void;
+  filterOptions?: FilterOption[];
+  filterValue?: string;
+  onFilterChange?: (value: string) => void;
   emptyMessage?: string;
+  emptyIcon?: React.ReactNode;
 }
 
 export function Table<T>({
@@ -36,7 +45,11 @@ export function Table<T>({
   onPageChange,
   searchable = false,
   onSearch,
+  filterOptions,
+  filterValue,
+  onFilterChange,
   emptyMessage = 'لا توجد بيانات',
+  emptyIcon,
 }: TableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -57,32 +70,54 @@ export function Table<T>({
   };
 
   return (
-    <div className="card-jahez overflow-hidden">
-      {searchable && (
-        <div className="p-4 border-b border-gray-100">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="بحث..."
-              className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-            />
-          </div>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-[#D0D6D7]/30 dark:border-slate-700 shadow-[0_2px_8px_rgba(0,55,62,0.06)]">
+      {/* Toolbar */}
+      {(searchable || filterOptions) && (
+        <div className="flex items-center gap-3 p-4 border-b border-[#D0D6D7]/20 dark:border-slate-700">
+          {/* Search */}
+          {searchable && (
+            <div className="relative flex-1 max-w-sm">
+              <Search className={cn('absolute top-1/2 -translate-y-1/2 text-[#735B4D]/40', 'right-3')} size={16} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="بحث..."
+                className="w-full pr-9 pl-4 py-2 rounded-xl border border-[#D0D6D7]/30 bg-[#F2E8D4]/20 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-[#00373E]/20 focus:border-[#00373E]/30 text-sm text-[#00373E] dark:text-slate-100 placeholder-[#735B4D]/40 transition-all duration-200"
+              />
+            </div>
+          )}
+
+          {/* Filter */}
+          {filterOptions && (
+            <div className="relative">
+              <select
+                value={filterValue}
+                onChange={(e) => onFilterChange?.(e.target.value)}
+                className="appearance-none px-4 py-2 pr-9 rounded-xl border border-[#D0D6D7]/30 bg-[#F2E8D4]/20 dark:bg-slate-700 text-sm text-[#00373E] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#00373E]/20 cursor-pointer transition-all duration-200"
+              >
+                <option value="">الكل</option>
+                {filterOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#735B4D]/40 pointer-events-none" size={14} />
+            </div>
+          )}
         </div>
       )}
 
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-gray-50">
+            <tr className="bg-[#F2E8D4]/30 dark:bg-slate-700/50">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    'px-4 py-3 text-right text-sm font-semibold text-gray-600',
-                    col.sortable && 'cursor-pointer hover:bg-gray-100 select-none'
+                    'px-4 py-3.5 text-right text-xs font-semibold text-[#735B4D] dark:text-slate-400 uppercase tracking-wider',
+                    col.sortable && 'cursor-pointer hover:bg-[#F2E8D4]/50 dark:hover:bg-slate-600 select-none transition-colors'
                   )}
                   style={col.width ? { width: col.width } : undefined}
                   onClick={() => col.sortable && handleSort(col.key)}
@@ -90,7 +125,7 @@ export function Table<T>({
                   <span className="inline-flex items-center gap-1">
                     {col.header}
                     {col.sortable && sortKey === col.key && (
-                      sortDir === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                      sortDir === 'asc' ? <ChevronUp size={14} className="text-[#00373E]" /> : <ChevronDown size={14} className="text-[#00373E]" />
                     )}
                   </span>
                 </th>
@@ -102,8 +137,8 @@ export function Table<T>({
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="animate-pulse">
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-3">
-                      <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <td key={col.key} className="px-4 py-3.5">
+                      <div className="h-4 bg-[#F2E8D4]/50 dark:bg-slate-700 rounded-lg w-3/4" />
                     </td>
                   ))}
                 </tr>
@@ -112,23 +147,32 @@ export function Table<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-12 text-center text-gray-500"
+                  className="px-4 py-16 text-center"
                 >
-                  {emptyMessage}
+                  <div className="flex flex-col items-center gap-3">
+                    {emptyIcon && (
+                      <div className="w-16 h-16 rounded-2xl bg-[#F2E8D4]/30 flex items-center justify-center text-[#735B4D]/30">
+                        {emptyIcon}
+                      </div>
+                    )}
+                    <p className="text-[#735B4D]/60 text-sm">{emptyMessage}</p>
+                  </div>
                 </td>
               </tr>
             ) : (
-              data.map((item) => (
+              data.map((item, rowIndex) => (
                 <tr
                   key={keyExtractor(item)}
                   className={cn(
-                    'border-t border-gray-50 hover:bg-primary-50/50 transition-colors',
-                    onRowClick && 'cursor-pointer'
+                    'border-t border-[#D0D6D7]/15 dark:border-slate-700/50 transition-all duration-200',
+                    'hover:bg-[#F2E8D4]/20 dark:hover:bg-slate-700/30',
+                    onRowClick && 'cursor-pointer',
+                    rowIndex % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-[#F2E8D4]/5 dark:bg-slate-800/50'
                   )}
                   onClick={() => onRowClick?.(item)}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-3 text-sm text-gray-700">
+                    <td key={col.key} className="px-4 py-3.5 text-sm text-[#00373E] dark:text-slate-300">
                       {col.render ? col.render(item) : (item as any)[col.key]}
                     </td>
                   ))}
@@ -139,19 +183,23 @@ export function Table<T>({
         </table>
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between p-4 border-t border-gray-100">
-          <span className="text-sm text-gray-500">
+        <div className="flex items-center justify-between p-4 border-t border-[#D0D6D7]/20 dark:border-slate-700 bg-[#F2E8D4]/10 dark:bg-slate-800/50">
+          <span className="text-xs text-[#735B4D]/60 dark:text-slate-500">
             الصفحة {page} من {totalPages}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Previous */}
             <button
               onClick={() => onPageChange?.(page - 1)}
               disabled={page <= 1}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00373E]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronRight size={18} />
+              {isRTL ? <ChevronRight size={16} className="text-[#00373E]" /> : <ChevronLeft size={16} className="text-[#00373E]" />}
             </button>
+
+            {/* Page numbers */}
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter((p) => p >= page - 1 && p <= page + 1)
               .map((p) => (
@@ -159,21 +207,23 @@ export function Table<T>({
                   key={p}
                   onClick={() => onPageChange?.(p)}
                   className={cn(
-                    'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
+                    'w-8 h-8 rounded-lg text-xs font-semibold transition-all duration-200',
                     p === page
-                      ? 'bg-primary-700 text-white'
-                      : 'hover:bg-gray-100 text-gray-600'
+                      ? 'bg-[#00373E] text-white shadow-md shadow-[#00373E]/20'
+                      : 'hover:bg-[#00373E]/10 text-[#00373E]'
                   )}
                 >
                   {p}
                 </button>
               ))}
+
+            {/* Next */}
             <button
               onClick={() => onPageChange?.(page + 1)}
               disabled={page >= totalPages}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#00373E]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronLeft size={18} />
+              {isRTL ? <ChevronLeft size={16} className="text-[#00373E]" /> : <ChevronRight size={16} className="text-[#00373E]" />}
             </button>
           </div>
         </div>

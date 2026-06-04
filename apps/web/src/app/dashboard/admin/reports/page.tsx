@@ -1,36 +1,56 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { MufasalBarChart, MufasalPieChart, MufasalAreaChart, CHART_COLORS } from '@/components/shared/Charts';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
-import { DollarSign, TrendingUp, Download, FileText, BarChart3 } from 'lucide-react';
+import { DollarSign, TrendingUp, Download, FileText, BarChart3, Loader2 } from 'lucide-react';
+import { reportsApi } from '@/lib/api/reports';
+import { adminApi } from '@/lib/api/admin';
 
-const monthlyRevenue = [
-  { name: 'ينا', value: 820000, value2: 72000 },
-  { name: 'فبر', value: 940000, value2: 85000 },
-  { name: 'مار', value: 880000, value2: 79000 },
-  { name: 'أبر', value: 1100000, value2: 98000 },
-  { name: 'ماي', value: 980000, value2: 87000 },
-  { name: 'يون', value: 1250000, value2: 112000 },
-  { name: 'يول', value: 1180000, value2: 105000 },
-  { name: 'أغس', value: 1340000, value2: 120000 },
-  { name: 'سبت', value: 1220000, value2: 109000 },
-  { name: 'أكت', value: 1480000, value2: 133000 },
-  { name: 'نوف', value: 1390000, value2: 125000 },
-  { name: 'ديس', value: 1650000, value2: 148000 },
-];
-
-const categoryBreakdown = [
-  { name: 'خياطة رجالي', value: 45, color: CHART_COLORS.primary },
-  { name: 'بشوت ومشالح', value: 28, color: CHART_COLORS.secondary },
-  { name: 'أقمشة', value: 18, color: CHART_COLORS.gold },
-  { name: 'أطفال', value: 9, color: CHART_COLORS.green },
-];
+const MONTHS_AR = ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'];
 
 export default function AdminReportsPage() {
   const { isRTL } = useAppStore();
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<any>(null);
+  const [salesTrend, setSalesTrend] = useState<{ name: string; value: number }[]>([]);
+  const [paymentBreakdown, setPaymentBreakdown] = useState<any[]>([]);
+  const [commissionData, setCommissionData] = useState<{ name: string; value: number }[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      reportsApi.getSummary(),
+      reportsApi.getSalesTrend(),
+      reportsApi.getPaymentBreakdown(),
+      adminApi.getRevenueReports(),
+    ]).then(([summaryRes, trendRes, paymentRes, commissionRes]) => {
+      if (!active) return;
+      setSummary(summaryRes);
+      setSalesTrend((trendRes || []).map((t: any, i: number) => ({
+        name: MONTHS_AR[i] || t.date?.slice(0, 7) || '',
+        value: t.revenue || t.value || 0,
+      })));
+      const methodLabels: Record<string, string> = { MADA: 'مدى', VISA: 'فيزا', MASTERCARD: 'ماستركارد', CASH_ON_DELIVERY: 'الدفع عند الاستلام', BANK_TRANSFER: 'تحويل بنكي', APPLE_PAY: 'أبل باي', STC_PAY: 'STC Pay' };
+      setPaymentBreakdown((paymentRes || []).map((p: any) => ({
+        name: isRTL ? (methodLabels[p.method] || p.method) : p.method,
+        value: p.revenue || p.count || 0,
+        color: CHART_COLORS.primary,
+      })));
+      const commissions = Array.isArray(commissionRes) ? commissionRes : commissionRes?.commissions || [];
+      setCommissionData(commissions.map((c: any, i: number) => ({
+        name: MONTHS_AR[i] || '',
+        value: c.value || c.commission || 0,
+      })));
+    }).catch(() => {}).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" size={32} /></div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -45,56 +65,54 @@ export default function AdminReportsPage() {
             <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center"><DollarSign size={22} /></div>
             <div>
               <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? 'الإيرادات الشهرية' : 'Monthly Revenue'}</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{formatCurrency(892000)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{formatCurrency(summary?.totalRevenue || 0)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-sm text-green-600"><TrendingUp size={14} />+12.5% {isRTL ? 'عن الشهر الماضي' : 'vs last month'}</div>
+          <div className="flex items-center gap-1 text-sm text-green-600"><TrendingUp size={14} />{isRTL ? 'إجمالي الإيرادات' : 'Total revenue'}</div>
         </Card>
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><BarChart3 size={22} /></div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? 'العمولات' : 'Commissions'}</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{formatCurrency(89200)}</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? 'الطلبات' : 'Orders'}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{summary?.totalOrders || 0}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-sm text-green-600"><TrendingUp size={14} />+8.3%</div>
+          <div className="flex items-center gap-1 text-sm text-green-600"><TrendingUp size={14} />{summary?.paidOrders || 0} {isRTL ? 'مدفوع' : 'paid'}</div>
         </Card>
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-600 flex items-center justify-center"><FileText size={22} /></div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? 'الفواتير المصدرة' : 'Invoices Issued'}</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">1,247</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? 'متوسط الطلب' : 'Avg Order'}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">{formatCurrency(summary?.avgOrderValue || 0)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-sm text-green-600"><TrendingUp size={14} />+5.1%</div>
+          <div className="flex items-center gap-1 text-sm text-green-600">{summary?.totalVat ? `${formatCurrency(summary.totalVat)} VAT` : ''}</div>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-5">
-          <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'الإيرادات والعمولات الشهرية' : 'Monthly Revenue & Commissions'}</h3>
+          <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'اتجاه المبيعات' : 'Sales Trend'}</h3>
           <MufasalBarChart
-            data={monthlyRevenue}
+            data={salesTrend}
             color={CHART_COLORS.primary}
-            color2={CHART_COLORS.gold}
             label1={isRTL ? 'الإيرادات' : 'Revenue'}
-            label2={isRTL ? 'العمولات' : 'Commissions'}
             prefix="﷼"
             height={280}
           />
         </Card>
         <Card className="p-5">
-          <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-2">{isRTL ? 'توزيع الفئات' : 'Category Breakdown'}</h3>
-          <MufasalPieChart data={categoryBreakdown} height={280} innerRadius={50} />
+          <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-2">{isRTL ? 'طرق الدفع' : 'Payments'}</h3>
+          <MufasalPieChart data={paymentBreakdown} height={280} innerRadius={50} />
         </Card>
       </div>
 
       <Card className="p-5">
         <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'نمو الإيرادات' : 'Revenue Growth Trend'}</h3>
         <MufasalAreaChart
-          data={monthlyRevenue.map(d => ({ name: d.name, value: d.value }))}
+          data={salesTrend}
           color={CHART_COLORS.primaryLight}
           label={isRTL ? 'الإيرادات' : 'Revenue'}
           prefix="﷼"

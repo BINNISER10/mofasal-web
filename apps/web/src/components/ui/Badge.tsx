@@ -4,19 +4,30 @@ import { cn } from '@/lib/utils/cn';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'gold';
+  variant?: 'primary' | 'secondary' | 'accent' | 'gold' | 'success' | 'danger' | 'neutral';
   size?: 'sm' | 'md';
   className?: string;
   dot?: boolean;
 }
 
 const variants = {
-  success: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
-  warning: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
-  error: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
-  info: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
-  neutral: 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-300',
-  gold: 'bg-gold-100 dark:bg-yellow-900/30 text-gold-800 dark:text-yellow-400',
+  primary: 'bg-[#00373E]/10 text-[#00373E]',
+  secondary: 'bg-[#481719]/10 text-[#481719]',
+  accent: 'bg-[#735B4D]/10 text-[#735B4D]',
+  gold: 'bg-[#D4AF37]/10 text-[#B8960A]',
+  success: 'bg-[#00373E]/10 text-[#00373E]',
+  danger: 'bg-[#481719]/10 text-[#481719]',
+  neutral: 'bg-[#D0D6D7]/30 text-[#735B4D]',
+};
+
+const dotColors = {
+  primary: 'bg-[#00373E]',
+  secondary: 'bg-[#481719]',
+  accent: 'bg-[#735B4D]',
+  gold: 'bg-[#D4AF37]',
+  success: 'bg-[#00373E]',
+  danger: 'bg-[#481719]',
+  neutral: 'bg-[#735B4D]',
 };
 
 const sizes = {
@@ -41,17 +52,7 @@ export function Badge({
       )}
     >
       {dot && (
-        <span
-          className={cn(
-            'w-1.5 h-1.5 rounded-full ml-1.5',
-            variant === 'success' && 'bg-green-800',
-            variant === 'warning' && 'bg-yellow-800',
-            variant === 'error' && 'bg-red-800',
-            variant === 'info' && 'bg-blue-800',
-            variant === 'neutral' && 'bg-gray-800',
-            variant === 'gold' && 'bg-gold-800'
-          )}
-        />
+        <span className={cn('w-1.5 h-1.5 rounded-full ml-1.5', dotColors[variant])} />
       )}
       {children}
     </span>

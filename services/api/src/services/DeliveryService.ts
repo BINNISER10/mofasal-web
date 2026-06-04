@@ -4,6 +4,41 @@ import logger from '../utils/logger';
 import socketService from './SocketService';
 import { NotificationService } from './NotificationService';
 
+interface DeliveryRequestData {
+  id: string;
+  orderId: string;
+  provider: string;
+  status: string;
+  driverName?: string | null;
+  driverPhone?: string | null;
+  trackingUrl?: string | null;
+  waybillNumber?: string | null;
+  estimatedArrival?: Date | null;
+}
+
+interface OrderData {
+  id: string;
+  orderNumber: string;
+  shopId: string;
+  customerId: string;
+  shop: {
+    id: string;
+    name: string;
+    lat?: number | null;
+    lng?: number | null;
+    shopVehicles: Array<{
+      id: string;
+      driverName?: string | null;
+      driverPhone?: string | null;
+    }>;
+  };
+  customer: {
+    id: string;
+    name: string;
+    phone: string;
+  };
+}
+
 export class DeliveryService {
   static async createDeliveryRequest(orderId: string, provider?: string) {
     const order = await prisma.order.findUnique({
@@ -20,7 +55,7 @@ export class DeliveryService {
 
     const selectedProvider = provider || await this.selectProvider(order);
     const deliveryRequest = await prisma.deliveryRequest.create({
-      data: { orderId, provider: selectedProvider as any, status: 'PENDING' },
+      data: { orderId, provider: selectedProvider as 'SHOP_VEHICLE' | 'UBER' | 'CAREEN' | 'JEENY' | 'SMSA' | 'ARAMEX', status: 'PENDING' },
     });
 
     try {
@@ -31,10 +66,10 @@ export class DeliveryService {
       if (fallbackProvider) {
         await prisma.deliveryRequest.update({
           where: { id: deliveryRequest.id },
-          data: { provider: fallbackProvider as any },
+          data: { provider: fallbackProvider as 'SHOP_VEHICLE' | 'UBER' | 'CAREEN' | 'JEENY' | 'SMSA' | 'ARAMEX' },
         });
         await this.dispatchToProvider(
-          { ...deliveryRequest, provider: fallbackProvider } as any,
+          { ...deliveryRequest, provider: fallbackProvider } as DeliveryRequestData,
           order
         );
       }
@@ -46,7 +81,7 @@ export class DeliveryService {
     });
   }
 
-  private static async selectProvider(order: any): Promise<string> {
+  private static async selectProvider(order: OrderData): Promise<string> {
     if (order.shop.shopVehicles && order.shop.shopVehicles.length > 0) {
       return 'SHOP_VEHICLE';
     }
@@ -66,7 +101,7 @@ export class DeliveryService {
     return fallbacks.length > 0 ? fallbacks[0] : null;
   }
 
-  private static async dispatchToProvider(deliveryRequest: any, order: any): Promise<void> {
+  private static async dispatchToProvider(deliveryRequest: DeliveryRequestData, order: OrderData): Promise<void> {
     switch (deliveryRequest.provider) {
       case 'SHOP_VEHICLE':
         await this.dispatchShopVehicle(deliveryRequest, order);
@@ -89,7 +124,7 @@ export class DeliveryService {
     }
   }
 
-  private static async dispatchShopVehicle(deliveryRequest: any, order: any) {
+  private static async dispatchShopVehicle(deliveryRequest: DeliveryRequestData, order: OrderData) {
     const vehicle = order.shop.shopVehicles?.[0];
     if (!vehicle) throw new Error('No available vehicle');
 
@@ -104,11 +139,11 @@ export class DeliveryService {
     });
   }
 
-  private static async dispatchUber(deliveryRequest: any, order: any) {
+  private static async dispatchUber(deliveryRequest: DeliveryRequestData, order: OrderData) {
     const { UberDeliveryService } = await import('./delivery/UberDeliveryService');
     const uberService = new UberDeliveryService();
     const result = await uberService.createDelivery({
-      pickupLat: order.shop.lat, pickupLng: order.shop.lng,
+      pickupLat: order.shop.lat || 0, pickupLng: order.shop.lng || 0,
       dropoffLat: 0, dropoffLng: 0, // would come from customer address
     });
     await prisma.deliveryRequest.update({
@@ -123,11 +158,11 @@ export class DeliveryService {
     });
   }
 
-  private static async dispatchCareen(deliveryRequest: any, order: any) {
+  private static async dispatchCareen(deliveryRequest: DeliveryRequestData, order: OrderData) {
     const { CareenDeliveryService } = await import('./delivery/CareenDeliveryService');
     const careenService = new CareenDeliveryService();
     const result = await careenService.createDelivery({
-      pickupLat: order.shop.lat, pickupLng: order.shop.lng,
+      pickupLat: order.shop.lat || 0, pickupLng: order.shop.lng || 0,
       dropoffLat: 0, dropoffLng: 0,
     });
     await prisma.deliveryRequest.update({
@@ -142,11 +177,11 @@ export class DeliveryService {
     });
   }
 
-  private static async dispatchJeeny(deliveryRequest: any, order: any) {
+  private static async dispatchJeeny(deliveryRequest: DeliveryRequestData, order: OrderData) {
     const { JeenyDeliveryService } = await import('./delivery/JeenyDeliveryService');
     const jeenyService = new JeenyDeliveryService();
     const result = await jeenyService.createDelivery({
-      pickupLat: order.shop.lat, pickupLng: order.shop.lng,
+      pickupLat: order.shop.lat || 0, pickupLng: order.shop.lng || 0,
       dropoffLat: 0, dropoffLng: 0,
     });
     await prisma.deliveryRequest.update({
@@ -161,7 +196,7 @@ export class DeliveryService {
     });
   }
 
-  private static async dispatchSmsa(deliveryRequest: any, order: any) {
+  private static async dispatchSmsa(deliveryRequest: DeliveryRequestData, order: OrderData) {
     const { SmsaWaybillService } = await import('./delivery/SmsaWaybillService');
     const smsaService = new SmsaWaybillService();
     const result = await smsaService.createWaybill({
@@ -180,7 +215,7 @@ export class DeliveryService {
     });
   }
 
-  private static async dispatchAramex(deliveryRequest: any, order: any) {
+  private static async dispatchAramex(deliveryRequest: DeliveryRequestData, order: OrderData) {
     const { AramexWaybillService } = await import('./delivery/AramexWaybillService');
     const aramexService = new AramexWaybillService();
     const result = await aramexService.createShipment({
@@ -214,7 +249,7 @@ export class DeliveryService {
 
     const updated = await prisma.deliveryRequest.update({
       where: { id: deliveryRequestId },
-      data: { status: status as any, ...data },
+      data: { status: status as 'PENDING' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED', ...data },
     });
 
     if (data?.lat && data?.lng) {
@@ -227,7 +262,7 @@ export class DeliveryService {
     if (status === 'DELIVERED') {
       await prisma.order.update({
         where: { id: delivery.orderId },
-        data: { status: 'DELIVERED' as any },
+        data: { status: 'DELIVERED' },
       });
       await NotificationService.sendToUser(delivery.order.customerId, 'DELIVERY_UPDATE', {
         title: 'Order Delivered', body: 'Your order has been delivered!',
@@ -253,6 +288,29 @@ export class DeliveryService {
     return prisma.deliveryTracking.findMany({
       where: { deliveryRequestId },
       orderBy: { timestamp: 'desc' },
+    });
+  }
+
+  static getProviders() {
+    return [
+      { id: 'SHOP_VEHICLE', name: 'مركبة المتجر', nameEn: 'Shop Vehicle' },
+      { id: 'UBER', name: 'Uber Direct', nameEn: 'Uber Direct' },
+      { id: 'CAREEN', name: 'كارين', nameEn: 'Careen' },
+      { id: 'JEENY', name: 'جيني', nameEn: 'Jeeny' },
+      { id: 'SMSA', name: 'SMSA', nameEn: 'SMSA Express' },
+      { id: 'ARAMEX', name: 'أرامكس', nameEn: 'Aramex' },
+    ];
+  }
+
+  static async cancelDelivery(deliveryRequestId: string) {
+    const delivery = await prisma.deliveryRequest.findUnique({ where: { id: deliveryRequestId } });
+    if (!delivery) throw ApiError.notFound('Delivery request not found');
+    if (delivery.status === 'DELIVERED' || delivery.status === 'CANCELLED') {
+      throw ApiError.badRequest('Cannot cancel delivery in current status');
+    }
+    return prisma.deliveryRequest.update({
+      where: { id: deliveryRequestId },
+      data: { status: 'CANCELLED' },
     });
   }
 }

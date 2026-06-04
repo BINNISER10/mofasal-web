@@ -1,9 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Toggle } from '@/components/ui/Toggle';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { adminApi } from '@/lib/api/admin';
 import { cn } from '@/lib/utils/cn';
 import toast from 'react-hot-toast';
 import {
@@ -131,35 +132,60 @@ export default function AdminSettingsPage() {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     core: true, payment: true, delivery: true, integrations: true, features: true,
   });
-  const [moduleStates, setModuleStates] = useState<Record<string, boolean>>({
-    tailoring_module: true,
-    marketplace: true,
-    onsite_measurement: true,
-    digital_confirmation: true,
-    order_tracking: true,
-    rating_system: true,
-    staff_management: true,
-    inventory_management: true,
-    accounting: true,
-    mada: true,
-    visa_mastercard: true,
-    apple_pay: false,
-    stc_pay: true,
-    tamara: false,
-    tabby: false,
-    cod: true,
-    bank_transfer: true,
-    shop_vehicle: true,
-    uber_delivery: false,
-    careen: false,
-    jeeny: false,
-    smsa: true,
-    aramex: true,
-    firebase: true,
-    twilio_sms: true,
-    email_service: true,
-    zatca: false,
-  });
+  const [moduleStates, setModuleStates] = useState<Record<string, boolean>>({});
+  const [originalStates, setOriginalStates] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const keyType = useRef<Record<string, 'module' | 'config'>>({});
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [configsRes, modulesRes] = await Promise.all([
+          adminApi.getConfigs(),
+          adminApi.getModules(),
+        ]);
+        const states: Record<string, boolean> = {};
+        (configsRes.configs || []).forEach((c: any) => {
+          const key = c.key;
+          states[key] = c.isEnabled ?? c.value === 'true';
+          keyType.current[key] = 'config';
+        });
+        (modulesRes.modules || []).forEach((m: any) => {
+          states[m.key] = m.isEnabled ?? true;
+          keyType.current[m.key] = 'module';
+        });
+        const defaults: Record<string, boolean> = {
+          tailoring_module: true, marketplace: true, onsite_measurement: true,
+          digital_confirmation: true, order_tracking: true, rating_system: true,
+          staff_management: true, inventory_management: true, accounting: true,
+          mada: true, visa_mastercard: true, apple_pay: false, stc_pay: true,
+          tamara: false, tabby: false, cod: true, bank_transfer: true,
+          shop_vehicle: true, uber_delivery: false, careen: false, jeeny: false,
+          smsa: true, aramex: true, firebase: true, twilio_sms: true,
+          email_service: true, zatca: false,
+        };
+        const merged = { ...defaults, ...states };
+        setModuleStates(merged);
+        setOriginalStates(merged);
+      } catch {
+        const defaults: Record<string, boolean> = {
+          tailoring_module: true, marketplace: true, onsite_measurement: true,
+          digital_confirmation: true, order_tracking: true, rating_system: true,
+          staff_management: true, inventory_management: true, accounting: true,
+          mada: true, visa_mastercard: true, apple_pay: false, stc_pay: true,
+          tamara: false, tabby: false, cod: true, bank_transfer: true,
+          shop_vehicle: true, uber_delivery: false, careen: false, jeeny: false,
+          smsa: true, aramex: true, firebase: true, twilio_sms: true,
+          email_service: true, zatca: false,
+        };
+        setModuleStates(defaults);
+        setOriginalStates(defaults);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
   const [showWarning, setShowWarning] = useState<{ module: ModuleToggle; category: string } | null>(null);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
@@ -197,10 +223,30 @@ export default function AdminSettingsPage() {
     setShowSaveConfirm(true);
   };
 
-  const confirmSave = () => {
+  const confirmSave = async () => {
     setShowSaveConfirm(false);
-    toast.success(isRTL ? 'تم حفظ الإعدادات بنجاح' : 'Settings saved successfully');
+    const changed: string[] = Object.keys(moduleStates).filter((k) => moduleStates[k] !== originalStates[k]);
+    if (changed.length === 0) {
+      toast.success(isRTL ? 'لا توجد تغييرات' : 'No changes');
+      return;
+    }
+    const togglePromises = changed.map((key) =>
+      keyType.current[key] === 'module'
+        ? adminApi.toggleModule(key)
+        : adminApi.toggleConfig(key)
+    );
+    try {
+      await Promise.all(togglePromises);
+      setOriginalStates({ ...moduleStates });
+      toast.success(isRTL ? 'تم حفظ الإعدادات بنجاح' : 'Settings saved successfully');
+    } catch (e: any) {
+      toast.error(e?.message || (isRTL ? 'تعذّر الحفظ' : 'Failed to save'));
+    }
   };
+
+  if (loading) {
+    return <Card className="p-8 text-center text-gray-500 dark:text-slate-400">{isRTL ? 'جاري التحميل...' : 'Loading...'}</Card>;
+  }
 
   return (
     <div className="space-y-6">

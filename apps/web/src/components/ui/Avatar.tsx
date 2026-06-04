@@ -33,17 +33,24 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+// ألوان البراند فقط
+const brandColors = [
+  '#00373E', // primary
+  '#481719', // secondary
+  '#735B4D', // accent
+  '#D4AF37', // gold
+  '#002F35', // primary dark
+  '#3D1315', // secondary dark
+  '#624D41', // accent dark
+  '#B8960A', // gold dark
+];
+
 function stringToColor(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const colors = [
-    '#1B5E20', '#388e3c', '#D4AF37', '#0d3b10',
-    '#1565c0', '#6a1b9a', '#e65100', '#c62828',
-    '#00695c', '#283593', '#4e342e', '#37474f',
-  ];
-  return colors[Math.abs(hash) % colors.length];
+  return brandColors[Math.abs(hash) % brandColors.length];
 }
 
 export function Avatar({
@@ -67,7 +74,7 @@ export function Avatar({
       ) : (
         <span
           className={cn(
-            'rounded-full flex items-center justify-center font-bold text-white',
+            'rounded-full flex items-center justify-center font-bold text-white shadow-md',
             sizes[size]
           )}
           style={{ backgroundColor: bgColor }}
@@ -78,7 +85,7 @@ export function Avatar({
       {showOnline && (
         <span
           className={cn(
-            'absolute bottom-0 right-0 rounded-full bg-green-500 border-2 border-white',
+            'absolute bottom-0 right-0 rounded-full bg-[#00373E] border-2 border-white',
             onlineSizes[size]
           )}
         />

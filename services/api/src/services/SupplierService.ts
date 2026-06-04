@@ -1,6 +1,30 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 
+interface SupplierCreateData {
+  shopId: string;
+  name: string;
+  nameAr?: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  notes?: string;
+}
+
+interface SupplierProductData {
+  productId: string;
+  name: string;
+  nameAr?: string;
+  sku?: string;
+  supplierPrice: number;
+  currency?: string;
+  minOrderQuantity?: number;
+  leadTimeDays?: number;
+}
+
 export class SupplierService {
   static async getSuppliers(shopId: string, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
@@ -17,11 +41,11 @@ export class SupplierService {
     return supplier;
   }
 
-  static async createSupplier(data: any) {
+  static async createSupplier(data: SupplierCreateData) {
     return prisma.supplier.create({ data });
   }
 
-  static async updateSupplier(id: string, data: any) {
+  static async updateSupplier(id: string, data: Partial<SupplierCreateData>) {
     const existing = await prisma.supplier.findUnique({ where: { id } });
     if (!existing) throw ApiError.notFound('Supplier not found');
     return prisma.supplier.update({ where: { id }, data });
@@ -35,7 +59,7 @@ export class SupplierService {
     return { message: 'Supplier deleted' };
   }
 
-  static async addProduct(supplierId: string, data: any) {
+  static async addProduct(supplierId: string, data: SupplierProductData) {
     return prisma.supplierProduct.create({ data: { supplierId, ...data }, include: { product: { select: { id: true, name: true, sku: true } } } });
   }
 

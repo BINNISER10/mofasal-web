@@ -7,7 +7,6 @@ import { ApiError } from '../utils/ApiError';
 import { JwtPayload } from '../middleware/auth';
 import redisService from './RedisService';
 import { NotificationService } from './NotificationService';
-import logger from '../utils/logger';
 
 export class AuthService {
   static async register(data: { name: string; phone?: string; email?: string; password: string }) {
@@ -113,6 +112,10 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
+  static async logout(_userId: string) {
+    return { message: 'Logged out' };
+  }
+
   static async refreshToken(refreshToken: string) {
     try {
       const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as JwtPayload;
@@ -167,26 +170,30 @@ export class AuthService {
     return { ...user, role: role?.name || 'UNKNOWN' };
   }
 
+  /**
+   * إرسال رمز تحقق (OTP) لتسجيل الدخول أو التسجيل عبر رقم الهاتف.
+   * نمط سعودي شائع: المصادقة برقم الجوال بدون كلمة مرور.
+   */
   static async sendOtp(phone: string) {
+    if (!phone) throw ApiError.badRequest('Phone number is required');
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     await redisService.set(`otp:${phone}`, code, 300);
-    logger.info(`[OTP Sent] Phone: ${phone}, Code: ${code}`);
-
-    const { SmsService } = await import('./integrations/SmsService');
-    await SmsService.sendVerificationCode(phone, code);
-
-    return { sent: true };
+    await NotificationService.sendSMS(phone, `رمز الدخول إلى مفصّل: ${code}`);
+    return { sent: true, expiresIn: 300 };
   }
 
+  /**
+   * التحقق من رمز OTP وتسجيل الدخول. ينشئ مستخدماً جديداً إن لم يكن موجوداً.
+   */
   static async verifyOtp(phone: string, code: string) {
+    if (!phone || !code) throw ApiError.badRequest('Phone and code are required');
     const storedCode = await redisService.get(`otp:${phone}`);
     if (!storedCode || storedCode !== code) {
       throw ApiError.badRequest('رمز التحقق غير صحيح أو منتهي الصلاحية');
     }
-
     await redisService.del(`otp:${phone}`);
 
-    let user = await prisma.user.findFirst({
+    let user = await prisma.user.findUnique({
       where: { phone },
       include: { role: { select: { name: true } } },
     });
@@ -194,44 +201,31 @@ export class AuthService {
     if (!user) {
       const shop = await prisma.shop.findFirst({ orderBy: { createdAt: 'asc' } });
       if (!shop) throw ApiError.internal('No shop configured');
-
       let role = await prisma.role.findFirst({ where: { name: 'CUSTOMER' } });
       if (!role) {
         role = await prisma.role.create({
           data: { shopId: shop.id, name: 'CUSTOMER', permissions: { orders: true } },
         });
       }
-
-      const randomPassword = Math.random().toString(36).substring(2, 10);
-      const hashedPassword = await bcrypt.hash(randomPassword, 12);
-
-      user = await prisma.user.create({
+      const created = await prisma.user.create({
         data: {
           shopId: shop.id,
-          name: 'عميل جديد',
+          name: phone,
           phone,
-          password: hashedPassword,
+          password: await bcrypt.hash(nanoid(16), 12),
           roleId: role.id,
           status: 'ACTIVE',
           phoneVerified: true,
         },
         include: { role: { select: { name: true } } },
       });
-    } else {
-      if (!user.phoneVerified) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { phoneVerified: true },
-        });
-      }
+      user = created;
+    } else if (user.status !== 'ACTIVE') {
+      throw ApiError.forbidden('Account is not active');
     }
 
     const tokens = this.generateTokens(user.id, user.role.name);
-
-    const { password: _, roleId: __, ...userWithoutSensitive } = user;
-    return {
-      user: { ...userWithoutSensitive, role: user.role.name },
-      ...tokens,
-    };
+    const { password: _pw, roleId: _rid, ...safe } = user;
+    return { user: { ...safe, role: user.role.name }, ...tokens };
   }
 }

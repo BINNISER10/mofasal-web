@@ -1,5 +1,58 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
+
+interface EmployeeCreateData {
+  shopId: string;
+  userId: string;
+  name: string;
+  departmentId?: string;
+  position?: string;
+  salary?: number;
+  hireDate?: Date;
+}
+
+interface LeaveRequestCreateData {
+  type: string;
+  startDate: Date;
+  endDate: Date;
+  reason?: string;
+}
+
+interface PayrollData {
+  baseSalary: number;
+  overtime?: number;
+  bonuses?: number;
+  deductions?: number;
+  month: number;
+  year: number;
+  notes?: string;
+}
+
+interface DepartmentCreateData {
+  shopId: string;
+  name: string;
+  nameAr?: string;
+  description?: string;
+  managerId?: string;
+}
+
+interface AttendanceWhereClause {
+  employee: { shopId: string };
+  date?: object;
+  status?: string;
+}
+
+interface LeaveRequestWhereClause {
+  employee: { shopId: string };
+  status?: string;
+}
+
+interface PayrollWhereClause {
+  employee: { shopId: string };
+  month?: number;
+  year?: number;
+}
 
 export class HRService {
   // ─── Employees ───
@@ -18,11 +71,11 @@ export class HRService {
     return employee;
   }
 
-  static async createEmployee(data: any) {
+  static async createEmployee(data: Prisma.EmployeeUncheckedCreateInput) {
     return prisma.employee.create({ data, include: { department: true } });
   }
 
-  static async updateEmployee(id: string, data: any) {
+  static async updateEmployee(id: string, data: Partial<EmployeeCreateData>) {
     const existing = await prisma.employee.findUnique({ where: { id } });
     if (!existing) throw ApiError.notFound('Employee not found');
     return prisma.employee.update({ where: { id }, data, include: { department: true } });
@@ -51,13 +104,13 @@ export class HRService {
   }
 
   static async getAttendance(shopId: string, date?: string) {
-    const where: any = { employee: { shopId } };
+    const where: AttendanceWhereClause = { employee: { shopId } };
     if (date) { const d = new Date(date); d.setHours(0, 0, 0, 0); where.date = { gte: d }; }
     return prisma.attendance.findMany({ where, include: { employee: { select: { id: true, name: true, position: true } } }, orderBy: { date: 'desc' }, take: 50 });
   }
 
   // ─── Leave Requests ───
-  static async createLeaveRequest(employeeId: string, data: any) {
+  static async createLeaveRequest(employeeId: string, data: LeaveRequestCreateData) {
     return prisma.leaveRequest.create({ data: { employeeId, ...data } });
   }
 
@@ -74,19 +127,19 @@ export class HRService {
   }
 
   static async getLeaveRequests(shopId: string, status?: string) {
-    const where: any = { employee: { shopId } };
+    const where: LeaveRequestWhereClause = { employee: { shopId } };
     if (status) where.status = status;
     return prisma.leaveRequest.findMany({ where, include: { employee: { select: { id: true, name: true, position: true } } }, orderBy: { createdAt: 'desc' } });
   }
 
   // ─── Payroll ───
-  static async processPayroll(employeeId: string, data: any, processedById: string) {
+  static async processPayroll(employeeId: string, data: PayrollData, processedById: string) {
     const netSalary = data.baseSalary + (data.overtime || 0) + (data.bonuses || 0) - (data.deductions || 0);
     return prisma.payroll.create({ data: { employeeId, processedById, netSalary, ...data } });
   }
 
   static async getPayrolls(shopId: string, month?: number, year?: number) {
-    const where: any = { employee: { shopId } };
+    const where: PayrollWhereClause = { employee: { shopId } };
     if (month) where.month = month;
     if (year) where.year = year;
     return prisma.payroll.findMany({ where, include: { employee: { select: { id: true, name: true, position: true, salary: true } } }, orderBy: [{ year: 'desc' }, { month: 'desc' }] });
@@ -103,11 +156,11 @@ export class HRService {
     return prisma.department.findMany({ where: { shopId }, include: { _count: { select: { employees: true } }, manager: { select: { id: true, name: true } } } });
   }
 
-  static async createDepartment(data: any) {
+  static async createDepartment(data: DepartmentCreateData) {
     return prisma.department.create({ data });
   }
 
-  static async updateDepartment(id: string, data: any) {
+  static async updateDepartment(id: string, data: Partial<DepartmentCreateData>) {
     return prisma.department.update({ where: { id }, data });
   }
 

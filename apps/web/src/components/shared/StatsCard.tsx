@@ -9,24 +9,46 @@ interface StatsCardProps {
   value: string | number;
   trend?: number;
   trendLabel?: string;
-  color?: 'primary' | 'gold' | 'info' | 'success' | 'danger';
+  color?: 'primary' | 'gold' | 'accent' | 'secondary' | 'success';
   className?: string;
 }
 
-const colorStyles = {
-  primary: 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300',
-  gold: 'bg-yellow-50 dark:bg-yellow-900/20 text-gold-600 dark:text-yellow-400',
-  info: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
-  success: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
-  danger: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
-};
-
-const iconBgStyles = {
-  primary: 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300',
-  gold: 'bg-yellow-100 dark:bg-yellow-900/40 text-gold-600 dark:text-yellow-400',
-  info: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
-  success: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400',
-  danger: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400',
+const colorConfig = {
+  primary: {
+    border: 'border-l-[#00373E]',
+    iconBg: 'bg-[#00373E]/10',
+    iconColor: 'text-[#00373E]',
+    trendUp: 'text-[#00373E]',
+    trendDown: 'text-[#481719]',
+  },
+  gold: {
+    border: 'border-l-[#D4AF37]',
+    iconBg: 'bg-[#D4AF37]/10',
+    iconColor: 'text-[#D4AF37]',
+    trendUp: 'text-[#00373E]',
+    trendDown: 'text-[#481719]',
+  },
+  accent: {
+    border: 'border-l-[#735B4D]',
+    iconBg: 'bg-[#735B4D]/10',
+    iconColor: 'text-[#735B4D]',
+    trendUp: 'text-[#00373E]',
+    trendDown: 'text-[#481719]',
+  },
+  secondary: {
+    border: 'border-l-[#481719]',
+    iconBg: 'bg-[#481719]/10',
+    iconColor: 'text-[#481719]',
+    trendUp: 'text-[#00373E]',
+    trendDown: 'text-[#481719]',
+  },
+  success: {
+    border: 'border-l-[#00373E]',
+    iconBg: 'bg-[#00373E]/10',
+    iconColor: 'text-[#00373E]',
+    trendUp: 'text-[#00373E]',
+    trendDown: 'text-[#481719]',
+  },
 };
 
 export function StatsCard({
@@ -38,45 +60,69 @@ export function StatsCard({
   color = 'primary',
   className,
 }: StatsCardProps) {
+  const config = colorConfig[color];
+
   return (
     <div
       className={cn(
-        'card-jahez p-5 flex items-start gap-4',
-        colorStyles[color],
+        // Base
+        'relative overflow-hidden rounded-2xl p-5 transition-all duration-300',
+        // Background: white مع cream gradient
+        'bg-gradient-to-br from-white to-[#F2E8D4]/30',
+        // Border
+        'border border-[#D0D6D7]/50',
+        // Border left accent
+        config.border,
+        'border-l-4',
+        // Shadow
+        'shadow-[0_2px_8px_rgba(0,55,62,0.06),0_4px_16px_rgba(0,55,62,0.04)]',
+        // Hover
+        'hover:shadow-[0_4px_16px_rgba(0,55,62,0.1),0_8px_32px_rgba(0,55,62,0.06)]',
+        'hover:-translate-y-0.5',
         className
       )}
     >
-      <div
-        className={cn(
-          'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0',
-          iconBgStyles[color]
-        )}
-      >
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium opacity-80">{label}</p>
-        <p className="text-2xl font-bold mt-1">{value}</p>
-        {trend !== undefined && (
-          <div className="flex items-center gap-1.5 mt-1">
-            {trend >= 0 ? (
-              <TrendingUp size={14} className="text-green-600" />
-            ) : (
-              <TrendingDown size={14} className="text-red-600" />
-            )}
-            <span
-              className={cn(
-                'text-xs font-semibold',
-                trend >= 0 ? 'text-green-600' : 'text-red-600'
+      {/* Decorative corner gradient */}
+      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#F2E8D4]/20 to-transparent rounded-bl-full" />
+
+      <div className="relative flex items-start gap-4">
+        {/* Icon */}
+        <div className={cn(
+          'w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 hover:scale-110',
+          config.iconBg
+        )}>
+          <span className={config.iconColor}>{icon}</span>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-[#735B4D]">{label}</p>
+          <p className="text-2xl font-bold text-[#00373E] mt-1">{value}</p>
+
+          {/* Trend */}
+          {trend !== undefined && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {trend >= 0 ? (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00373E]/10">
+                  <TrendingUp size={12} className="text-[#00373E]" />
+                  <span className="text-xs font-semibold text-[#00373E]">
+                    +{Math.abs(trend)}%
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#481719]/10">
+                  <TrendingDown size={12} className="text-[#481719]" />
+                  <span className="text-xs font-semibold text-[#481719]">
+                    -{Math.abs(trend)}%
+                  </span>
+                </div>
               )}
-            >
-              {Math.abs(trend)}%
-            </span>
-            {trendLabel && (
-              <span className="text-xs opacity-60">{trendLabel}</span>
-            )}
-          </div>
-        )}
+              {trendLabel && (
+                <span className="text-xs text-[#735B4D]/60">{trendLabel}</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

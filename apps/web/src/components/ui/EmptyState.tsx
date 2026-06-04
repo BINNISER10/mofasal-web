@@ -28,15 +28,31 @@ export function EmptyState({
         className
       )}
     >
-      <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-        {icon || <Inbox size={36} className="text-gray-400" />}
+      {/* Icon container */}
+      <div className="relative mb-6">
+        {/* Background decoration */}
+        <div className="absolute inset-0 w-24 h-24 rounded-full bg-[#F2E8D4]/30 -m-2" />
+        <div className="absolute inset-0 w-20 h-20 rounded-full bg-[#D1CDAE]/20 -m-0" />
+
+        {/* Icon */}
+        <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-[#F2E8D4] to-[#D1CDAE]/30 flex items-center justify-center shadow-[0_4px_16px_rgba(0,55,62,0.08)]">
+          {icon || <Inbox size={36} className="text-[#735B4D]/40" />}
+        </div>
       </div>
-      <h3 className="text-lg font-bold text-gray-800 mb-1">{title}</h3>
+
+      {/* Text */}
+      <h3 className="text-lg font-bold text-[#00373E] mb-2">{title}</h3>
       {description && (
-        <p className="text-sm text-gray-500 max-w-sm mb-6">{description}</p>
+        <p className="text-sm text-[#735B4D]/60 max-w-sm mb-6 leading-relaxed">{description}</p>
       )}
+
+      {/* Action */}
       {actionLabel && onAction && (
-        <Button variant="primary" onClick={onAction}>
+        <Button
+          variant="primary"
+          onClick={onAction}
+          className="bg-[#00373E] hover:bg-[#002F35] shadow-md shadow-[#00373E]/20"
+        >
           {actionLabel}
         </Button>
       )}

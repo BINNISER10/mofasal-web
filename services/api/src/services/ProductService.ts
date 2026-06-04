@@ -1,28 +1,13 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 
-type ProductSort = 'smart' | 'newest' | 'price_asc' | 'price_desc';
-
-const PRODUCT_CANDIDATE_CAP = 500;
-
-function clamp01(value: number): number {
-  if (value < 0) return 0;
-  if (value > 1) return 1;
-  return value;
-}
-
-function computeProductScore(product: { stockQuantity?: number; createdAt?: Date; shop?: { rating?: number } | null }): number {
-  const stockScore = (product.stockQuantity || 0) > 0 ? 1 : 0;
-  const shopRatingScore = clamp01((product.shop?.rating || 0) / 5);
-
-  let recencyScore = 0;
-  if (product.createdAt) {
-    const ageDays = (Date.now() - new Date(product.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-    recencyScore = clamp01(1 - ageDays / 90);
-  }
-
-  const score = stockScore * 0.4 + shopRatingScore * 0.4 + recencyScore * 0.2;
-  return Math.round(score * 1000) / 1000;
+interface ProductWhereClause {
+  isActive?: boolean;
+  categoryId?: string;
+  shopId?: string;
+  visibility?: string;
+  price?: { gte?: number; lte?: number };
+  OR?: object[];
 }
 
 export class ProductService {
@@ -48,14 +33,13 @@ export class ProductService {
 
   static async getProducts(filters: {
     categoryId?: string; shopId?: string; search?: string; minPrice?: number; maxPrice?: number;
-    tags?: string; isActive?: boolean; page?: number; limit?: number; visibility?: string; sort?: ProductSort;
+    tags?: string; isActive?: boolean; page?: number; limit?: number; visibility?: string;
   }) {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
     const skip = (page - 1) * limit;
-    const sort: ProductSort = filters.sort || 'smart';
 
-    const where: any = { isActive: true };
+    const where: ProductWhereClause = { isActive: true };
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.shopId) where.shopId = filters.shopId;
     if (filters.isActive !== undefined) where.isActive = filters.isActive;
@@ -73,36 +57,89 @@ export class ProductService {
       ];
     }
 
-    const include = { category: true, variants: true, shop: { select: { id: true, name: true, logo: true, rating: true } } };
-
-    if (sort !== 'smart') {
-      const orderBy =
-        sort === 'price_asc' ? { price: 'asc' as const }
-        : sort === 'price_desc' ? { price: 'desc' as const }
-        : { createdAt: 'desc' as const };
-
-      const [products, total] = await Promise.all([
-        prisma.product.findMany({ where, skip, take: limit, include, orderBy }),
-        prisma.product.count({ where }),
-      ]);
-      return { products, total, page, limit };
-    }
-
-    const candidates = await prisma.product.findMany({
-      where,
-      take: PRODUCT_CANDIDATE_CAP,
-      include,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const scored = candidates
-      .map((product) => ({ ...product, score: computeProductScore(product as any) }))
-      .sort((a, b) => b.score - a.score);
-
-    const total = scored.length;
-    const products = scored.slice(skip, skip + limit);
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        include: { category: true, variants: true, shop: { select: { id: true, name: true, logo: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.product.count({ where }),
+    ]);
 
     return { products, total, page, limit };
+  }
+
+  static async searchProducts(query: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { nameAr: { contains: query, mode: 'insensitive' } },
+            { description: { contains: query, mode: 'insensitive' } },
+            { tags: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        skip, take: limit,
+        include: { category: true, variants: true, shop: { select: { id: true, name: true, logo: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.product.count({
+        where: { isActive: true, OR: [{ name: { contains: query, mode: 'insensitive' } }, { nameAr: { contains: query, mode: 'insensitive' } }] },
+      }),
+    ]);
+    return { products, total, page, limit };
+  }
+
+  static async getProductsByCategory(categoryId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: { categoryId, isActive: true },
+        skip, take: limit,
+        include: { category: true, variants: true, shop: { select: { id: true, name: true, logo: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.product.count({ where: { categoryId, isActive: true } }),
+    ]);
+    return { products, total, page, limit };
+  }
+
+  static async getMerchantProducts(merchantId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: { shopId: merchantId, isActive: true },
+        skip, take: limit,
+        include: { category: true, variants: true },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.product.count({ where: { shopId: merchantId, isActive: true } }),
+    ]);
+    return { products, total, page, limit };
+  }
+
+  static async updateStockSimple(productId: string, stock: number) {
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw ApiError.notFound('Product not found');
+    return prisma.product.update({
+      where: { id: productId },
+      data: { stockQuantity: stock },
+    });
+  }
+
+  static async toggleVisibility(productId: string) {
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw ApiError.notFound('Product not found');
+    const newVisibility = product.visibility === 'PUBLIC' ? 'HIDDEN' : 'PUBLIC';
+    return prisma.product.update({
+      where: { id: productId },
+      data: { visibility: newVisibility },
+    });
   }
 
   static async getProductById(id: string) {
@@ -119,7 +156,21 @@ export class ProductService {
     return product;
   }
 
-  static async updateProduct(id: string, data: any) {
+  static async updateProduct(id: string, data: Partial<{
+    name: string;
+    nameAr: string;
+    description: string;
+    categoryId: string;
+    price: number;
+    compareAtPrice: number;
+    costPrice: number;
+    stockQuantity: number;
+    unit: string;
+    images: string[];
+    visibility: string;
+    tags: string;
+    isActive: boolean;
+  }>) {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) throw ApiError.notFound('Product not found');
     return prisma.product.update({ where: { id }, data, include: { category: true, variants: true } });
@@ -136,7 +187,14 @@ export class ProductService {
     return prisma.productVariant.create({ data: { ...data, productId, stock: data.stock || 0 } });
   }
 
-  static async updateVariant(productId: string, variantId: string, data: any) {
+  static async updateVariant(productId: string, variantId: string, data: Partial<{
+    name: string;
+    sku: string;
+    price: number;
+    stockQuantity: number;
+    attributes: Record<string, string>;
+    images: string[];
+  }>) {
     const variant = await prisma.productVariant.findFirst({ where: { id: variantId, productId } });
     if (!variant) throw ApiError.notFound('Variant not found');
     return prisma.productVariant.update({ where: { id: variantId }, data });
@@ -159,7 +217,7 @@ export class ProductService {
 
     const [movement] = await Promise.all([
       prisma.inventoryMovement.create({
-        data: { productId, type: type as any, quantity, reference, notes, createdById },
+        data: { productId, type: type as 'IN' | 'OUT', quantity, reference, notes, createdById },
       }),
       prisma.product.update({
         where: { id: productId },
@@ -171,7 +229,7 @@ export class ProductService {
   }
 
   static async getCategories(filters: { parentId?: string; isActive?: boolean }) {
-    const where: any = {};
+    const where: { parentId?: string; isActive?: boolean } = {};
     if (filters.parentId !== undefined) where.parentId = filters.parentId;
     if (filters.isActive !== undefined) where.isActive = filters.isActive;
 
@@ -186,7 +244,14 @@ export class ProductService {
     return prisma.category.create({ data });
   }
 
-  static async updateCategory(id: string, data: any) {
+  static async updateCategory(id: string, data: Partial<{
+    name: string;
+    nameAr: string;
+    description: string;
+    image: string;
+    sortOrder: number;
+    isActive: boolean;
+  }>) {
     return prisma.category.update({ where: { id }, data });
   }
 

@@ -1,16 +1,43 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useAppStore } from '@/lib/stores/appStore';
 import { Avatar } from '@/components/ui/Avatar';
+import { authApi } from '@/lib/api/auth';
 import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const { isRTL } = useAppStore();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+      setPhone(user.phone?.replace('+966', ''));
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!name.trim()) { toast.error(isRTL ? 'الاسم مطلوب' : 'Name is required'); return; }
+    setSaving(true);
+    try {
+      const updated = await authApi.updateProfile({ name: name.trim(), email: email.trim(), phone: `+966${phone.replace(/\D/g, '')}` });
+      setUser(updated);
+      toast.success(isRTL ? 'تم حفظ التغييرات' : 'Changes saved');
+    } catch (e: any) {
+      toast.error(e?.message || (isRTL ? 'تعذّر الحفظ' : 'Failed'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
@@ -27,13 +54,13 @@ export default function ProfilePage() {
       <Card className="p-5">
         <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'المعلومات الشخصية' : 'Personal Info'}</h3>
         <div className="space-y-4">
-          <Input label={isRTL ? 'الاسم' : 'Name'} defaultValue={user?.name} />
-          <Input label="Email" type="email" defaultValue={user?.email} />
-          <Input label={isRTL ? 'رقم الجوال' : 'Phone'} isPhone defaultValue={user?.phone?.replace('+966', '')} />
+          <Input label={isRTL ? 'الاسم' : 'Name'} value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input label={isRTL ? 'رقم الجوال' : 'Phone'} isPhone value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
       </Card>
 
-      <Button variant="primary" size="lg" fullWidth onClick={() => toast.success(isRTL ? 'تم حفظ التغييرات' : 'Changes saved')}>
+      <Button variant="primary" size="lg" fullWidth isLoading={saving} disabled={saving} onClick={handleSave}>
         {isRTL ? 'حفظ التغييرات' : 'Save Changes'}
       </Button>
     </div>

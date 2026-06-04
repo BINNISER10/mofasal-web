@@ -1,20 +1,35 @@
 import { nanoid } from 'nanoid';
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
-import logger from '../utils/logger';
-import { LedgerService } from './LedgerService';
-import { NotificationService } from './NotificationService';
 
 const STATUS_FLOW: Record<string, string[]> = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED: ['IN_PROGRESS', 'CANCELLED'],
-  IN_PROGRESS: ['READY_FOR_DELIVERY', 'CANCELLED'],
+  CONFIRMED: ['STAFF_ON_WAY', 'CANCELLED'],
+  STAFF_ON_WAY: ['TAKING_MEASUREMENTS', 'CANCELLED'],
+  TAKING_MEASUREMENTS: ['IN_PROGRESS', 'CANCELLED'],
+  IN_PROGRESS: ['CUTTING_FABRIC', 'CANCELLED'],
+  CUTTING_FABRIC: ['SEWING_ASSEMBLY', 'CANCELLED'],
+  SEWING_ASSEMBLY: ['IRONING_FINISHING', 'CANCELLED'],
+  IRONING_FINISHING: ['PACKING_WRAPPING', 'CANCELLED'],
+  PACKING_WRAPPING: ['READY_FOR_DELIVERY', 'CANCELLED'],
   READY_FOR_DELIVERY: ['OUT_FOR_DELIVERY'],
   OUT_FOR_DELIVERY: ['DELIVERED'],
-  DELIVERED: ['COMPLETED'],
+  DELIVERED: ['COMPLETED', 'RETURNED'],
   COMPLETED: [],
   CANCELLED: [],
+  RETURNED: [],
 };
+
+type OrderStatus = 'PENDING' | 'CONFIRMED' | 'STAFF_ON_WAY' | 'TAKING_MEASUREMENTS' | 'IN_PROGRESS' | 'CUTTING_FABRIC' | 'SEWING_ASSEMBLY' | 'IRONING_FINISHING' | 'PACKING_WRAPPING' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED' | 'RETURNED';
+
+interface OrderWhereClause {
+  shopId?: string;
+  customerId?: object;
+  status?: string;
+  orderNumber?: object;
+  paymentStatus?: string;
+  items?: object;
+}
 
 export class OrderService {
   static generateOrderNumber(): string {
@@ -85,15 +100,6 @@ export class OrderService {
       },
     });
 
-    // إشعار فوري: عميل + موظفو المحل
-    NotificationService.notifyOrderCreated({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customerId: order.customerId,
-      shopId: order.shopId,
-      grandTotal: order.grandTotal,
-    }).catch((err) => logger.error('Order creation notification failed', err));
-
     return order;
   }
 
@@ -105,7 +111,7 @@ export class OrderService {
     const limit = filters.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: OrderWhereClause = {};
     if (filters.shopId) where.shopId = filters.shopId;
     if (filters.userId) {
       // userId هو معرّف User؛ نوفّقه بسجلات Customer عبر الهاتف
@@ -147,7 +153,6 @@ export class OrderService {
         items: true,
         customer: { select: { id: true, name: true, phone: true } },
         shop: { select: { id: true, name: true, nameAr: true, logo: true, address: true, lat: true, lng: true } },
-        orderMeasurements: true,
       },
     });
     if (!order) throw ApiError.notFound('Order not found');
@@ -176,34 +181,25 @@ export class OrderService {
       },
     });
 
-    // إشعار تغيير الحالة (لا يُعطّل تدفّق الطلب)
-    NotificationService.notifyOrderStatusChanged({
-      id: updatedOrder.id,
-      orderNumber: updatedOrder.orderNumber,
-      customerId: updatedOrder.customerId,
-      shopId: updatedOrder.shopId,
-      status: newStatus,
-      previousStatus: order.status,
-    }).catch((err) => logger.error('Order status notification failed', err));
-
-    // ترحيل محاسبي تلقائي عند اعتبار الطلب مدفوعاً (لا يُعطّل تدفّق الطلب أبداً)
-    if (newStatus === 'COMPLETED') {
-      LedgerService.postOrderRevenue(updatedOrder).catch((err) =>
-        logger.error(`Auto ledger posting failed for order ${updatedOrder.orderNumber}: ${err.message}`)
-      );
-    }
-
     return updatedOrder;
   }
 
   static readonly TRACKING_SEQUENCE: Array<{ status: string; label: string; labelEn: string }> = [
     { status: 'PENDING', label: 'تم استلام الطلب', labelEn: 'Order received' },
     { status: 'CONFIRMED', label: 'تم تأكيد الطلب', labelEn: 'Order confirmed' },
-    { status: 'IN_PROGRESS', label: 'قيد التنفيذ والخياطة', labelEn: 'In progress' },
+    { status: 'STAFF_ON_WAY', label: 'الموظف في الطريق', labelEn: 'Staff on the way' },
+    { status: 'TAKING_MEASUREMENTS', label: 'أخذ المقاسات', labelEn: 'Taking measurements' },
+    { status: 'IN_PROGRESS', label: 'قيد التنفيذ والخياطة', labelEn: 'Cutting & sewing' },
+    { status: 'CUTTING_FABRIC', label: 'قص القماش', labelEn: 'Cutting fabric' },
+    { status: 'SEWING_ASSEMBLY', label: 'التجميع والخياطة', labelEn: 'Sewing assembly' },
+    { status: 'IRONING_FINISHING', label: 'الكي والتشطيب', labelEn: 'Ironing & finishing' },
+    { status: 'PACKING_WRAPPING', label: 'التغليف', labelEn: 'Packing & wrapping' },
     { status: 'READY_FOR_DELIVERY', label: 'جاهز للتوصيل', labelEn: 'Ready for delivery' },
     { status: 'OUT_FOR_DELIVERY', label: 'في الطريق إليك', labelEn: 'Out for delivery' },
     { status: 'DELIVERED', label: 'تم التوصيل', labelEn: 'Delivered' },
     { status: 'COMPLETED', label: 'مكتمل', labelEn: 'Completed' },
+    { status: 'CANCELLED', label: 'ملغي', labelEn: 'Cancelled' },
+    { status: 'RETURNED', label: 'مرتجع', labelEn: 'Returned' },
   ];
 
   static async getOrderTracking(orderId: string) {
@@ -230,7 +226,7 @@ export class OrderService {
     if (['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(order.status)) {
       throw ApiError.badRequest('لا يمكن إلغاء الطلب في حالته الحالية');
     }
-    const updatedOrder = await prisma.order.update({
+    return prisma.order.update({
       where: { id: orderId },
       data: { status: 'CANCELLED' },
       include: {
@@ -238,82 +234,44 @@ export class OrderService {
         shop: { select: { id: true, name: true } },
       },
     });
-    // إشعار الإلغاء
-    NotificationService.notifyOrderStatusChanged({
-      id: updatedOrder.id,
-      orderNumber: updatedOrder.orderNumber,
-      customerId: updatedOrder.customerId,
-      shopId: updatedOrder.shopId,
-      status: 'CANCELLED',
-      previousStatus: order.status,
-    }).catch((err) => logger.error('Order cancellation notification failed', err));
-    return updatedOrder;
   }
 
-  static async createB2BSubOrderForFabric(orderId: string, fabricNote: string, quantity = 3.5) {
-    try {
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
-      if (!order) return;
+  static async getOrdersByCustomer(customerId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where: { customerId },
+        skip, take: limit,
+        include: { items: true, shop: { select: { id: true, name: true, logo: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.order.count({ where: { customerId } }),
+    ]);
+    return { orders, total, page, limit };
+  }
 
-      // 1. Find the product (fabric) by name or SKU
-      const product = await prisma.product.findFirst({
-        where: {
-          type: 'FABRIC',
-          name: { contains: fabricNote, mode: 'insensitive' },
-        },
-      });
+  static async getOrdersByShop(shopId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where: { shopId },
+        skip, take: limit,
+        include: { items: true, customer: { select: { id: true, name: true, phone: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.order.count({ where: { shopId } }),
+    ]);
+    return { orders, total, page, limit };
+  }
 
-      if (!product) {
-        logger.warn(`B2B sub-order: Fabric product not found for note: ${fabricNote}`);
-        return;
-      }
-
-      // 2. Find the supplier for this product
-      const supplierProduct = await prisma.supplierProduct.findFirst({
-        where: { productId: product.id, isActive: true },
-        include: { supplier: true },
-      });
-
-      const supplierId = supplierProduct?.supplierId || null;
-
-      // 3. Deduct stock from the product
-      if (product.stockQuantity >= quantity) {
-        await prisma.product.update({
-          where: { id: product.id },
-          data: { stockQuantity: { decrement: Math.ceil(quantity) } },
-        });
-      } else {
-        logger.warn(`B2B sub-order: Fabric product ${product.name} is out of stock or insufficient quantity.`);
-      }
-
-      // 4. Create the B2B PurchaseOrder
-      const orderNumber = `PO-B2B-${Date.now().toString(36).toUpperCase()}`;
-      await prisma.purchaseOrder.create({
-        data: {
-          shopId: order.shopId,
-          supplierId,
-          orderNumber,
-          status: 'PENDING',
-          totalAmount: (supplierProduct?.price || product.costPrice || 50) * quantity,
-          taxAmount: ((supplierProduct?.price || product.costPrice || 50) * quantity) * 0.15,
-          grandTotal: ((supplierProduct?.price || product.costPrice || 50) * quantity) * 1.15,
-          notes: `طلب قماش تلقائي للطلب رقم ${order.orderNumber}. نوع القماش: ${fabricNote}`,
-          items: {
-            create: {
-              productId: product.id,
-              name: product.name,
-              quantity: Math.ceil(quantity),
-              unitPrice: supplierProduct?.price || product.costPrice || 50,
-              totalPrice: (supplierProduct?.price || product.costPrice || 50) * Math.ceil(quantity),
-            },
-          },
-        },
-      });
-
-      logger.info(`Successfully generated B2B sub-order ${orderNumber} for fabric ${product.name}`);
-    } catch (error) {
-      logger.error('Failed to create B2B sub-order for fabric', error);
-    }
+  static async assignStaff(orderId: string, staffId: string) {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw ApiError.notFound('Order not found');
+    return prisma.order.update({
+      where: { id: orderId },
+      data: { staffId },
+      include: { customer: { select: { id: true, name: true } }, shop: { select: { id: true, name: true } } },
+    });
   }
 
   static async getOrderStats(shopId?: string) {
@@ -323,5 +281,59 @@ export class OrderService {
       prisma.order.aggregate({ where: { ...where, paymentStatus: 'PAID' }, _sum: { grandTotal: true } }),
     ]);
     return { total, totalRevenue: revenue._sum.grandTotal || 0 };
+  }
+
+  /**
+   * إنشاء أمر شراء (B2B) تلقائي للقماش المطلوب في طلب تفصيل.
+   * يبحث عن منتج القماش بالاسم، ينقص المخزون، وينشئ أمر شراء من المورّد المرتبط.
+   * @param orderId رقم الطلب الأصلي
+   * @param fabricName اسم القماش المطلوب (بحث جزئي)
+   * @param requiredMeters الأمتار المطلوبة (تُقرّب لأعلى لأقرب متر كامل)
+   */
+  static async createB2BSubOrderForFabric(orderId: string, fabricName: string, requiredMeters: number) {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw ApiError.notFound('Order not found');
+
+    const fabric = await prisma.product.findFirst({
+      where: { shopId: order.shopId, name: { contains: fabricName, mode: 'insensitive' } },
+    });
+    if (!fabric) throw ApiError.notFound('Fabric product not found');
+
+    const quantity = Math.ceil(requiredMeters);
+
+    await prisma.product.update({
+      where: { id: fabric.id },
+      data: { stockQuantity: { decrement: quantity } },
+    });
+
+    const supplierProduct = await prisma.supplierProduct.findFirst({
+      where: { productId: fabric.id },
+    });
+
+    const unitPrice = supplierProduct?.price ?? fabric.costPrice ?? 0;
+    const totalAmount = unitPrice * quantity;
+
+    return prisma.purchaseOrder.create({
+      data: {
+        shopId: order.shopId,
+        supplierId: supplierProduct?.supplierId,
+        orderNumber: `PO-${nanoid(8).toUpperCase()}`,
+        status: 'DRAFT',
+        totalAmount,
+        grandTotal: totalAmount,
+        notes: `Auto-generated for order ${order.orderNumber} (fabric: ${fabricName})`,
+        items: {
+          create: [
+            {
+              productId: fabric.id,
+              name: fabric.name,
+              quantity,
+              unitPrice,
+              totalPrice: totalAmount,
+            },
+          ],
+        },
+      },
+    });
   }
 }

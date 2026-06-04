@@ -7,8 +7,6 @@ class RedisService {
   private pubClient: Redis;
   private subClient: Redis;
 
-  private memoryStore = new Map<string, { value: string; expires: number }>();
-
   constructor() {
     this.client = new Redis(config.redis.url, {
       keyPrefix: config.redis.prefix,
@@ -36,48 +34,30 @@ class RedisService {
 
   async get(key: string): Promise<string | null> {
     try {
-      if (this.client.status === 'ready') {
-        return await this.client.get(key);
-      }
+      return await this.client.get(key);
     } catch {
-      // fallback
-    }
-    const item = this.memoryStore.get(key);
-    if (!item) return null;
-    if (Date.now() > item.expires) {
-      this.memoryStore.delete(key);
       return null;
     }
-    return item.value;
   }
 
   async set(key: string, value: string, ttl?: number): Promise<void> {
     try {
-      if (this.client.status === 'ready') {
-        if (ttl) {
-          await this.client.set(key, value, 'EX', ttl);
-        } else {
-          await this.client.set(key, value);
-        }
-        return;
+      if (ttl) {
+        await this.client.set(key, value, 'EX', ttl);
+      } else {
+        await this.client.set(key, value);
       }
     } catch {
-      // fallback
+      // silently fail
     }
-    const expires = ttl ? Date.now() + ttl * 1000 : Infinity;
-    this.memoryStore.set(key, { value, expires });
   }
 
   async del(key: string): Promise<void> {
     try {
-      if (this.client.status === 'ready') {
-        await this.client.del(key);
-        return;
-      }
+      await this.client.del(key);
     } catch {
-      // fallback
+      // silently fail
     }
-    this.memoryStore.delete(key);
   }
 
   async setJSON(key: string, data: unknown, ttl?: number): Promise<void> {
@@ -132,6 +112,10 @@ class RedisService {
     } catch {
       // silently fail
     }
+  }
+
+  async ping(): Promise<void> {
+    await this.client.ping();
   }
 
   getClient(): Redis {

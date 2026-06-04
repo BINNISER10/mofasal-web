@@ -1,6 +1,20 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 
+interface POSOrderData {
+  customerId?: string;
+  items: Array<{
+    productId?: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    discount?: number;
+    taxRate?: number;
+  }>;
+  paymentMethod?: string;
+  notes?: string;
+}
+
 export class POSService {
   static async openSession(shopId: string, cashierId: string, openingBalance = 0) {
     const active = await prisma.pOSSession.findFirst({ where: { shopId, cashierId, status: 'OPEN' } });
@@ -30,7 +44,7 @@ export class POSService {
     return session;
   }
 
-  static async createOrder(sessionId: string, data: any) {
+  static async createOrder(sessionId: string, data: POSOrderData) {
     const session = await prisma.pOSSession.findUnique({ where: { id: sessionId } });
     if (!session || session.status !== 'OPEN') throw ApiError.badRequest('Session is not open');
     const orderNumber = `POS-${Date.now()}`;

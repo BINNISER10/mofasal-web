@@ -4,6 +4,23 @@ import { AuthRequest } from '../../middleware/auth';
 import { sendSuccess, sendPaginated } from '../../utils/response';
 import { ConfigService } from '../../services/ConfigService';
 
+interface AdminUserWhereClause {
+  role?: { name: string };
+  status?: string;
+  OR?: object[];
+}
+
+interface AdminOrderWhereClause {
+  createdAt?: { gte?: Date; lte?: Date };
+  shopId?: string;
+  paymentStatus?: string;
+}
+
+interface AuditLogWhereClause {
+  entity?: string;
+  action?: string;
+}
+
 export class AdminController {
   static async getDashboard(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -29,9 +46,9 @@ export class AdminController {
       const { page, limit, role, status, search } = req.query;
       const p = page ? parseInt(page as string) : 1;
       const l = limit ? parseInt(limit as string) : 20;
-      const where: any = {};
+      const where: AdminUserWhereClause = {};
       if (role) where.role = { name: role as string };
-      if (status) where.status = status;
+      if (status) where.status = status as string;
       if (search) where.OR = [{ name: { contains: search as string, mode: 'insensitive' } }, { phone: { contains: search as string } }];
 
       const [users, total] = await Promise.all([
@@ -45,7 +62,7 @@ export class AdminController {
 
   static async updateUserStatus(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const user = await prisma.user.update({ where: { id: req.params.id }, data: { status: req.body.status as any } });
+      const user = await prisma.user.update({ where: { id: req.params.id }, data: { status: req.body.status as 'ACTIVE' | 'INACTIVE' | 'BANNED' } });
       sendSuccess(res, { id: user.id, status: user.status }, 'User status updated');
     } catch (error) { next(error); }
   }
@@ -117,7 +134,7 @@ export class AdminController {
   static async getOrderReports(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { startDate, endDate, shopId } = req.query;
-      const where: any = {};
+      const where: AdminOrderWhereClause = {};
       if (startDate || endDate) {
         where.createdAt = {};
         if (startDate) where.createdAt.gte = new Date(startDate as string);
@@ -133,7 +150,7 @@ export class AdminController {
   static async getRevenueReports(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { startDate, endDate, groupBy } = req.query;
-      const where: any = { paymentStatus: 'PAID' as any };
+      const where: AdminOrderWhereClause = { paymentStatus: 'PAID' };
       if (startDate) where.createdAt = { gte: new Date(startDate as string) };
       if (endDate) where.createdAt = { ...where.createdAt, lte: new Date(endDate as string) };
 
@@ -170,9 +187,9 @@ export class AdminController {
       const { page, limit, entity, action } = req.query;
       const p = page ? parseInt(page as string) : 1;
       const l = limit ? parseInt(limit as string) : 50;
-      const where: any = {};
-      if (entity) where.entity = entity;
-      if (action) where.action = action;
+      const where: AuditLogWhereClause = {};
+      if (entity) where.entity = entity as string;
+      if (action) where.action = action as string;
 
       const [logs, total] = await Promise.all([
         prisma.auditLog.findMany({

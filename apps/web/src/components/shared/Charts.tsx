@@ -23,23 +23,25 @@ export const CHART_COLORS = {
   primaryMid: '#1A6470',
   primaryLight: '#4A949B',
   secondary: '#481719',
-  gold: '#F59E0B',
-  goldDark: '#D97706',
-  green: '#22C55E',
-  greenDark: '#16A34A',
-  blue: '#3B82F6',
-  red: '#EF4444',
-  gray: '#9CA3AF',
-  orange: '#F97316',
-  purple: '#8B5CF6',
+  accent: '#735B4D',
+  gold: '#D4AF37',
+  goldDark: '#B8960A',
+  cream: '#F2E8D4',
+  olive: '#D1CDAE',
+  grey: '#D0D6D7',
+  green: '#00373E',
+  red: '#481719',
+  blue: '#1A6470',
 };
 
 const tooltipStyle = {
-  backgroundColor: '#fff',
-  border: '1px solid #E5E7EB',
+  backgroundColor: '#FFFFFF',
+  border: '1px solid #D0D6D7',
   borderRadius: '12px',
-  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+  boxShadow: '0 4px 16px rgba(0, 55, 62, 0.1)',
   fontSize: '13px',
+  color: '#00373E',
+  padding: '12px 16px',
 };
 
 interface AreaData {
@@ -116,14 +118,12 @@ export function MufasalAreaChart({
   suffix = '',
 }: AreaChartProps) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   const gradId = `grad-${color.replace('#', '')}`;
 
   if (!mounted) {
-    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+    return <div style={{ height, width: '100%' }} className="bg-[#F2E8D4]/20 animate-pulse rounded-xl" />;
   }
 
   return (
@@ -131,19 +131,19 @@ export function MufasalAreaChart({
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={color} stopOpacity={0.18} />
+            <stop offset="5%" stopColor={color} stopOpacity={0.15} />
             <stop offset="95%" stopColor={color} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#D0D6D7" vertical={false} opacity={0.3} />
         <XAxis
           dataKey="name"
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+          tick={{ fontSize: 11, fill: '#735B4D' }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+          tick={{ fontSize: 11, fill: '#735B4D' }}
           axisLine={false}
           tickLine={false}
           tickFormatter={(v) => `${prefix}${v.toLocaleString()}${suffix}`}
@@ -163,7 +163,7 @@ export function MufasalAreaChart({
           strokeWidth={2.5}
           fill={`url(#${gradId})`}
           dot={false}
-          activeDot={{ r: 5, fill: color, strokeWidth: 2, stroke: '#fff' }}
+          activeDot={{ r: 5, fill: color, strokeWidth: 2, stroke: '#F2E8D4' }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -180,12 +180,10 @@ export function MufasalDualAreaChart({
   prefix = '',
 }: DualBarChartProps) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   if (!mounted) {
-    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+    return <div style={{ height, width: '100%' }} className="bg-[#F2E8D4]/20 animate-pulse rounded-xl" />;
   }
 
   return (
@@ -193,21 +191,21 @@ export function MufasalDualAreaChart({
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="dual1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={color} stopOpacity={0.18} />
+            <stop offset="5%" stopColor={color} stopOpacity={0.15} />
             <stop offset="95%" stopColor={color} stopOpacity={0} />
           </linearGradient>
           <linearGradient id="dual2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={color2} stopOpacity={0.18} />
+            <stop offset="5%" stopColor={color2} stopOpacity={0.15} />
             <stop offset="95%" stopColor={color2} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${prefix}${v.toLocaleString()}`} width={50} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#D0D6D7" vertical={false} opacity={0.3} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#735B4D' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: '#735B4D' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${prefix}${v.toLocaleString()}`} width={50} />
         <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${prefix}${value.toLocaleString()}`, name]} />
-        <Legend iconType="circle" iconSize={8} formatter={(value) => <span style={{ fontSize: '12px', color: '#6B7280' }}>{value}</span>} />
-        <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.5} fill="url(#dual1)" dot={false} name={label1} activeDot={{ r: 4 }} />
-        <Area type="monotone" dataKey="value2" stroke={color2} strokeWidth={2.5} fill="url(#dual2)" dot={false} name={label2} activeDot={{ r: 4 }} />
+        <Legend iconType="circle" iconSize={8} formatter={(value) => <span style={{ fontSize: '12px', color: '#735B4D' }}>{value}</span>} />
+        <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2.5} fill="url(#dual1)" dot={false} name={label1} activeDot={{ r: 4, fill: color, stroke: '#F2E8D4', strokeWidth: 2 }} />
+        <Area type="monotone" dataKey="value2" stroke={color2} strokeWidth={2.5} fill="url(#dual2)" dot={false} name={label2} activeDot={{ r: 4, fill: color2, stroke: '#F2E8D4', strokeWidth: 2 }} />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -223,22 +221,20 @@ export function MufasalBarChart({
   prefix = '',
 }: DualBarChartProps) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   if (!mounted) {
-    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+    return <div style={{ height, width: '100%' }} className="bg-[#F2E8D4]/20 animate-pulse rounded-xl" />;
   }
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={4}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${prefix}${v.toLocaleString()}`} width={50} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#D0D6D7" vertical={false} opacity={0.3} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#735B4D' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: '#735B4D' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${prefix}${v.toLocaleString()}`} width={50} />
         <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [`${prefix}${value.toLocaleString()}`, name || label1]} />
-        {color2 && <Legend iconType="square" iconSize={10} formatter={(value) => <span style={{ fontSize: '12px', color: '#6B7280' }}>{value}</span>} />}
+        {color2 && <Legend iconType="square" iconSize={10} formatter={(value) => <span style={{ fontSize: '12px', color: '#735B4D' }}>{value}</span>} />}
         <Bar dataKey="value" fill={color} radius={[6, 6, 0, 0]} name={label1} maxBarSize={44} />
         {color2 && (
           <Bar dataKey="value2" fill={color2} radius={[6, 6, 0, 0]} name={label2} maxBarSize={44} />
@@ -250,12 +246,10 @@ export function MufasalBarChart({
 
 export function MufasalPieChart({ data, height = 260, innerRadius = 55 }: PieChartProps) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   if (!mounted) {
-    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+    return <div style={{ height, width: '100%' }} className="bg-[#F2E8D4]/20 animate-pulse rounded-xl" />;
   }
 
   return (
@@ -271,7 +265,7 @@ export function MufasalPieChart({ data, height = 260, innerRadius = 55 }: PieCha
           labelLine={false}
           label={renderPieLabel}
           strokeWidth={2}
-          stroke="#fff"
+          stroke="#F2E8D4"
         >
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -285,7 +279,7 @@ export function MufasalPieChart({ data, height = 260, innerRadius = 55 }: PieCha
           iconType="circle"
           iconSize={9}
           formatter={(value) => (
-            <span style={{ fontSize: '12px', color: '#6B7280' }}>{value}</span>
+            <span style={{ fontSize: '12px', color: '#735B4D' }}>{value}</span>
           )}
         />
       </PieChart>
@@ -301,22 +295,20 @@ export function MufasalLineChart({
   prefix = '',
 }: AreaChartProps) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   if (!mounted) {
-    return <div style={{ height, width: '100%' }} className="bg-gray-50/50 dark:bg-slate-800/50 animate-pulse rounded-xl" />;
+    return <div style={{ height, width: '100%' }} className="bg-[#F2E8D4]/20 animate-pulse rounded-xl" />;
   }
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${prefix}${v.toLocaleString()}`} width={50} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#D0D6D7" vertical={false} opacity={0.3} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#735B4D' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: '#735B4D' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${prefix}${v.toLocaleString()}`} width={50} />
         <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => [`${prefix}${value.toLocaleString()}`, label]} />
-        <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: color, strokeWidth: 2, stroke: '#fff' }} />
+        <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2.5} dot={false} activeDot={{ r: 5, fill: color, strokeWidth: 2, stroke: '#F2E8D4' }} />
       </LineChart>
     </ResponsiveContainer>
   );

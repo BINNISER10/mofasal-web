@@ -1,15 +1,26 @@
+import { Prisma } from '@prisma/client';
 import { nanoid } from 'nanoid';
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 import logger from '../utils/logger';
 import socketService from './SocketService';
 import { NotificationService } from './NotificationService';
-import { LedgerService } from './LedgerService';
 import { config } from '../config';
+
+interface GatewayResult {
+  success: boolean;
+  reference?: string;
+  status?: string;
+  message?: string;
+}
+
+interface InvoiceWhereClause {
+  shopId?: string;
+}
 
 export class PaymentService {
   static async processPayment(data: {
-    orderId: string; method: string; amount: number; gatewayData?: any;
+    orderId: string; method: string; amount: number; gatewayData?: Record<string, string>;
   }) {
     const order = await prisma.order.findUnique({
       where: { id: data.orderId },
@@ -22,14 +33,14 @@ export class PaymentService {
       data: {
         orderId: data.orderId,
         amount: data.amount,
-        method: data.method as any,
+        method: data.method as 'MADA' | 'VISA_MASTERCARD' | 'APPLE_PAY' | 'STC_PAY' | 'TAMARA' | 'TABBY' | 'SADAD' | 'CASH' | 'COD',
         status: 'PROCESSING',
-        gatewayResponse: data.gatewayData || {},
+              gatewayResponse: data.gatewayData as unknown as Prisma.InputJsonValue,
       },
     });
 
     try {
-      let gatewayResult: any;
+      let gatewayResult: GatewayResult;
 
       switch (data.method) {
         case 'MADA':
@@ -67,12 +78,12 @@ export class PaymentService {
             data: {
               status: 'PAID',
               gatewayReference: gatewayResult.reference,
-              gatewayResponse: gatewayResult,
+              gatewayResponse: gatewayResult as unknown as Prisma.InputJsonValue,
             },
           }),
           prisma.order.update({
             where: { id: data.orderId },
-            data: { paymentStatus: 'PAID', paymentMethod: data.method as any },
+            data: { paymentStatus: 'PAID', paymentMethod: data.method as 'MADA' | 'VISA_MASTERCARD' | 'APPLE_PAY' | 'STC_PAY' | 'TAMARA' | 'TABBY' | 'SADAD' | 'CASH' | 'COD' },
           }),
         ]);
 
@@ -81,16 +92,11 @@ export class PaymentService {
           title: 'Payment Successful', body: `Payment of SAR ${data.amount} completed`,
         });
 
-        // ترحيل محاسبي تلقائي عند نجاح الدفع (لا يُعطّل تدفّق الدفع أبداً)
-        LedgerService.postOrderRevenue({ ...order, paymentMethod: data.method }).catch((err) =>
-          logger.error(`Auto ledger posting failed for order ${order.orderNumber}: ${err.message}`)
-        );
-
         return { success: true, transactionId: transaction.id, reference: gatewayResult.reference };
       } else {
         await prisma.paymentTransaction.update({
           where: { id: transaction.id },
-          data: { status: 'FAILED', gatewayResponse: gatewayResult },
+          data: { status: 'FAILED', gatewayResponse: gatewayResult as unknown as Prisma.InputJsonValue },
         });
 
         return { success: false, transactionId: transaction.id, message: gatewayResult.message || 'Payment failed' };
@@ -98,13 +104,13 @@ export class PaymentService {
     } catch (error) {
       await prisma.paymentTransaction.update({
         where: { id: transaction.id },
-        data: { status: 'FAILED', gatewayResponse: { error: (error as Error).message } },
+          data: { status: 'FAILED', gatewayResponse: { error: (error as Error).message } as unknown as Prisma.InputJsonValue },
       });
       throw error;
     }
   }
 
-  private static async processMada(orderId: string, amount: number, gatewayData: any): Promise<any> {
+  private static async processMada(orderId: string, amount: number, gatewayData?: Record<string, string>): Promise<GatewayResult> {
     try {
       const { MadaService } = await import('./payment/MadaService');
       return await new MadaService().charge(amount, gatewayData);
@@ -113,29 +119,29 @@ export class PaymentService {
     }
   }
 
-  private static async processVisaMastercard(orderId: string, amount: number, gatewayData: any): Promise<any> {
+  private static async processVisaMastercard(orderId: string, amount: number, gatewayData?: Record<string, string>): Promise<GatewayResult> {
     try {
       const { VisaMastercardService } = await import('./payment/VisaMastercardService');
-      return await new VisaMastercardService().charge(amount, gatewayData);
+      return await new VisaMastercardService().charge(amount, JSON.stringify(gatewayData || {}));
     } catch (err) {
       throw ApiError.badGateway(`Visa/Mastercard payment failed: ${(err as Error).message}`);
     }
   }
 
-  private static async processApplePay(orderId: string, amount: number, gatewayData: any): Promise<any> {
+  private static async processApplePay(orderId: string, amount: number, gatewayData?: Record<string, string>): Promise<GatewayResult> {
     throw ApiError.badGateway('Apple Pay gateway not configured');
   }
 
-  private static async processStcPay(orderId: string, amount: number, gatewayData: any): Promise<any> {
+  private static async processStcPay(orderId: string, amount: number, gatewayData?: Record<string, string>): Promise<GatewayResult> {
     try {
       const { StcPayService } = await import('./payment/StcPayService');
-      return await new StcPayService().charge(amount, gatewayData);
+      return await new StcPayService().charge(amount, JSON.stringify(gatewayData || {}));
     } catch (err) {
       throw ApiError.badGateway(`STC Pay failed: ${(err as Error).message}`);
     }
   }
 
-  private static async processTamara(orderId: string, amount: number, gatewayData: any): Promise<any> {
+  private static async processTamara(orderId: string, amount: number, gatewayData?: Record<string, string>): Promise<GatewayResult> {
     try {
       const { TamaraService } = await import('./payment/TamaraService');
       return await new TamaraService().createSession(amount, gatewayData);
@@ -144,7 +150,7 @@ export class PaymentService {
     }
   }
 
-  private static async processTabby(orderId: string, amount: number, gatewayData: any): Promise<any> {
+  private static async processTabby(orderId: string, amount: number, gatewayData?: Record<string, string>): Promise<GatewayResult> {
     try {
       const { TabbyService } = await import('./payment/TabbyService');
       return await new TabbyService().createSession(amount, gatewayData);
@@ -153,13 +159,26 @@ export class PaymentService {
     }
   }
 
-  private static async processSadad(orderId: string, amount: number, gatewayData: any): Promise<any> {
+  private static async processSadad(orderId: string, amount: number, gatewayData?: Record<string, string>): Promise<GatewayResult> {
     try {
       const { SadadService } = await import('./payment/SadadService');
       return await new SadadService().generateInvoice(amount, gatewayData);
     } catch (err) {
       throw ApiError.badGateway(`Sadad payment failed: ${(err as Error).message}`);
     }
+  }
+
+  static async getAllTransactions(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.paymentTransaction.findMany({
+        skip, take: limit,
+        include: { order: { select: { id: true, orderNumber: true } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.paymentTransaction.count(),
+    ]);
+    return { items, total, page, limit };
   }
 
   static async getTransactions(orderId: string) {
@@ -175,7 +194,7 @@ export class PaymentService {
     return tx;
   }
 
-  static async handleGatewayWebhook(method: string, payload: any) {
+  static async handleGatewayWebhook(method: string, payload: Record<string, string>) {
     logger.info(`Webhook received for ${method}`, payload);
     const reference = payload.reference || payload.id;
     if (!reference) return { received: true };
@@ -193,7 +212,7 @@ export class PaymentService {
     const status = payload.status === 'captured' || payload.status === 'paid' ? 'PAID' : 'FAILED';
     if (status === 'PAID') {
       await prisma.$transaction([
-        prisma.paymentTransaction.update({ where: { id: transaction.id }, data: { status: 'PAID', gatewayResponse: payload } }),
+        prisma.paymentTransaction.update({ where: { id: transaction.id }, data: { status: 'PAID', gatewayResponse: payload as unknown as Prisma.InputJsonValue } }),
         prisma.order.update({ where: { id: transaction.orderId }, data: { paymentStatus: 'PAID' } }),
       ]);
       socketService.emitPaymentUpdate(transaction.orderId, 'PAID');
@@ -224,11 +243,28 @@ export class PaymentService {
       }),
       prisma.order.update({
         where: { id: transaction.orderId },
-        data: { paymentStatus: 'REFUNDED' as any },
+        data: { paymentStatus: 'REFUNDED' },
       }),
     ]);
 
     return { success: true, refundedAmount: refundAmount };
+  }
+
+  static async getInvoices(shopId?: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where: InvoiceWhereClause = {};
+    if (shopId) where.shopId = shopId;
+    const [items, total] = await Promise.all([
+      prisma.invoice.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      prisma.invoice.count({ where }),
+    ]);
+    return { items, total, page, limit };
+  }
+
+  static async getInvoice(invoiceId: string) {
+    const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId } });
+    if (!invoice) throw ApiError.notFound('Invoice not found');
+    return invoice;
   }
 
   static async generateInvoice(orderId: string) {

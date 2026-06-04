@@ -1,21 +1,49 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { useAppStore } from '@/lib/stores/appStore';
-import { formatCurrency, formatDate } from '@/lib/utils/formatting';
-import { ShoppingBag, Clock, Heart, Ruler, RefreshCw, Package, Plus, Store, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { formatCurrency, getRelativeTime } from '@/lib/utils/formatting';
+import { ShoppingBag, Clock, Heart, Ruler, RefreshCw, Package, Plus, Store, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ordersApi } from '@/lib/api/orders';
+import { usersApi } from '@/lib/api/users';
+
+const STATUS_LABELS: Record<string, string> = {
+  SEWING_ASSEMBLY: 'خياطة', TAKING_MEASUREMENTS: 'مقاسات', ON_WAY_TO_CUSTOMER: 'توصيل',
+  PENDING: 'قيد الانتظار', CONFIRMED: 'مؤكد', DELIVERED: 'تم التسليم', CANCELLED: 'ملغي',
+};
 
 export default function CustomerDashboardPage() {
   const { isRTL } = useAppStore();
+  const { user } = useAuthStore();
   const router = useRouter();
+  const [stats, setStats] = useState({ active: 0, past: 0, measurements: 0 });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    Promise.all([
+      ordersApi.getByCustomer(user.id, { limit: '5' }),
+      usersApi.getMeasurements(user.id),
+    ]).then(([ordersRes, measRes]) => {
+      if (!active) return;
+      const orders = ordersRes?.orders || [];
+      const activeOrders = orders.filter((o: any) => !['DELIVERED', 'CANCELLED', 'RETURNED'].includes(o.status));
+      const pastOrders = orders.filter((o: any) => ['DELIVERED', 'CANCELLED', 'RETURNED'].includes(o.status));
+      setStats({ active: activeOrders.length, past: pastOrders.length, measurements: measRes?.measurements?.length || 0 });
+      setRecentOrders(activeOrders.slice(0, 3));
+    }).catch(() => {}).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [user]);
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner */}
       <div className="rounded-3xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-white flex items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold mb-1">{isRTL ? 'مرحباً بك في مفصل 👋' : 'Welcome to Mufasal 👋'}</h2>
@@ -43,11 +71,15 @@ export default function CustomerDashboardPage() {
         </div>
       </div>
 
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="animate-spin text-primary-600" size={32} /></div>
+      ) : (
+        <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'الطلبات النشطة' : 'Active Orders'} value="3" color="primary" />
-        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'الطلبات السابقة' : 'Past Orders'} value="24" color="info" />
-        <StatsCard icon={<Heart size={22} />} label={isRTL ? 'المتاجر المفضلة' : 'Favorite Shops'} value="8" color="danger" />
-        <StatsCard icon={<Ruler size={22} />} label={isRTL ? 'المقاسات المحفوظة' : 'Saved Measurements'} value="2" color="gold" />
+        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'الطلبات النشطة' : 'Active Orders'} value={String(stats.active)} color="primary" />
+        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'الطلبات السابقة' : 'Past Orders'} value={String(stats.past)} color="info" />
+        <StatsCard icon={<Heart size={22} />} label={isRTL ? 'المتاجر المفضلة' : 'Favorite Shops'} value="-" color="danger" />
+        <StatsCard icon={<Ruler size={22} />} label={isRTL ? 'المقاسات المحفوظة' : 'Saved Measurements'} value={String(stats.measurements)} color="gold" />
       </div>
 
       <Card className="p-5">
@@ -55,58 +87,47 @@ export default function CustomerDashboardPage() {
           <h3 className="font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'الطلبات النشطة' : 'Active Orders'}</h3>
           <a href="/dashboard/customer/orders" className="text-sm text-primary-700 font-semibold">{isRTL ? 'عرض الكل' : 'View All'}</a>
         </div>
-        {[
-          { id: '#ORD-1284', shop: 'خياطة الرجال', status: 'SEWING_ASSEMBLY', amount: 1200, date: '2024-03-15', nextStep: isRTL ? 'الكوي والتشطيب' : 'Ironing & Finishing' },
-          { id: '#ORD-1282', shop: 'خياطة الرجال', status: 'TAKING_MEASUREMENTS', amount: 2300, date: '2024-03-14', nextStep: isRTL ? 'قص القماش' : 'Cutting Fabric' },
-          { id: '#ORD-1280', shop: 'متجر الأقمشة', status: 'ON_WAY_TO_CUSTOMER', amount: 540, date: '2024-03-13', nextStep: isRTL ? 'توصيل' : 'Delivery' },
-        ].map((order) => (
+        {recentOrders.map((order: any) => (
           <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-slate-700 last:border-0">
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">{order.shop}</p>
-                <Badge variant={order.status === 'ON_WAY_TO_CUSTOMER' ? 'info' : 'gold'} size="sm">{isRTL ? ({ SEWING_ASSEMBLY: 'خياطة', TAKING_MEASUREMENTS: 'مقاسات', ON_WAY_TO_CUSTOMER: 'توصيل' } as Record<string, string>)[order.status] || order.status : order.status}</Badge>
+                <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">{order.shopName || order.shop}</p>
+                <Badge variant={order.status === 'ON_WAY_TO_CUSTOMER' ? 'info' : 'gold'} size="sm">{STATUS_LABELS[order.status] || order.status}</Badge>
               </div>
-              <p className="text-xs text-gray-500 dark:text-slate-400">{order.id} - {isRTL ? 'الخطوة القادمة:' : 'Next:'} {order.nextStep}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">#{order.orderNumber || order.id?.slice(0, 6)} - {getRelativeTime(order.createdAt)}</p>
             </div>
             <div className="text-left">
-              <p className="font-semibold text-sm">{formatCurrency(order.amount)}</p>
+              <p className="font-semibold text-sm">{formatCurrency(order.totalAmount || order.grandTotal || 0)}</p>
               <a href={`/dashboard/customer/orders/${order.id}`} className="text-xs text-primary-700">{isRTL ? 'تتبع' : 'Track'}</a>
             </div>
           </div>
         ))}
+        {recentOrders.length === 0 && (
+          <div className="py-8 text-center text-gray-400 dark:text-slate-500">{isRTL ? 'لا توجد طلبات نشطة' : 'No active orders'}</div>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-5">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-3">{isRTL ? 'إعادة طلب سريع' : 'Quick Re-order'}</h3>
           <div className="space-y-3">
-            {[
-              { shop: 'خياطة الرجال', item: 'بدلة رسمية', lastOrder: '2024-02-20' },
-              { shop: 'متجر الأقمشة', item: 'قماش صوف', lastOrder: '2024-01-15' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl">
-                <div><p className="text-sm font-semibold dark:text-slate-200">{item.shop}</p><p className="text-xs text-gray-500 dark:text-slate-400">{item.item}</p></div>
-                <Button size="sm" variant="outline" icon={<RefreshCw size={14} />}>{isRTL ? 'إعادة' : 'Repeat'}</Button>
-              </div>
-            ))}
+            <div className="py-8 text-center text-gray-400 dark:text-slate-500">{isRTL ? 'اطلب أول قياس لك لبدء الطلبات' : 'Place your first order to get started'}</div>
           </div>
         </Card>
 
         <Card className="p-5">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-3">{isRTL ? 'المقاسات المحفوظة' : 'Saved Measurements'}</h3>
           <div className="space-y-3">
-            {[
-              { name: 'المقاسات الشخصية', type: isRTL ? 'رجالي' : 'Men', updated: '2024-03-01' },
-              { name: 'مقاسات الأطفال', type: isRTL ? 'أطفال' : 'Kids', updated: '2024-02-15' },
-            ].map((m, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl">
-                <div><p className="text-sm font-semibold dark:text-slate-200">{m.name}</p><p className="text-xs text-gray-500 dark:text-slate-400">{m.type} - {isRTL ? 'آخر تحديث' : 'Updated'}: {m.updated}</p></div>
-                <Badge variant="success" size="sm">{isRTL ? 'محفوظ' : 'Saved'}</Badge>
-              </div>
-            ))}
+            {stats.measurements > 0 ? (
+              <div className="py-8 text-center text-gray-500 dark:text-slate-400">{isRTL ? `${stats.measurements} مقاس محفوظ` : `${stats.measurements} saved measurements`}</div>
+            ) : (
+              <div className="py-8 text-center text-gray-400 dark:text-slate-500">{isRTL ? 'لا توجد مقاسات محفوظة' : 'No saved measurements'}</div>
+            )}
           </div>
         </Card>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -1,6 +1,21 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 
+interface ReviewUpdateData {
+  shopRating?: number;
+  tailorRating?: number;
+  representativeRating?: number;
+  shopReview?: string;
+  tailorReview?: string;
+  representativeReview?: string;
+  isPublished?: boolean;
+}
+
+interface ReviewWhereClause {
+  order: { shopId: string };
+  isPublished?: boolean;
+}
+
 export class ReviewService {
   static async createReview(data: {
     orderId: string; userId: string; shopRating?: number; tailorRating?: number;
@@ -30,7 +45,7 @@ export class ReviewService {
     return review;
   }
 
-  static async updateReview(orderId: string, userId: string, data: any) {
+  static async updateReview(orderId: string, userId: string, data: ReviewUpdateData) {
     const review = await prisma.review.findUnique({ where: { orderId } });
     if (!review) throw ApiError.notFound('Review not found');
     if (review.userId !== userId) throw ApiError.forbidden('Not your review');
@@ -55,16 +70,16 @@ export class ReviewService {
   }
 
   static async getShopReviews(shopId: string, page = 1, limit = 20) {
-    const where = { order: { shopId }, isPublished: true };
+    const where: ReviewWhereClause = { order: { shopId }, isPublished: true };
     const [reviews, total] = await Promise.all([
       prisma.review.findMany({
-        where: where as any,
+        where,
         skip: (page - 1) * limit,
         take: limit,
         include: { user: { select: { id: true, name: true, avatar: true } }, order: { select: { shopId: true } } },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.review.count({ where: where as any }),
+      prisma.review.count({ where }),
     ]);
 
     return { reviews, total, page, limit };
@@ -87,7 +102,7 @@ export class ReviewService {
 
   static async getShopRatingSummary(shopId: string) {
     const result = await prisma.review.aggregate({
-      where: { order: { shopId }, isPublished: true } as any,
+      where: { order: { shopId }, isPublished: true } as ReviewWhereClause,
       _avg: { shopRating: true, tailorRating: true, representativeRating: true },
       _count: true,
     });
@@ -102,7 +117,7 @@ export class ReviewService {
 
   private static async updateShopRating(shopId: string) {
     const avg = await prisma.review.aggregate({
-      where: { order: { shopId }, isPublished: true } as any,
+      where: { order: { shopId }, isPublished: true } as ReviewWhereClause,
       _avg: { shopRating: true },
     });
 

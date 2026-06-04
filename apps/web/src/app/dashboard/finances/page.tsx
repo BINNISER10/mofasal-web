@@ -1,32 +1,56 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
-import { DollarSign, TrendingUp, TrendingDown, FileText, Download } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, FileText, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { MufasalDualAreaChart, MufasalPieChart, CHART_COLORS } from '@/components/shared/Charts';
+import { accountingApi } from '@/lib/api/accounting';
+import { paymentsApi } from '@/lib/api/payments';
 
-const revenueVsExpenses = [
-  { name: 'ينا', value: 89200, value2: 34500 },
-  { name: 'فبر', value: 102000, value2: 38000 },
-  { name: 'مار', value: 95000, value2: 36000 },
-  { name: 'أبر', value: 118000, value2: 41000 },
-  { name: 'ماي', value: 109000, value2: 39000 },
-  { name: 'يون', value: 134000, value2: 45000 },
-];
-
-const expenseBreakdown = [
-  { name: 'أقمشة', value: 40, color: CHART_COLORS.primary },
-  { name: 'رواتب', value: 30, color: CHART_COLORS.gold },
-  { name: 'إيجار', value: 15, color: CHART_COLORS.blue },
-  { name: 'خدمات', value: 10, color: CHART_COLORS.green },
-  { name: 'أخرى', value: 5, color: CHART_COLORS.gray },
-];
+const MONTHS_AR = ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'];
 
 export default function FinancesPage() {
   const { isRTL } = useAppStore();
+  const [loading, setLoading] = useState(true);
+  const [trialBalance, setTrialBalance] = useState<any>(null);
+  const [journal, setJournal] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      accountingApi.getTrialBalance().catch(() => null),
+      accountingApi.getJournal({ limit: '5' }).catch(() => []),
+      paymentsApi.getInvoices({ limit: '5' }).catch(() => ({ invoices: [], total: 0 })),
+    ]).then(([tb, jr, inv]) => {
+      if (!active) return;
+      setTrialBalance(tb);
+      setJournal(Array.isArray(jr) ? jr : []);
+      setInvoices(inv?.invoices || []);
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const revenueAccounts = trialBalance?.rows?.filter((r: any) => r.type === 'REVENUE') || [];
+  const expenseAccounts = trialBalance?.rows?.filter((r: any) => r.type === 'EXPENSE') || [];
+  const totalRevenue = revenueAccounts.reduce((s: number, r: any) => s + (r.credit || 0) - (r.debit || 0), 0);
+  const totalExpenses = expenseAccounts.reduce((s: number, r: any) => s + (r.debit || 0) - (r.credit || 0), 0);
+  const netProfit = totalRevenue - totalExpenses;
+  const vatAmount = totalRevenue * 0.15;
+
+  const revenueVsExpenses = journal.slice(0, 6).map((e: any, i: number) => {
+    const rev = e.lines?.filter((l: any) => l.account?.type === 'REVENUE').reduce((s: number, l: any) => s + (l.credit || 0), 0) || 0;
+    const exp = e.lines?.filter((l: any) => l.account?.type === 'EXPENSE').reduce((s: number, l: any) => s + (l.debit || 0), 0) || 0;
+    return { name: MONTHS_AR[i] || (e.date?.slice(0, 7) || ''), value: rev || (totalRevenue / Math.max(journal.length, 1)), value2: exp || (totalExpenses / Math.max(journal.length, 1)) };
+  });
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" size={32} /></div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -35,17 +59,17 @@ export default function FinancesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات الشهر' : 'Monthly Revenue'} value={formatCurrency(89200)} trend={12.5} color="success" />
-        <StatsCard icon={<TrendingDown size={22} />} label={isRTL ? 'المصروفات' : 'Expenses'} value={formatCurrency(34500)} trend={-3.2} color="danger" />
-        <StatsCard icon={<TrendingUp size={22} />} label={isRTL ? 'صافي الربح' : 'Net Profit'} value={formatCurrency(54700)} trend={18.7} color="primary" />
-        <StatsCard icon={<FileText size={22} />} label={isRTL ? 'الفواتير' : 'Invoices'} value="156" color="info" />
+        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات الشهر' : 'Monthly Revenue'} value={formatCurrency(totalRevenue)} color="success" />
+        <StatsCard icon={<TrendingDown size={22} />} label={isRTL ? 'المصروفات' : 'Expenses'} value={formatCurrency(totalExpenses)} color="danger" />
+        <StatsCard icon={<TrendingUp size={22} />} label={isRTL ? 'صافي الربح' : 'Net Profit'} value={formatCurrency(netProfit)} color="primary" />
+        <StatsCard icon={<FileText size={22} />} label={isRTL ? 'الفواتير' : 'Invoices'} value={String(invoices.length)} color="info" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-5">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'الإيرادات مقابل المصروفات' : 'Revenue vs Expenses'}</h3>
           <MufasalDualAreaChart
-            data={revenueVsExpenses}
+            data={revenueVsExpenses.length > 0 ? revenueVsExpenses : [{ name: MONTHS_AR[0], value: totalRevenue || 0, value2: totalExpenses || 0 }]}
             color={CHART_COLORS.primary}
             color2={CHART_COLORS.red}
             label1={isRTL ? 'الإيرادات' : 'Revenue'}
@@ -57,16 +81,24 @@ export default function FinancesPage() {
 
         <Card className="p-5">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-2">{isRTL ? 'توزيع المصروفات' : 'Expense Breakdown'}</h3>
-          <MufasalPieChart data={expenseBreakdown} height={250} innerRadius={50} />
+          <MufasalPieChart
+            data={expenseAccounts.length > 0 ? expenseAccounts.map((e: any, i: number) => ({
+              name: e.name,
+              value: e.debit || 0,
+              color: [CHART_COLORS.primary, CHART_COLORS.gold, CHART_COLORS.blue, CHART_COLORS.green, CHART_COLORS.gray][i % 5],
+            })) : [{ name: isRTL ? 'بدون بيانات' : 'No data', value: 1, color: CHART_COLORS.gray }]}
+            height={250}
+            innerRadius={50}
+          />
         </Card>
       </div>
 
       <Card className="p-5">
         <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'حساب ضريبة القيمة المضافة' : 'VAT Calculation'}</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'الإيرادات الخاضعة للضريبة' : 'Taxable Revenue'}</p><p className="text-lg font-bold dark:text-slate-100">{formatCurrency(89200)}</p></div>
-          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">VAT 15%</p><p className="text-lg font-bold text-primary-700">{formatCurrency(13380)}</p></div>
-          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'صافي الإيرادات' : 'Net Revenue'}</p><p className="text-lg font-bold text-green-600">{formatCurrency(75820)}</p></div>
+          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'الإيرادات الخاضعة للضريبة' : 'Taxable Revenue'}</p><p className="text-lg font-bold dark:text-slate-100">{formatCurrency(totalRevenue)}</p></div>
+          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">VAT 15%</p><p className="text-lg font-bold text-primary-700">{formatCurrency(vatAmount)}</p></div>
+          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'صافي الإيرادات' : 'Net Revenue'}</p><p className="text-lg font-bold text-green-600">{formatCurrency(totalRevenue - vatAmount)}</p></div>
         </div>
       </Card>
     </div>
