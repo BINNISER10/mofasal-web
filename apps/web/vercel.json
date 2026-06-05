@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd ../services/api && npx prisma generate && cd ../../apps/web && next build",
+  "installCommand": "cd ../services/api && npm install && cd ../../apps/web && npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next"
+}

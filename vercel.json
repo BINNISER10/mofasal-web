@@ -1,0 +1,20 @@
+{
+  "functions": {
+    "apps/web/src/app/api/**/*.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 30,
+      "memory": 512
+    }
+  },
+  "redirects": [],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,PATCH,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Authorization,Content-Type" }
+      ]
+    }
+  ]
+}
