@@ -63,8 +63,8 @@ ${userContext ? `سياق العميل: ${userContext}` : ''}
 
 أجب بشكل مختصر ومفيد (حد أقصى 3 جمل).`;
 
-      const aiProvider = AIFactory.getProvider('gemini');
-      const answer = await aiProvider.generateResponse(prompt);
+      const { provider } = await AIFactory.getAvailableProvider();
+      const answer = await provider.generateResponse(prompt);
 
       // اقتراحات ذات صلة
       const suggestions = this.getSuggestions(question);
@@ -210,8 +210,8 @@ score: الرقم
 
 النص: ${text}`;
 
-      const aiProvider = AIFactory.getProvider('gemini');
-      const response = await aiProvider.generateResponse(prompt);
+      const { provider } = await AIFactory.getAvailableProvider();
+      const response = await provider.generateResponse(prompt);
 
       const sentimentMatch = response.match(/sentiment:\s*(positive|negative|neutral)/i);
       const scoreMatch = response.match(/score:\s*([-\d.]+)/);

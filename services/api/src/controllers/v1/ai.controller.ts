@@ -2,6 +2,8 @@ import { Response, NextFunction } from 'express';
 import { RecommendationService } from '../../services/RecommendationService';
 import { SmartAdvisorService } from '../../services/SmartAdvisorService';
 import { MufasalOmniAI } from '../../services/ai.service';
+import { AIFactory } from '../../services/ai/ai.factory';
+import { OllamaProvider } from '../../services/ai/ollama.provider';
 import { AuthRequest } from '../../middleware/auth';
 import { sendSuccess, sendCreated } from '../../utils/response';
 import { ApiError } from '../../utils/ApiError';
@@ -90,6 +92,40 @@ export class AIController {
       if (!text) throw ApiError.badRequest('text is required');
       const result = await SmartAdvisorService.analyzeSentiment(text);
       sendSuccess(res, result);
+    } catch (error) { next(error); }
+  }
+
+  /**
+   * فحص حالة AI — أي مزود يعمل حالياً
+   */
+  static async healthCheck(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const configuredProvider = process.env.AI_PROVIDER || 'gemini';
+      const hasGemini = !!process.env.GEMINI_API_KEY;
+      const hasOpenAI = !!process.env.OPENAI_API_KEY;
+      const hasDeepSeek = !!process.env.DEEPSEEK_API_KEY;
+
+      // Check Ollama
+      const ollamaHealth = await OllamaProvider.healthCheck();
+
+      // Get available provider
+      const { name: activeProvider } = await AIFactory.getAvailableProvider();
+
+      sendSuccess(res, {
+        configured: configuredProvider,
+        active: activeProvider,
+        providers: {
+          gemini: { available: hasGemini, free: true, limits: '15 RPM, 1M tokens/day' },
+          ollama: { available: ollamaHealth.running && ollamaHealth.modelAvailable, free: true, running: ollamaHealth.running, modelAvailable: ollamaHealth.modelAvailable },
+          openai: { available: hasOpenAI, free: false },
+          deepseek: { available: hasDeepSeek, free: false, cost: '$0.14/1M tokens' },
+        },
+        recommendation: !hasGemini && ollamaHealth.running
+          ? 'Ollama يعمل محلياً — مجاني بالكامل'
+          : hasGemini
+            ? 'Gemini مجاني — يكفي لـ 1000+ مستخدم يومياً'
+            : 'لا يوجد مزود AI مُفعّل',
+      });
     } catch (error) { next(error); }
   }
 }

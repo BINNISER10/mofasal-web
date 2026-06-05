@@ -38,6 +38,18 @@ export interface SentimentResult {
   score: number;
 }
 
+export interface AIHealthCheck {
+  configured: string;
+  active: string;
+  providers: {
+    gemini: { available: boolean; free: boolean; limits: string };
+    ollama: { available: boolean; free: boolean; running: boolean; modelAvailable: boolean };
+    openai: { available: boolean; free: boolean };
+    deepseek: { available: boolean; free: boolean; cost: string };
+  };
+  recommendation: string;
+}
+
 export const aiApi = {
   logBehavior: (actionType: string, actionData?: Record<string, any>): Promise<{ queued: boolean }> =>
     apiClient.post<{ queued: boolean }>('/ai/behavior', { actionType, actionData }),
@@ -63,6 +75,9 @@ export const aiApi = {
 
   analyzeSentiment: (text: string): Promise<SentimentResult> =>
     apiClient.post<SentimentResult>('/ai/sentiment', { text }),
+
+  healthCheck: (): Promise<AIHealthCheck> =>
+    apiClient.get<AIHealthCheck>('/ai/health'),
 };
 
 /**

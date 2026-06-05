@@ -42,5 +42,6 @@ router.post('/ask', optionalAuth, validate(askSchema), AIController.askAdvisor);
 router.get('/trending', optionalAuth, AIController.getTrending);
 router.get('/shops', authenticate, AIController.getShopRecommendations);
 router.post('/sentiment', authenticate, validate(sentimentSchema), AIController.analyzeSentiment);
+router.get('/health', AIController.healthCheck);
 
 export default router;

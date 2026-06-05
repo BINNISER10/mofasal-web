@@ -68,10 +68,10 @@ if (redisAvailable) {
     if (job.name === 'analyze-behavior') {
       const { shopId, userId, actionType, actionData } = job.data;
       try {
-        const aiProvider = AIFactory.getProvider('gemini');
+        const { provider, name } = await AIFactory.getAvailableProvider();
         const prompt = `المستخدم ${userId} قام بإجراء ${actionType} بتفاصيل ${JSON.stringify(actionData)}. استنتج نمط سلوكه في جملة واحدة.`;
-        const insight = await aiProvider.generateResponse(prompt);
-        logger.info(`[Behavior AI] User ${userId}: ${insight}`);
+        const insight = await provider.generateResponse(prompt);
+        logger.info(`[Behavior AI:${name}] User ${userId}: ${insight}`);
       } catch (err: any) {
         logger.warn(`[Behavior AI] Failed for user ${userId}: ${err?.message}`);
       }
