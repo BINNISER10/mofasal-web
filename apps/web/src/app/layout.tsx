@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Cairo, Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
+import { SmartAdvisor } from '@/components/shared/SmartAdvisor';
 import { Toaster } from 'react-hot-toast';
 
 const cairo = Cairo({
@@ -64,6 +65,7 @@ export default function RootLayout({
       <body className="font-arabic antialiased bg-[var(--surface)] text-[var(--text-primary)] transition-colors duration-300 leading-relaxed">
         <ThemeProvider>
           {children}
+          <SmartAdvisor />
           <Toaster
             position="top-center"
             toastOptions={{

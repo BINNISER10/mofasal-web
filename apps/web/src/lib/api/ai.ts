@@ -15,7 +15,8 @@ export interface RecommendedProduct {
 export interface RecommendationsResult {
   items: RecommendedProduct[];
   personalized: boolean;
-  basedOn?: { topCategories: string[]; topShops: string[] };
+  strategy?: string;
+  basedOn?: { topCategories: string[]; topShops: string[]; collaborative?: number };
 }
 
 export interface AIProfile {
@@ -23,6 +24,18 @@ export interface AIProfile {
   insights: string;
   preferences: Record<string, any>;
   lastUpdated?: string;
+}
+
+export interface AdvisorResponse {
+  answer: string;
+  suggestions?: string[];
+  relatedProducts?: any[];
+  confidence: number;
+}
+
+export interface SentimentResult {
+  sentiment: 'positive' | 'negative' | 'neutral';
+  score: number;
 }
 
 export const aiApi = {
@@ -37,6 +50,19 @@ export const aiApi = {
 
   getProfile: (): Promise<AIProfile> =>
     apiClient.get<AIProfile>('/ai/profile'),
+
+  // New AI features
+  askAdvisor: (question: string, context?: Record<string, any>): Promise<AdvisorResponse> =>
+    apiClient.post<AdvisorResponse>('/ai/ask', { question, context }),
+
+  getTrending: (limit?: number): Promise<RecommendedProduct[]> =>
+    apiClient.get<RecommendedProduct[]>('/ai/trending', { params: limit ? { limit: String(limit) } : undefined }),
+
+  getShopRecommendations: (limit?: number): Promise<any[]> =>
+    apiClient.get<any[]>('/ai/shops', { params: limit ? { limit: String(limit) } : undefined }),
+
+  analyzeSentiment: (text: string): Promise<SentimentResult> =>
+    apiClient.post<SentimentResult>('/ai/sentiment', { text }),
 };
 
 /**
