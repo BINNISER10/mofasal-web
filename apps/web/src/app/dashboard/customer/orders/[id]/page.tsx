@@ -1,193 +1,186 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { OrderTrackingAnimation } from '@/components/shared/OrderTrackingAnimation';
+import { Badge } from '@/components/ui/Badge';
 import { useAppStore } from '@/lib/stores/appStore';
 import { ordersApi } from '@/lib/api/orders';
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils/formatting';
-import { ArrowRight, Package, User, MapPin, CreditCard, Ruler, Scissors, Calendar, Truck, CheckCircle2, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import toast from 'react-hot-toast';
+import {
+  ShoppingBag, Clock, CheckCircle2, Truck, Scissors, Package,
+  ChevronLeft, ChevronRight, Star, MapPin, ArrowLeft, MessageSquare,
+} from 'lucide-react';
 
-const mockOrder = {
-  id: 'ORD-1284',
-  orderNumber: 'ORD-1284',
-  shopName: 'خياطة الرجال',
-  shopPhone: '+966 55 123 4567',
-  customerName: 'أحمد محمد',
-  fabricName: 'قماش صوف إيطالي - كحلي',
-  fabricPrice: 350,
-  measurements: { chest: 102, waist: 88, shoulderWidth: 46, sleeveLength: 62, shirtLength: 76, neckCircumference: 40, pantLength: 106, inseam: 82 },
-  items: [{ name: 'بدلة رسمية', quantity: 1, price: 1200 }],
-  totalAmount: 1200,
-  deliveryFee: 35,
-  vatAmount: 185,
-  grandTotal: 1420,
-  status: 'SEWING_ASSEMBLY',
-  paymentStatus: 'PAID',
-  paymentMethod: 'بطاقة مدى',
-  deliveryAddress: 'الرياض، حي الورود، شارع الملك فهد، مبنى 12، شقة 5',
-  estimatedDeliveryDate: '2024-04-01',
-  createdAt: '2024-03-15T09:00:00Z',
-  trackingDates: {
-    PENDING: '2024-03-15T09:00:00Z',
-    CONFIRMED: '2024-03-15T09:30:00Z',
-    STAFF_ON_WAY: '2024-03-15T10:00:00Z',
-    TAKING_MEASUREMENTS: '2024-03-15T11:30:00Z',
-    CUTTING_FABRIC: '2024-03-16T08:00:00Z',
-    SEWING_ASSEMBLY: '2024-03-17T09:00:00Z',
-  },
-};
+const STATUS_STEPS = [
+  { key: 'PENDING', labelAr: 'قيد الانتظار', labelEn: 'Pending', icon: <Clock size={16} /> },
+  { key: 'CONFIRMED', labelAr: 'مؤكد', labelEn: 'Confirmed', icon: <CheckCircle2 size={16} /> },
+  { key: 'IN_PROGRESS', labelAr: 'قيد التنفيذ', labelEn: 'In Progress', icon: <Scissors size={16} /> },
+  { key: 'READY_FOR_DELIVERY', labelAr: 'جاهز', labelEn: 'Ready', icon: <Package size={16} /> },
+  { key: 'OUT_FOR_DELIVERY', labelAr: 'في الطريق', labelEn: 'On the Way', icon: <Truck size={16} /> },
+  { key: 'DELIVERED', labelAr: 'تم التوصيل', labelEn: 'Delivered', icon: <CheckCircle2 size={16} /> },
+];
 
-export default function CustomerOrderTrackingPage() {
-  const params = useParams();
+export default function CustomerOrderDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { isRTL } = useAppStore();
-  const [showDetails, setShowDetails] = useState(false);
-  const orderId = String(params.id);
-  const [order, setOrder] = useState<any>(mockOrder);
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let active = true;
-    ordersApi.getById(orderId)
-      .then((res) => {
-        if (!active) return;
-        const api: any = res.order;
-        if (!api || !api.id) return;
-        setOrder({
-          ...mockOrder,
-          ...api,
-          orderNumber: api.orderNumber || mockOrder.orderNumber,
-          shopName: api.shop?.nameAr || api.shop?.name || mockOrder.shopName,
-          totalAmount: api.subtotal ?? api.totalAmount ?? mockOrder.totalAmount,
-          vatAmount: api.vatAmount ?? mockOrder.vatAmount,
-          grandTotal: api.totalAmount ?? mockOrder.grandTotal,
-          measurements: api.measurements || mockOrder.measurements,
-          trackingDates: api.trackingDates || mockOrder.trackingDates,
-          deliveryAddress: typeof api.deliveryAddress === 'string' ? api.deliveryAddress : mockOrder.deliveryAddress,
-        });
+    if (!id) return;
+    ordersApi.getById(id)
+      .then((res) => setOrder(res.order))
+      .catch((err) => {
+        console.error('Failed to fetch order', err);
+        toast.error(isRTL ? 'فشل تحميل الطلب' : 'Failed to load order');
       })
-      .catch(() => { /* الإبقاء على القالب الاحتياطي عند فشل الاتصال أو عدم المصادقة */ });
-    return () => { active = false; };
-  }, [orderId]);
+      .finally(() => setLoading(false));
+  }, [id, isRTL]);
+
+  if (loading) {
+    return <LoadingSpinner fullScreen text={isRTL ? 'جاري تحميل الطلب...' : 'Loading order...'} />;
+  }
+
+  if (!order) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <ShoppingBag size={48} className="text-[#735B4D]/30 mx-auto mb-4" />
+          <p className="text-[#735B4D]/60">{isRTL ? 'الطلب غير موجود' : 'Order not found'}</p>
+          <Button variant="ghost" onClick={() => router.back()} className="mt-4" icon={<ArrowLeft size={16} />}>
+            {isRTL ? 'رجوع' : 'Back'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-3">
-        <a href="/dashboard/customer/orders" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"><ArrowRight size={20} className="text-gray-500 dark:text-slate-400" /></a>
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'تتبع الطلب' : 'Order Tracking'}</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400">{isRTL ? `طلب #${order.orderNumber}` : `Order #${order.orderNumber}`}</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-[#F2E8D4]/30 transition-colors">
+            {isRTL ? <ChevronRight size={20} className="text-[#735B4D]" /> : <ChevronLeft size={20} className="text-[#735B4D]" />}
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-[#00373E]">
+              {isRTL ? 'طلب' : 'Order'} #{order.orderNumber || order.id?.slice(0, 8)}
+            </h1>
+            <p className="text-xs text-[#735B4D]/60 mt-1">
+              {new Date(order.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US')}
+            </p>
+          </div>
         </div>
-        <Badge variant="gold" size="md">{isRTL ? 'قيد الخياطة' : 'In Production'}</Badge>
+        {order.status === 'DELIVERED' && (
+          <Button variant="gold" size="sm" icon={<Star size={16} />} onClick={() => router.push(`/dashboard/customer/orders/${id}/rate`)}>
+            {isRTL ? 'تقييم' : 'Rate'}
+          </Button>
+        )}
       </div>
 
-      {/* Interactive Tracking Animation */}
-      <Card className="p-6">
-        <OrderTrackingAnimation
-          currentStatus={order.status}
-          dates={order.trackingDates}
-          locale={isRTL ? 'ar' : 'en'}
-          className="py-4"
-        />
-      </Card>
-
-      {/* Timeline */}
+      {/* Order Progress */}
       <Card className="p-5">
-        <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 flex items-center gap-2"><Clock size={18} className="text-primary-600" />{isRTL ? 'سجل التتبع' : 'Tracking History'}</h3>
-        <div className="relative pr-6">
-          <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-slate-700" />
-          {[
-            { status: 'PENDING', label: isRTL ? 'تم استلام الطلب' : 'Order Received', time: order.trackingDates.PENDING },
-            { status: 'CONFIRMED', label: isRTL ? 'تم تأكيد الطلب' : 'Order Confirmed', time: order.trackingDates.CONFIRMED },
-            { status: 'STAFF_ON_WAY', label: isRTL ? 'الموظف في الطريق لأخذ المقاسات' : 'Staff on way for measurements', time: order.trackingDates.STAFF_ON_WAY },
-            { status: 'TAKING_MEASUREMENTS', label: isRTL ? 'تم أخذ المقاسات' : 'Measurements taken', time: order.trackingDates.TAKING_MEASUREMENTS },
-            { status: 'CUTTING_FABRIC', label: isRTL ? 'جاري قص القماش' : 'Cutting fabric', time: order.trackingDates.CUTTING_FABRIC },
-            { status: 'SEWING_ASSEMBLY', label: isRTL ? 'جاري الخياطة والتجميع' : 'Sewing & assembly', time: order.trackingDates.SEWING_ASSEMBLY },
-          ].map((step, i) => {
-            const isActive = step.status === order.status;
-            const isCompleted = new Date(step.time) < new Date(order.trackingDates.SEWING_ASSEMBLY);
+        <h3 className="font-bold text-[#00373E] mb-4">{isRTL ? 'تتبع الطلب' : 'Order Tracking'}</h3>
+        <div className="flex items-center justify-between">
+          {STATUS_STEPS.map((step, i) => {
+            const isCompleted = i <= currentStepIndex;
+            const isCurrent = i === currentStepIndex;
             return (
-              <div key={step.status} className="relative flex items-start gap-4 pb-6 last:pb-0">
-                <div className={`relative z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                  isCompleted ? 'bg-green-500 border-green-500' : isActive ? 'bg-gold-500 border-gold-500 animate-pulse' : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600'
+              <div key={step.key} className="flex flex-col items-center flex-1">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  isCurrent ? 'bg-[#00373E] text-white shadow-lg shadow-[#00373E]/30 scale-110'
+                  : isCompleted ? 'bg-[#00373E]/20 text-[#00373E]'
+                  : 'bg-[#D0D6D7]/20 text-[#735B4D]/30'
                 }`}>
-                  {isCompleted && <CheckCircle2 size={14} className="text-white" />}
+                  {step.icon}
                 </div>
-                <div className="flex-1 pt-0.5">
-                  <p className={`text-sm font-semibold ${isActive ? 'text-gold-700' : isCompleted ? 'text-gray-800 dark:text-slate-200' : 'text-gray-400 dark:text-slate-500'}`}>{step.label}</p>
-                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{formatDateTime(step.time)}</p>
-                </div>
+                <p className={`text-[10px] mt-1.5 text-center ${isCurrent ? 'text-[#00373E] font-bold' : isCompleted ? 'text-[#00373E]/60' : 'text-[#735B4D]/30'}`}>
+                  {isRTL ? step.labelAr : step.labelEn}
+                </p>
+                {i < STATUS_STEPS.length - 1 && (
+                  <div className={`absolute h-0.5 w-full ${isCompleted ? 'bg-[#00373E]/20' : 'bg-[#D0D6D7]/20'}`} />
+                )}
               </div>
             );
           })}
         </div>
       </Card>
 
-      {/* Order Details */}
-      <Card className="p-5">
-        <button onClick={() => setShowDetails(!showDetails)} className="flex items-center justify-between w-full">
-          <h3 className="font-bold text-gray-800 dark:text-slate-100 flex items-center gap-2"><Package size={18} className="text-primary-600" />{isRTL ? 'تفاصيل الطلب' : 'Order Details'}</h3>
-          <span className="text-primary-700 text-sm">{showDetails ? (isRTL ? 'إخفاء' : 'Hide') : (isRTL ? 'عرض' : 'Show')}</span>
-        </button>
-        {showDetails && (
-          <div className="mt-4 space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'المتجر' : 'Shop'}</p><p className="font-semibold text-sm dark:text-slate-200">{order.shopName}</p></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'القماش' : 'Fabric'}</p><p className="font-semibold text-sm dark:text-slate-200">{order.fabricName}</p></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'التوصيل' : 'Delivery'}</p><p className="font-semibold text-sm dark:text-slate-200">{formatDate(order.estimatedDeliveryDate)}</p></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'طريقة الدفع' : 'Payment'}</p><p className="font-semibold text-sm dark:text-slate-200">{order.paymentMethod}</p></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'حالة الدفع' : 'Payment Status'}</p><Badge variant="success" size="sm">{isRTL ? 'مدفوع' : 'Paid'}</Badge></div>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg"><p className="text-xs text-gray-500 dark:text-slate-400">{isRTL ? 'الإجمالي' : 'Total'}</p><p className="font-semibold text-sm text-primary-700">{formatCurrency(order.grandTotal)}</p></div>
-            </div>
-
-            <div className="p-4 bg-green-50 rounded-xl">
-              <h4 className="text-sm font-bold text-green-800 mb-3 flex items-center gap-2"><Ruler size={16} />{isRTL ? 'المقاسات' : 'Measurements'}</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {Object.entries(order.measurements).map(([key, val]) => (
-                  <div key={key} className="text-center p-2 bg-white dark:bg-slate-800 rounded-lg">
-                    <p className="text-xs text-gray-500 dark:text-slate-400">{key}</p>
-                    <p className="text-sm font-bold text-gray-800 dark:text-slate-200">{String(val)} <span className="text-xs text-gray-400 dark:text-slate-500">سم</span></p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Order Items */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="p-5">
+            <h3 className="font-bold text-[#00373E] mb-4 flex items-center gap-2">
+              <Package size={18} className="text-[#D4AF37]" />
+              {isRTL ? 'عناصر الطلب' : 'Order Items'}
+            </h3>
+            <div className="space-y-3">
+              {(order.items || []).map((item: any, i: number) => (
+                <div key={i} className="flex items-center justify-between py-3 border-b border-[#D0D6D7]/10 last:border-0">
+                  <div>
+                    <p className="text-sm font-semibold text-[#00373E]">{item.name}</p>
+                    <p className="text-xs text-[#735B4D]/60">{isRTL ? 'الكمية:' : 'Qty:'} {item.quantity}</p>
                   </div>
-                ))}
+                  <p className="text-sm font-bold text-[#00373E]">{item.unitPrice?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Notes */}
+          {order.customerNotes && (
+            <Card className="p-5">
+              <h3 className="font-bold text-[#00373E] mb-2 flex items-center gap-2">
+                <MessageSquare size={18} className="text-[#D4AF37]" />
+                {isRTL ? 'ملاحظاتك' : 'Your Notes'}
+              </h3>
+              <p className="text-sm text-[#735B4D]">{order.customerNotes}</p>
+            </Card>
+          )}
+        </div>
+
+        {/* Summary */}
+        <div className="space-y-6">
+          <Card className="p-5">
+            <h3 className="font-bold text-[#00373E] mb-4">{isRTL ? 'ملخص الطلب' : 'Order Summary'}</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-[#735B4D]">{isRTL ? 'المجموع الفرعي' : 'Subtotal'}</span>
+                <span className="text-sm font-semibold text-[#00373E]">{order.totalAmount?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-[#735B4D]">{isRTL ? 'ضريبة القيمة المضافة' : 'VAT'}</span>
+                <span className="text-sm font-semibold text-[#00373E]">{order.vatAmount?.toLocaleString() || '0'} {isRTL ? 'ريال' : 'SAR'}</span>
+              </div>
+              {order.deliveryFee > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-[#735B4D]">{isRTL ? 'رسوم التوصيل' : 'Delivery'}</span>
+                  <span className="text-sm font-semibold text-[#00373E]">{order.deliveryFee?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span>
+                </div>
+              )}
+              <div className="flex justify-between pt-3 border-t border-[#D0D6D7]/20">
+                <span className="text-sm font-bold text-[#00373E]">{isRTL ? 'الإجمالي' : 'Total'}</span>
+                <span className="text-lg font-bold text-[#00373E]">{order.grandTotal?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span>
               </div>
             </div>
+          </Card>
 
-            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-slate-400">{isRTL ? 'سعر القماش' : 'Fabric price'}</span>
-              <span className="font-semibold dark:text-slate-200">{formatCurrency(order.fabricPrice)}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-slate-400">{isRTL ? 'رسوم الخياطة' : 'Tailoring fee'}</span>
-              <span className="font-semibold dark:text-slate-200">{formatCurrency(order.totalAmount)}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-slate-400">{isRTL ? 'ضريبة القيمة المضافة' : 'VAT'}</span>
-              <span className="font-semibold dark:text-slate-200">{formatCurrency(order.vatAmount)}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-primary-50 rounded-lg">
-              <span className="text-sm font-bold text-primary-800">{isRTL ? 'الإجمالي الكلي' : 'Grand Total'}</span>
-              <span className="text-lg font-bold text-primary-700">{formatCurrency(order.grandTotal)}</span>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Delivery Map Placeholder */}
-      <Card className="p-5">
-        <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 flex items-center gap-2"><MapPin size={18} className="text-primary-600" />{isRTL ? 'موقع التوصيل' : 'Delivery Location'}</h3>
-        <div className="h-48 bg-gray-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-gray-400 dark:text-slate-500">
-          <div className="text-center">
-            <MapPin size={32} className="mx-auto mb-2 text-primary-400" />
-            <p className="text-sm dark:text-slate-400">{isRTL ? 'خريطة التتبع المباشر' : 'Live tracking map'}</p>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">{order.deliveryAddress}</p>
-          </div>
+          <Card className="p-5">
+            <h3 className="font-bold text-[#00373E] mb-2">{isRTL ? 'حالة الدفع' : 'Payment'}</h3>
+            <Badge variant={order.paymentStatus === 'PAID' ? 'primary' : 'danger'} size="md">
+              {order.paymentStatus === 'PAID' ? (isRTL ? 'مدفوع' : 'Paid') : (isRTL ? 'غير مدفوع' : 'Unpaid')}
+            </Badge>
+            {order.paymentMethod && (
+              <p className="text-xs text-[#735B4D]/60 mt-2">{order.paymentMethod}</p>
+            )}
+          </Card>
         </div>
-      </Card>
-
-      <div className="flex gap-3">
-        <Button variant="primary" fullWidth>{isRTL ? 'تواصل مع المتجر' : 'Contact Shop'}</Button>
-        <Button variant="outline" fullWidth>{isRTL ? 'الإبلاغ عن مشكلة' : 'Report Issue'}</Button>
       </div>
     </div>
   );

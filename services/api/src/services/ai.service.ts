@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import { Queue, Worker } from 'bullmq';
 import { AIFactory } from './ai/ai.factory';
 import crypto from 'crypto';
+import logger from '../utils/logger';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const REDIS_CONNECT_TIMEOUT = 3000;
@@ -70,9 +71,9 @@ if (redisAvailable) {
         const aiProvider = AIFactory.getProvider('gemini');
         const prompt = `المستخدم ${userId} قام بإجراء ${actionType} بتفاصيل ${JSON.stringify(actionData)}. استنتج نمط سلوكه في جملة واحدة.`;
         const insight = await aiProvider.generateResponse(prompt);
-        console.log(`[Behavior AI] User ${userId}: ${insight}`);
+        logger.info(`[Behavior AI] User ${userId}: ${insight}`);
       } catch (err: any) {
-        console.warn(`[Behavior AI] Failed for user ${userId}:`, err?.message);
+        logger.warn(`[Behavior AI] Failed for user ${userId}: ${err?.message}`);
       }
     }
   }, { connection: redisClient, concurrency: 10 });
