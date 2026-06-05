@@ -8,13 +8,10 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { paymentsApi } from '@/lib/api/payments';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
-import {
-  FileText, ChevronLeft, ChevronRight, Printer, Download,
-  Calendar, DollarSign, User, Building2, ArrowLeft,
-} from 'lucide-react';
+import { FileText, ChevronLeft, ChevronRight, Printer, ArrowLeft } from 'lucide-react';
 
 export default function InvoiceDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const router = useRouter();
   const { isRTL } = useAppStore();
   const [invoice, setInvoice] = useState<any>(null);
@@ -22,140 +19,40 @@ export default function InvoiceDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    paymentsApi.getInvoice(id)
+    paymentsApi.getInvoice(id as string)
       .then((res) => setInvoice(res))
-      .catch((err) => {
-        console.error('Failed to fetch invoice', err);
-        toast.error(isRTL ? 'فشل تحميل الفاتورة' : 'Failed to load invoice');
-      })
+      .catch(() => toast.error(isRTL ? 'فشل تحميل الفاتورة' : 'Failed to load invoice'))
       .finally(() => setLoading(false));
   }, [id, isRTL]);
 
-  if (loading) {
-    return <LoadingSpinner fullScreen text={isRTL ? 'جاري تحميل الفاتورة...' : 'Loading invoice...'} />;
-  }
-
-  if (!invoice) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <FileText size={48} className="text-[#735B4D]/30 mx-auto mb-4" />
-          <p className="text-[#735B4D]/60">{isRTL ? 'الفاتورة غير موجودة' : 'Invoice not found'}</p>
-          <Button variant="ghost" onClick={() => router.back()} className="mt-4" icon={<ArrowLeft size={16} />}>
-            {isRTL ? 'رجوع' : 'Back'}
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner fullScreen text={isRTL ? 'جاري تحميل الفاتورة...' : 'Loading invoice...'} />;
+  if (!invoice) return <div className="flex items-center justify-center py-20"><div className="text-center"><FileText size={48} className="text-[#735B4D]/30 mx-auto mb-4" /><p className="text-[#735B4D]/60">{isRTL ? 'الفاتورة غير موجودة' : 'Invoice not found'}</p></div></div>;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-[#F2E8D4]/30 transition-colors">
-            {isRTL ? <ChevronRight size={20} className="text-[#735B4D]" /> : <ChevronLeft size={20} className="text-[#735B4D]" />}
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-[#00373E]">
-              {isRTL ? 'فاتورة' : 'Invoice'} #{invoice.invoiceNumber || invoice.id?.slice(0, 8)}
-            </h1>
-            <p className="text-xs text-[#735B4D]/60 mt-1">
-              {new Date(invoice.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US')}
-            </p>
-          </div>
+          <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-[#F2E8D4]/30">{isRTL ? <ChevronRight size={20} className="text-[#735B4D]" /> : <ChevronLeft size={20} className="text-[#735B4D]" />}</button>
+          <div><h1 className="text-xl font-bold text-[#00373E]">{isRTL ? 'فاتورة' : 'Invoice'} #{invoice.invoiceNumber || invoice.id?.slice(0, 8)}</h1></div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" icon={<Printer size={16} />} onClick={() => window.print()}>
-            {isRTL ? 'طباعة' : 'Print'}
-          </Button>
-        </div>
+        <Button variant="ghost" size="sm" icon={<Printer size={16} />} onClick={() => window.print()}>{isRTL ? 'طباعة' : 'Print'}</Button>
       </div>
-
-      {/* Invoice Content */}
       <Card className="p-8">
-        {/* Invoice Header */}
         <div className="flex justify-between items-start mb-8 pb-6 border-b border-[#D0D6D7]/20">
-          <div>
-            <h2 className="text-2xl font-black text-[#00373E]">مُفصّل</h2>
-            <p className="text-sm text-[#735B4D]/60">MUFASAL</p>
-            <p className="text-xs text-[#735B4D]/40 mt-1">{isRTL ? 'منصة تفصيل ملابس سعودية' : 'Saudi Tailoring Platform'}</p>
-          </div>
-          <div className="text-left">
-            <Badge variant={invoice.status === 'PAID' ? 'primary' : 'danger'} size="md">
-              {invoice.status === 'PAID' ? (isRTL ? 'مدفوعة' : 'Paid') : (isRTL ? 'غير مدفوعة' : 'Unpaid')}
-            </Badge>
-            <p className="text-xs text-[#735B4D]/60 mt-2">
-              {isRTL ? 'رقم الفاتورة:' : 'Invoice #'} {invoice.invoiceNumber || invoice.id?.slice(0, 8)}
-            </p>
-          </div>
+          <div><h2 className="text-2xl font-black text-[#00373E]">مُفصّل</h2><p className="text-sm text-[#735B4D]/60">MUFASAL</p></div>
+          <Badge variant={invoice.status === 'PAID' ? 'primary' : 'danger'} size="md">{invoice.status === 'PAID' ? (isRTL ? 'مدفوعة' : 'Paid') : (isRTL ? 'غير مدفوعة' : 'Unpaid')}</Badge>
         </div>
-
-        {/* Customer & Dates */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
-          <div>
-            <h4 className="text-xs font-semibold text-[#735B4D]/60 uppercase mb-2">{isRTL ? 'العميل' : 'Customer'}</h4>
-            <p className="text-sm font-semibold text-[#00373E]">{invoice.customerName || invoice.customer?.name || '—'}</p>
-            <p className="text-xs text-[#735B4D]/60">{invoice.customerPhone || invoice.customer?.phone || ''}</p>
-          </div>
-          <div className="text-left">
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span className="text-xs text-[#735B4D]/60">{isRTL ? 'تاريخ الإصدار' : 'Issued'}</span>
-                <span className="text-xs font-semibold text-[#00373E]">{new Date(invoice.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US')}</span>
-              </div>
-              {invoice.dueDate && (
-                <div className="flex justify-between">
-                  <span className="text-xs text-[#735B4D]/60">{isRTL ? 'تاريخ الاستحقاق' : 'Due'}</span>
-                  <span className="text-xs font-semibold text-[#00373E]">{new Date(invoice.dueDate).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US')}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Items Table */}
         <div className="mb-8">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b-2 border-[#00373E]/10">
-                <th className="text-right py-3 font-semibold text-[#735B4D]">{isRTL ? 'الوصف' : 'Description'}</th>
-                <th className="text-center py-3 font-semibold text-[#735B4D]">{isRTL ? 'الكمية' : 'Qty'}</th>
-                <th className="text-center py-3 font-semibold text-[#735B4D]">{isRTL ? 'السعر' : 'Price'}</th>
-                <th className="text-left py-3 font-semibold text-[#735B4D]">{isRTL ? 'المجموع' : 'Total'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(invoice.items || []).map((item: any, i: number) => (
-                <tr key={i} className="border-b border-[#D0D6D7]/10">
-                  <td className="py-3 text-[#00373E]">{item.description || item.name}</td>
-                  <td className="py-3 text-center text-[#735B4D]">{item.quantity}</td>
-                  <td className="py-3 text-center text-[#735B4D]">{item.unitPrice?.toLocaleString()}</td>
-                  <td className="py-3 text-left font-semibold text-[#00373E]">{(item.quantity * item.unitPrice)?.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
+            <thead><tr className="border-b-2 border-[#00373E]/10"><th className="text-right py-3 font-semibold text-[#735B4D]">{isRTL ? 'الوصف' : 'Description'}</th><th className="text-center py-3 font-semibold text-[#735B4D]">{isRTL ? 'الكمية' : 'Qty'}</th><th className="text-center py-3 font-semibold text-[#735B4D]">{isRTL ? 'السعر' : 'Price'}</th><th className="text-left py-3 font-semibold text-[#735B4D]">{isRTL ? 'المجموع' : 'Total'}</th></tr></thead>
+            <tbody>{(invoice.items || []).map((item: any, i: number) => <tr key={i} className="border-b border-[#D0D6D7]/10"><td className="py-3 text-[#00373E]">{item.description || item.name}</td><td className="py-3 text-center text-[#735B4D]">{item.quantity}</td><td className="py-3 text-center text-[#735B4D]">{item.unitPrice?.toLocaleString()}</td><td className="py-3 text-left font-semibold text-[#00373E]">{(item.quantity * item.unitPrice)?.toLocaleString()}</td></tr>)}</tbody>
           </table>
         </div>
-
-        {/* Totals */}
         <div className="border-t-2 border-[#00373E]/10 pt-4">
           <div className="space-y-2 max-w-xs ms-auto">
-            <div className="flex justify-between">
-              <span className="text-sm text-[#735B4D]">{isRTL ? 'المجموع الفرعي' : 'Subtotal'}</span>
-              <span className="text-sm font-semibold text-[#00373E]">{invoice.subtotal?.toLocaleString() || invoice.totalAmount?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span>
-            </div>
-            {invoice.vatAmount > 0 && (
-              <div className="flex justify-between">
-                <span className="text-sm text-[#735B4D]">{isRTL ? 'ضريبة القيمة المضافة (15%)' : 'VAT (15%)'}</span>
-                <span className="text-sm font-semibold text-[#00373E]">{invoice.vatAmount?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span>
-              </div>
-            )}
-            <div className="flex justify-between pt-2 border-t border-[#D0D6D7]/20">
-              <span className="text-base font-bold text-[#00373E]">{isRTL ? 'الإجمالي' : 'Total'}</span>
-              <span className="text-xl font-black text-[#00373E]">{invoice.grandTotal?.toLocaleString() || invoice.totalAmount?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span>
-            </div>
+            <div className="flex justify-between"><span className="text-sm text-[#735B4D]">{isRTL ? 'المجموع الفرعي' : 'Subtotal'}</span><span className="text-sm font-semibold text-[#00373E]">{invoice.totalAmount?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span></div>
+            {invoice.vatAmount > 0 && <div className="flex justify-between"><span className="text-sm text-[#735B4D]">{isRTL ? 'ضريبة القيمة المضافة' : 'VAT'}</span><span className="text-sm font-semibold text-[#00373E]">{invoice.vatAmount?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span></div>}
+            <div className="flex justify-between pt-2 border-t border-[#D0D6D7]/20"><span className="text-base font-bold text-[#00373E]">{isRTL ? 'الإجمالي' : 'Total'}</span><span className="text-xl font-black text-[#00373E]">{invoice.grandTotal?.toLocaleString() || invoice.totalAmount?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span></div>
           </div>
         </div>
       </Card>
