@@ -165,4 +165,16 @@ export const ordersApi = {
   getTracking: async (id: string): Promise<{ tracking: TrackingEntry[] }> => {
     return apiClient.get<{ tracking: TrackingEntry[] }>(`/orders/${id}/tracking`);
   },
+
+  getConfirmation: async (token: string): Promise<any> => {
+    return apiClient.get(`/orders/confirm/${token}`);
+  },
+
+  approveConfirmation: async (token: string): Promise<any> => {
+    return apiClient.post(`/orders/confirm/${token}/approve`);
+  },
+
+  requestChanges: async (token: string, notes: string): Promise<any> => {
+    return apiClient.post(`/orders/confirm/${token}/changes`, { notes });
+  },
 };

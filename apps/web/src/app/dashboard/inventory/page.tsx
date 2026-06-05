@@ -1,80 +1,194 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { productsApi } from '@/lib/api/products';
 import { formatCurrency } from '@/lib/utils/formatting';
-import { Package, AlertTriangle, TrendingDown, TrendingUp, Plus, Search } from 'lucide-react';
+import { Package, AlertTriangle, TrendingDown, TrendingUp, Plus, Search, Loader2, Minus, ArrowUpDown } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+interface Product {
+  id: string;
+  name: string;
+  nameAr?: string;
+  stockQuantity: number;
+  unit?: string;
+  price: number;
+  costPrice?: number;
+}
 
 export default function InventoryPage() {
   const { isRTL } = useAppStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
 
-  const inventory = [
-    { name: 'قماش أسود', stock: 2, min: 10, unit: 'متر', price: 45, usage: 120 },
-    { name: 'قماش أبيض', stock: 45, min: 10, unit: 'متر', price: 40, usage: 85 },
-    { name: 'قماش بيج', stock: 8, min: 10, unit: 'متر', price: 50, usage: 65 },
-    { name: 'أزرار', stock: 500, min: 100, unit: 'قطعة', price: 2, usage: 1200 },
-    { name: 'سحابات', stock: 30, min: 50, unit: 'قطعة', price: 5, usage: 200 },
-    { name: 'خيوط', stock: 150, min: 20, unit: 'بكرة', price: 8, usage: 350 },
-    { name: 'بطانة', stock: 15, min: 10, unit: 'متر', price: 25, usage: 60 },
-    { name: 'دانتيل', stock: 3, min: 5, unit: 'متر', price: 35, usage: 25 },
-  ];
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await productsApi.list({ limit: '100' });
+      setProducts(res.products || []);
+    } catch (err) {
+      console.error('Failed to fetch products', err);
+      toast.error(isRTL ? 'فشل تحميل المنتجات' : 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdjustStock = async (id: string, type: 'IN' | 'OUT', quantity: number) => {
+    try {
+      setAdjustingId(id);
+      await productsApi.adjustStock(id, type, quantity, isRTL ? 'تعديل يدوي' : 'Manual adjustment');
+      await fetchProducts();
+      toast.success(isRTL ? 'تم تحديث المخزون' : 'Stock updated');
+    } catch (err) {
+      console.error('Failed to adjust stock', err);
+      toast.error(isRTL ? 'فشل تحديث المخزون' : 'Failed to update stock');
+    } finally {
+      setAdjustingId(null);
+    }
+  };
+
+  const filtered = products.filter((p) => {
+    if (!search) return true;
+    const name = (p.nameAr || p.name || '').toLowerCase();
+    return name.includes(search.toLowerCase());
+  });
+
+  const lowStockCount = products.filter((p) => p.stockQuantity > 0 && p.stockQuantity <= 5).length;
+  const totalItems = products.length;
+  const totalValue = products.reduce((sum, p) => sum + (p.stockQuantity * (p.costPrice || p.price || 0)), 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00373E]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">{isRTL ? 'المخزون' : 'Inventory'}</h2>
+        <h2 className="text-xl font-bold text-[#00373E]">{isRTL ? 'المخزون' : 'Inventory'}</h2>
         <div className="flex gap-2">
-          <button className="p-2 hover:bg-gray-100 rounded-lg"><Search size={18} className="text-gray-500" /></button>
-          <button className="flex items-center gap-1 px-3 py-1.5 bg-primary-700 text-white rounded-lg text-sm font-semibold"><Plus size={16} />{isRTL ? 'إضافة' : 'Add'}</button>
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-[#735B4D]/40" size={16} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={isRTL ? 'بحث...' : 'Search...'}
+              className="pr-9 pl-4 py-2 rounded-xl border border-[#D0D6D7]/30 bg-[#F2E8D4]/20 text-sm text-[#00373E] focus:outline-none focus:ring-2 focus:ring-[#00373E]/20"
+            />
+          </div>
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"><AlertTriangle size={22} /></div>
-            <div><p className="text-sm text-gray-500">{isRTL ? 'مخزون منخفض' : 'Low Stock'}</p><p className="text-2xl font-bold text-red-600">3</p></div>
+            <div className="w-10 h-10 rounded-xl bg-[#481719]/10 text-[#481719] flex items-center justify-center">
+              <AlertTriangle size={22} />
+            </div>
+            <div>
+              <p className="text-sm text-[#735B4D]">{isRTL ? 'مخزون منخفض' : 'Low Stock'}</p>
+              <p className="text-2xl font-bold text-[#481719]">{lowStockCount}</p>
+            </div>
           </div>
         </Card>
         <Card className="p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center"><Package size={22} /></div>
-            <div><p className="text-sm text-gray-500">{isRTL ? 'إجمالي المواد' : 'Total Items'}</p><p className="text-2xl font-bold text-gray-900">24</p></div>
+            <div className="w-10 h-10 rounded-xl bg-[#00373E]/10 text-[#00373E] flex items-center justify-center">
+              <Package size={22} />
+            </div>
+            <div>
+              <p className="text-sm text-[#735B4D]">{isRTL ? 'إجمالي المواد' : 'Total Items'}</p>
+              <p className="text-2xl font-bold text-[#00373E]">{totalItems}</p>
+            </div>
           </div>
         </Card>
         <Card className="p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><TrendingDown size={22} /></div>
-            <div><p className="text-sm text-gray-500">{isRTL ? 'الاستخدام الشهري' : 'Monthly Usage'}</p><p className="text-2xl font-bold text-gray-900">{formatCurrency(4250)}</p></div>
+            <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center">
+              <TrendingDown size={22} />
+            </div>
+            <div>
+              <p className="text-sm text-[#735B4D]">{isRTL ? 'قيمة المخزون' : 'Stock Value'}</p>
+              <p className="text-2xl font-bold text-[#00373E]">{formatCurrency(totalValue)}</p>
+            </div>
           </div>
         </Card>
       </div>
 
+      {/* Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="bg-gray-50 border-b border-gray-100">
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">{isRTL ? 'المادة' : 'Item'}</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">{isRTL ? 'الوحدة' : 'Unit'}</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">{isRTL ? 'المخزون' : 'Stock'}</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">{isRTL ? 'الحد الأدنى' : 'Min'}</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">{isRTL ? 'سعر الوحدة' : 'Unit Price'}</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">{isRTL ? 'الاستخدام' : 'Usage'}</th>
-            </tr></thead>
+            <thead>
+              <tr className="bg-[#F2E8D4]/30 border-b border-[#D0D6D7]/20">
+                <th className="text-right px-4 py-3 font-semibold text-[#735B4D]">{isRTL ? 'المنتج' : 'Product'}</th>
+                <th className="text-right px-4 py-3 font-semibold text-[#735B4D]">{isRTL ? 'الوحدة' : 'Unit'}</th>
+                <th className="text-right px-4 py-3 font-semibold text-[#735B4D]">{isRTL ? 'المخزون' : 'Stock'}</th>
+                <th className="text-right px-4 py-3 font-semibold text-[#735B4D]">{isRTL ? 'السعر' : 'Price'}</th>
+                <th className="text-center px-4 py-3 font-semibold text-[#735B4D]">{isRTL ? 'إجراءات' : 'Actions'}</th>
+              </tr>
+            </thead>
             <tbody>
-              {inventory.map((item, i) => (
-                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{item.unit}</td>
-                  <td className="px-4 py-3">
-                    <span className={item.stock <= item.min ? 'text-red-600 font-bold' : 'font-semibold'}>{item.stock}</span>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center text-[#735B4D]/60">
+                    {isRTL ? 'لا توجد منتجات' : 'No products found'}
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{item.min}</td>
-                  <td className="px-4 py-3">{formatCurrency(item.price)}</td>
-                  <td className="px-4 py-3"><div className="flex items-center gap-1">{item.usage} <TrendingUp size={14} className="text-gray-400" /></div></td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((product) => (
+                  <tr key={product.id} className="border-b border-[#D0D6D7]/10 hover:bg-[#F2E8D4]/10 transition-colors">
+                    <td className="px-4 py-3 font-medium text-[#00373E]">
+                      {product.nameAr || product.name}
+                    </td>
+                    <td className="px-4 py-3 text-[#735B4D]/60">
+                      {product.unit || (isRTL ? 'قطعة' : 'piece')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={product.stockQuantity <= 5 ? 'text-[#481719] font-bold' : 'font-semibold text-[#00373E]'}>
+                        {product.stockQuantity}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[#00373E]">
+                      {formatCurrency(product.price)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleAdjustStock(product.id, 'OUT', 1)}
+                          disabled={adjustingId === product.id || product.stockQuantity <= 0}
+                          className="w-8 h-8 rounded-lg bg-[#481719]/10 text-[#481719] flex items-center justify-center hover:bg-[#481719]/20 disabled:opacity-30 transition-colors"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleAdjustStock(product.id, 'IN', 1)}
+                          disabled={adjustingId === product.id}
+                          className="w-8 h-8 rounded-lg bg-[#00373E]/10 text-[#00373E] flex items-center justify-center hover:bg-[#00373E]/20 disabled:opacity-30 transition-colors"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -122,4 +122,12 @@ export const adminApi = {
     const data = await apiClient.get<{ items: any[]; total: number }>('/admin/audit-logs', { params });
     return { logs: data.items, total: data.total };
   },
+
+  getCommissions: async (): Promise<any[]> => {
+    return apiClient.get<any[]>('/admin/commissions');
+  },
+
+  updateCommission: async (shopId: string, rate: number): Promise<any> => {
+    return apiClient.put(`/admin/commissions/${shopId}`, { rate });
+  },
 };

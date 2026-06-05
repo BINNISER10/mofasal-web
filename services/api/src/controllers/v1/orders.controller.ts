@@ -60,4 +60,25 @@ export class OrderController {
       sendSuccess(res, order, 'Order cancelled');
     } catch (error) { next(error); }
   }
+
+  static async getConfirmation(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const confirmation = await OrderService.getConfirmationByToken(req.params.token);
+      sendSuccess(res, confirmation);
+    } catch (error) { next(error); }
+  }
+
+  static async approveConfirmation(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await OrderService.approveConfirmation(req.params.token);
+      sendSuccess(res, result, 'Order approved');
+    } catch (error) { next(error); }
+  }
+
+  static async requestChanges(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await OrderService.requestConfirmationChanges(req.params.token, req.body.notes);
+      sendSuccess(res, result, 'Change request sent');
+    } catch (error) { next(error); }
+  }
 }

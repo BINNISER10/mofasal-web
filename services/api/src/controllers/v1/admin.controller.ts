@@ -202,4 +202,50 @@ export class AdminController {
       sendPaginated(res, logs, total, p, l);
     } catch (error) { next(error); }
   }
+
+  static async getCommissions(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const shops = await prisma.shop.findMany({
+        select: {
+          id: true,
+          name: true,
+          nameAr: true,
+          commissionRate: true,
+          orderCount: true,
+          rating: true,
+          isOpen: true,
+        },
+        orderBy: { orderCount: 'desc' },
+      });
+
+      const commissions = shops.map((shop) => ({
+        id: shop.id,
+        name: shop.nameAr || shop.name,
+        rate: Math.round((shop.commissionRate || 0.1) * 100),
+        ordersCount: shop.orderCount || 0,
+        earned: Math.round((shop.orderCount || 0) * 100 * (shop.commissionRate || 0.1)),
+        tier: (shop.orderCount || 0) >= 50 ? 'gold' : (shop.orderCount || 0) >= 20 ? 'silver' : 'bronze',
+        isOpen: shop.isOpen,
+      }));
+
+      sendSuccess(res, commissions);
+    } catch (error) { next(error); }
+  }
+
+  static async updateCommission(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { shopId } = req.params;
+      const { rate } = req.body;
+      if (typeof rate !== 'number' || rate < 0 || rate > 100) {
+        throw ApiError.badRequest('Rate must be between 0 and 100');
+      }
+
+      const shop = await prisma.shop.update({
+        where: { id: shopId },
+        data: { commissionRate: rate / 100 },
+      });
+
+      sendSuccess(res, { id: shop.id, rate }, 'Commission rate updated');
+    } catch (error) { next(error); }
+  }
 }

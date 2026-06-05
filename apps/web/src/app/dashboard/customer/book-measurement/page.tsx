@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAppStore } from '@/lib/stores/appStore';
+import { servicesApi } from '@/lib/api/services';
 import toast from 'react-hot-toast';
 import {
   MapPin, Clock, Star, User, Phone, Calendar, Ruler,
@@ -47,10 +48,23 @@ export default function BookMeasurementPage() {
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setIsSubmitting(false);
-    setConfirmed(true);
-    toast.success(isRTL ? 'تم حجز موعد القياس بنجاح!' : 'Measurement appointment booked!');
+    try {
+      await servicesApi.create({
+        shopId: 'default', // Will be assigned by backend
+        serviceType: 'ON_SITE_MEASUREMENT',
+        customAddress: address || undefined,
+        scheduledDate: selectedDate || undefined,
+        preferredTime: selectedTime || undefined,
+        notes: rep ? `Preferred rep: ${rep.name}` : undefined,
+      });
+      setConfirmed(true);
+      toast.success(isRTL ? 'تم حجز موعد القياس بنجاح!' : 'Measurement appointment booked!');
+    } catch (err) {
+      console.error('Booking failed', err);
+      toast.error(isRTL ? 'فشل حجز الموعد' : 'Booking failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const rep = MOCK_REPS.find(r => r.id === selectedRep);

@@ -52,4 +52,8 @@ router.get('/reports/revenue', AdminController.getRevenueReports);
 router.get('/reports/shops', AdminController.getShopReports);
 router.get('/audit-logs', AdminController.getAuditLogs);
 
+// Commission endpoints
+router.get('/commissions', AdminController.getCommissions);
+router.put('/commissions/:shopId', AdminController.updateCommission);
+
 export default router;

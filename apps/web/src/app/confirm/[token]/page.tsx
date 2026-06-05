@@ -1,15 +1,16 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAppStore } from '@/lib/stores/appStore';
+import { ordersApi } from '@/lib/api/orders';
 import toast from 'react-hot-toast';
 import {
   CheckCircle2, XCircle, Scissors, Ruler, Package,
   Calendar, DollarSign, AlertTriangle, Clock, MessageSquare,
-  User, Phone, ChevronDown, ChevronUp, Shield,
+  User, Phone, ChevronDown, ChevronUp, Shield, Loader2,
 } from 'lucide-react';
 
 const mockConfirmation = {
@@ -51,7 +52,23 @@ const MEASUREMENTS_AR: Record<string, string> = {
 export default function ConfirmationPage() {
   const { token } = useParams<{ token: string }>();
   const { isRTL } = useAppStore();
-  const data = mockConfirmation;
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    ordersApi.getConfirmation(token)
+      .then((res) => {
+        setData(res);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch confirmation', err);
+        setError(isRTL ? 'رابط التأكيد غير صالح أو منتهي الصلاحية' : 'Invalid or expired confirmation link');
+        setLoading(false);
+      });
+  }, [token, isRTL]);
 
   const [action, setAction] = useState<'approved' | 'changes_requested' | null>(null);
   const [changeNote, setChangeNote] = useState('');
@@ -60,20 +77,54 @@ export default function ConfirmationPage() {
 
   const handleApprove = async () => {
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setIsSubmitting(false);
-    setAction('approved');
-    toast.success(isRTL ? 'تمت الموافقة على الطلب! سيبدأ الإنتاج فوراً' : 'Order approved! Production starts now');
+    try {
+      await ordersApi.approveConfirmation(token);
+      setAction('approved');
+      toast.success(isRTL ? 'تمت الموافقة على الطلب! سيبدأ الإنتاج فوراً' : 'Order approved! Production starts now');
+    } catch (err) {
+      console.error('Approval failed', err);
+      toast.error(isRTL ? 'فشلت الموافقة' : 'Approval failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRequestChanges = async () => {
     if (!changeNote.trim()) { toast.error(isRTL ? 'يرجى وصف التعديل المطلوب' : 'Please describe the changes'); return; }
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setIsSubmitting(false);
-    setAction('changes_requested');
-    toast.success(isRTL ? 'تم إرسال طلب التعديل للمتجر' : 'Change request sent to shop');
+    try {
+      await ordersApi.requestChanges(token, changeNote);
+      setAction('changes_requested');
+      toast.success(isRTL ? 'تم إرسال طلب التعديل للمتجر' : 'Change request sent to shop');
+    } catch (err) {
+      console.error('Change request failed', err);
+      toast.error(isRTL ? 'فشل إرسال طلب التعديل' : 'Failed to send change request');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00373E]" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-6">
+        <div className="text-center max-w-md mx-auto">
+          <div className="w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-6">
+            <XCircle size={48} className="text-red-500" />
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-slate-100 mb-3">{isRTL ? 'خطأ' : 'Error'}</h1>
+          <p className="text-gray-500 dark:text-slate-400">{error || (isRTL ? 'رابط غير صالح' : 'Invalid link')}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (action === 'approved') {
     return (

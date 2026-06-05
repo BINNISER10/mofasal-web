@@ -36,6 +36,9 @@ router.get('/:id/tracking', authenticate, OrderController.getTracking);
 router.patch('/:id/status', authenticate, validate(statusSchema), OrderController.updateStatus);
 router.post('/:id/cancel', authenticate, OrderController.cancel);
 
-
+// Confirmation endpoints (public - uses token)
+router.get('/confirm/:token', OrderController.getConfirmation);
+router.post('/confirm/:token/approve', OrderController.approveConfirmation);
+router.post('/confirm/:token/changes', OrderController.requestChanges);
 
 export default router;

@@ -336,4 +336,63 @@ export class OrderService {
       },
     });
   }
+
+  /**
+   * جلب بيانات التأكيد بالتوكن
+   */
+  static async getConfirmationByToken(token: string) {
+    const link = await prisma.confirmationLink.findUnique({
+      where: { token },
+      include: {
+        order: {
+          include: {
+            shop: { select: { id: true, name: true, nameAr: true, phone: true } },
+            items: true,
+          },
+        },
+      },
+    });
+    if (!link) throw ApiError.notFound('Confirmation link not found');
+    if (link.expiresAt < new Date()) throw ApiError.badRequest('Confirmation link has expired');
+    return link;
+  }
+
+  /**
+   * موافقة العميل على الطلب
+   */
+  static async approveConfirmation(token: string) {
+    const link = await prisma.confirmationLink.findUnique({ where: { token } });
+    if (!link) throw ApiError.notFound('Confirmation link not found');
+    if (link.expiresAt < new Date()) throw ApiError.badRequest('Confirmation link has expired');
+    if (link.customerApproved === true) throw ApiError.badRequest('Already approved');
+
+    const [updatedLink, updatedOrder] = await prisma.$transaction([
+      prisma.confirmationLink.update({
+        where: { token },
+        data: { customerApproved: true, approvedAt: new Date() },
+      }),
+      prisma.order.update({
+        where: { id: link.orderId },
+        data: { isConfirmed: true, confirmedDate: new Date(), status: 'CONFIRMED' },
+      }),
+    ]);
+
+    return { confirmation: updatedLink, order: updatedOrder };
+  }
+
+  /**
+   * طلب تعديلات من العميل
+   */
+  static async requestConfirmationChanges(token: string, notes: string) {
+    const link = await prisma.confirmationLink.findUnique({ where: { token } });
+    if (!link) throw ApiError.notFound('Confirmation link not found');
+    if (link.expiresAt < new Date()) throw ApiError.badRequest('Confirmation link has expired');
+
+    const updated = await prisma.confirmationLink.update({
+      where: { token },
+      data: { customerApproved: false, customerNotes: notes },
+    });
+
+    return { confirmation: updated };
+  }
 }
