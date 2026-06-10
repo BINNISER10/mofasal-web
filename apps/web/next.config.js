@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   output: 'standalone',
+  transpilePackages: ['@mufasal/shared', '@mufasal/ui'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.mufasal.com' },
@@ -10,17 +13,20 @@ const nextConfig = {
       { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
       { protocol: 'https', hostname: 'ui-avatars.com' },
       { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
-  experimental: {
-    optimizeCss: false,
-  },
+  experimental: { optimizeCss: false, externalDir: true },
   webpack: (config) => {
+    const sharedRoot = path.resolve(__dirname, '../../packages/shared');
+    const uiRoot = path.resolve(__dirname, '../../packages/ui/src');
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@mufasal/shared': require('path').resolve(__dirname, '../../packages/shared/src'),
-      '@mufasal/ui': require('path').resolve(__dirname, '../../packages/ui/src'),
+      '@mufasal/shared': sharedRoot,
+      '@mufasal/ui': uiRoot,
+      zod: path.resolve(__dirname, 'node_modules/zod'),
     };
+    config.resolve.extensions = ['.ts', '.tsx', ...config.resolve.extensions];
     return config;
   },
 };
