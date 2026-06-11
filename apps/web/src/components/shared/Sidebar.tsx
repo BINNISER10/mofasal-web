@@ -29,6 +29,7 @@ import {
   Moon,
   Ruler,
   TrendingUp,
+  Shield,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -147,6 +148,13 @@ const menuItems: MenuItem[] = [
     labelAr: 'العمولات',
     icon: <DollarSign size={20} />,
     href: '/dashboard/admin/commissions',
+    roles: ['admin'],
+  },
+  {
+    label: 'Security',
+    labelAr: 'الأمان',
+    icon: <Shield size={20} />,
+    href: '/dashboard/admin/security',
     roles: ['admin'],
   },
   {
