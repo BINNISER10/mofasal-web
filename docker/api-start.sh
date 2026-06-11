@@ -19,7 +19,7 @@ npx prisma migrate deploy --schema=./prisma/schema.prisma || echo "migrate deplo
 
 if [ "${SEED_DATABASE:-false}" = "true" ]; then
   echo "==> seed database"
-  node -r ts-node/register/transpile-only prisma/seed.ts || {
+  node dist/seed.js || {
     echo "seed failed — see error above"
     exit 1
   }
