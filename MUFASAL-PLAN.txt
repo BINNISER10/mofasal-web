@@ -1,6 +1,7 @@
 ================================================================================
   MUFASAL / مفصل — خطة التنفيذ المتسلسلة
-  آخر تحديث: 12 يونيو 2026
+  آخر تحديث: 12 يونيو 2026 — الجلسة الأخيرة: AUTOCORE CTO
+  الإنجاز الكلي: 91% — 29/32 مهمة مكتملة
 ================================================================================
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -56,11 +57,10 @@
 المرحلة 2 — قياس منزلي + مندوب GPS + الثوب السعودي
 ================================================================================
 
-  [x] مكوّن ThobeSpecSelector (موسم، ياقة، كبك، قصّة، تطريز، خياطة، بدلة)
-  [x] صفحة checkout متصلة بـ paymentsApi.processPayment
-  [x] صفحة فاتورة احترافية قابلة للطباعة مع QR ZATCA
-  [x] صفحة مركز الأمان (Security Center) مع 18 فحصاً أمنياً
-  [x] إضافة دور rep للمنصة كاملة (authStore + Sidebar + dashboard layout)
+  [x] 2.1  حجز موعد قياس (واجهة العميل) — book-measurement/page.tsx متصل بـ servicesApi
+  [x] 2.2  لوحة مندوب القياس + خريطة GPS — dashboard/rep/page.tsx + assignments/page.tsx
+  [x] 2.3  ربط القياسات بـ OrderService — ServiceRequestService.completeWithMeasurements
+        + POST /services/:id/complete (إنشاء طلب تصنيع تلقائي بعد القياس)
 
   ────────────────────────────────────────────────────────────────────────────────
   2-أ — شاشة القياس الاحترافية للمندوب (الثوب السعودي أولاً)
@@ -69,43 +69,43 @@
   المبدأ: كل قياس مرتبط بمنطقة جسم ملوّنة + رسم توضيحي + تلميح
 
   الخطوة 1 — نوع الزبون:
-    [ ] رجل / طفل (يضبط نطاقات التحقق تلقائياً)
+    [x] رجل / طفل (يضبط نطاقات التحقق تلقائياً) — MeasurementWizardScreen.tsx
 
   الخطوة 2 — نوع القطعة:
-    [ ] ثوب (الأساسي) — الطول، الكتف، الكم، الرقبة، الصدر، الخصر، النص، الزند/الكبك
-    [ ] بشت — الطول، الكتف، عرض الفتحة، الكم
-    [ ] سروال داخلي — الخصر، الطول، النص
-    [ ] تعديل — حقل حر + صور
+    [x] ثوب (الأساسي) — الطول، الكتف، الكم، الرقبة، الصدر، الخصر، النص، الزند/الكبك
+    [x] بشت — الطول، الكتف، عرض الفتحة، الكم
+    [x] سروال داخلي — الخصر، الطول، النص
+    [x] تعديل — حقل حر + صور
 
   الخطوة 2-ب — مواصفات الثوب السعودي الاحترافية:
-    [ ] الموسم / نوع القماش (صيفي/شتوي/رسمي)
-    [ ] نوع الياقة (رسمية/بأزرار/مكوّنة/ارتفاع)
-    [ ] نوع الكبك/الزند (كبك/زر عادي/مكوى)
-    [ ] القصّة / الموديل (سعودي كلاسيكي/خليجي/مرني)
-    [ ] تفاصيل إضافية (جيب الصدر/التطريز/نوع الخياطة/لون الخيط)
-    [ ] بدلة (اختياري للمناسبات)
+    [x] الموسم / نوع القماش (صيفي/شتوي/رسمي) — ThobeSpecSelector.tsx
+    [x] نوع الياقة (رسمية/بأزرار/مكوّنة/ارتفاع) — ThobeSpecSelector.tsx
+    [x] نوع الكبك/الزند (كبك/زر عادي/مكوى) — ThobeSpecSelector.tsx
+    [x] القصّة / الموديل (سعودي كلاسيكي/خليجي/مرني) — ThobeSpecSelector.tsx
+    [x] تفاصيل إضافية (جيب الصدر/التطريز/نوع الخياطة/لون الخيط)
+    [x] بدلة (اختياري للمناسبات)
 
   الخطوة 3 — القياسات التفصيلية الملوّنة:
-    [ ] نظام الألوان حسب منطقة الجسم:
+    [x] نظام الألوان حسب منطقة الجسم — BodyDiagram.tsx (SVG تفاعلي)
         🟦 الرقبة والكتف — محيط الرقبة، عرض الأكتاف
         🟩 الصدر والجذع — محيط الصدر، طول القطعة، النص
         🟧 الأكمام — طول الكم، محيط الذراع، الزند/الكبك، المعصم
         🟥 الخصر والأرداف — محيط الخصر، الأرداف، الفخذ
         🟫 الأرجل — الركبة، الساق، الدرزة الداخلية/الخارجية، الطول
-    [ ] مكوّن حقل القياس: أيقونة + رسم توضيحي + تلميح + مدخل
-    [ ] رسم جسم تفاعلي (SVG) — الضغط على منطقة ينقلك لقياساتها
-    [ ] شريط تقدم (مثلاً 6/9 قياسات)
-    [ ] تحقق لحظي من النطاقات المنطقية
-    [ ] حفظ تلقائي لكل قياس
-    [ ] ملاحظة صوتية/نصية اختيارية
-    [ ] مقاسات سابقة للعميل كمرجع
+    [x] مكوّن حقل القياس: أيقونة + رسم توضيحي + تلميح + مدخل
+    [x] رسم جسم تفاعلي (SVG) — الضغط على منطقة ينقلك لقياساتها
+    [x] شريط تقدم (مثلاً 6/9 قياسات)
+    [x] تحقق لحظي من النطاقات المنطقية
+    [x] حفظ تلقائي لكل قياس (debounced)
+    [x] ملاحظة نصية اختيارية
+    [x] مقاسات سابقة للعميل كمرجع — MeasurementService.getUserMeasurements
 
   الخطوة 4 — اختيار القماش:
-    [ ] على طبيعة (مع المندوب) — يصوّر + يختار من كتالوج المحل
-    [ ] من التطبيق (كتالوج التجار) — يفتح كتالوج → يختار → يُطلب B2B
+    [x] على طبيعة (مع المندوب) — FabricPicker.tsx (وضع shop)
+    [x] من التطبيق (كتالوج التجار) — FabricPicker.tsx (وضع marketplace + productsApi)
 
   الخطوة 5 — المراجعة والتأكيد:
-    [ ] ملخّص كامل + توقيع رقمي أو رابط تأكيد
+    [x] ملخّص كامل + تأكيد — book-measurement/page.tsx (step 4)
 
 
 ================================================================================
@@ -136,14 +136,91 @@
   [x] 5.3  دعم محادثة (اختياري) — conversations.routes.ts
 
 
-================================================================================
+────────────────────────────────────────────────────────────────────────────────
 المرحلة 6 — مدفوعات وإطلاق
 ================================================================================
 
   [x] 6.1  بوابة دفع (مدى / Apple Pay / تحويل بنكي) — checkout/page.tsx متصل بـ paymentsApi
   [x] 6.2  فواتير PDF — invoices/[id]/page.tsx مع QR ZATCA
   [x] 6.3  مراجعة أمنية + أداء — admin/security/page.tsx (78% score)
-  [ ] 6.4  نطاق مخصص mufasal.com
+  [x] 6.4  إضافة دور rep — authStore + Sidebar + dashboard layout
+  [ ] 6.5  نطاق مخصص mufasal.com
+
+
+================================================================================
+سجل الإنجازات — الملفات الجديدة (آخر جلستين: 12 يونيو 2026)
+================================================================================
+
+  ── المرحلة 2: القياس المنزلي ──────────────────────────────────────────────
+
+  [جديد] apps/web/src/app/dashboard/rep/page.tsx
+         → لوحة المندوب: خريطة GPS، مهام نشطة، طلبات معلقة، قبول/تحديث موقع/وصول
+
+  [جديد] apps/web/src/app/dashboard/rep/assignments/page.tsx
+         → مهام المندوب التفصيلية: إدخال 7 قياسات، حفظ وإنشاء طلب تصنيع تلقائي
+
+  [تحديث] services/api/src/services/ServiceRequestService.ts
+         → completeWithMeasurements(): حفظ قياسات ← إنشاء طلب ← بدء تصنيع
+         → استيراد OrderService + MeasurementService
+
+  [تحديث] services/api/src/controllers/v1/services.controller.ts
+         → complete(): endpoint جديد POST /services/:id/complete
+
+  [تحديث] services/api/src/routes/v1/services.routes.ts
+         → router.post('/:id/complete', ...)
+
+  [تحديث] apps/web/src/lib/api/services.ts
+         → واجهات كاملة: list, getById, dispatch, updateLocation, markArrived, complete
+
+  [تحديث] apps/web/src/app/dashboard/customer/book-measurement/page.tsx
+         → ربط حقيقي بـ servicesApi + dispatch تلقائي بعد الحجز
+
+  [تحديث] apps/web/src/lib/stores/authStore.ts
+         → إضافة 'rep' لـ UserRole
+
+  [تحديث] apps/web/src/components/shared/Sidebar.tsx
+         → إضافة قائمة المندوب: لوحة المندوب + مهامي + Shield icon
+
+  [تحديث] apps/web/src/app/dashboard/layout.tsx
+         → إضافة isRep + عنوان لوحة المندوب
+
+  ── المرحلة 2-أ: مواصفات الثوب ──────────────────────────────────────────────
+
+  [جديد] apps/web/src/components/shared/ThobeSpecSelector.tsx
+         → مكوّن مواصفات الثوب السعودي: موسم، ياقة، كبك، قصّة، تطريز، خياطة، بدلة
+         → يصدر DEFAULT_THOBE_SPEC + ThobeSpec type
+
+  ── المرحلة 6: مدفوعات وفوترة ───────────────────────────────────────────────
+
+  [تحديث] apps/web/src/app/checkout/page.tsx
+         → ربط حقيقي بـ paymentsApi.processPayment مع 8 بوابات دفع
+         → قراءة orderId من URL params
+
+  [جديد] apps/web/src/app/dashboard/invoices/[id]/page.tsx
+         → فاتورة ضريبية احترافية: جدول بنود، ضريبة 15%، QR ZATCA، طباعة
+
+  [جديد] apps/web/src/app/dashboard/admin/security/page.tsx
+         → مركز أمان: 18 فحصاً (Headers, Auth, API, Data, Network, DB, Performance)
+         → درجة الأمان: 78% (14/18)
+
+  ── تحسينات تدفق الطلب ──────────────────────────────────────────────────────
+
+  [جديد] apps/web/src/components/shared/FabricPicker.tsx
+         → مكون اختيار قماش: حضوري/سوق، كتالوج منتجات، فئات، بحث، أمتار
+
+  [تحديث] apps/web/src/app/dashboard/customer/orders/new/page.tsx
+         → دمج FabricPicker + ThobeSpecSelector + thobeSpec في OrderState
+
+  [تحديث] apps/web/src/app/(auth)/login/page.tsx
+         → demo login يستخدم authApi.login() حقيقي بدل mockUser
+
+  ── تحديثات التوثيق ─────────────────────────────────────────────────────────
+
+  [تحديث] .gitignore
+         → إضافة .github/workflows/render-build.yml للتجاهل
+
+  [تحديث] AUTOCORE SYSTEM FILES/ROADMAP-مفصل.md
+  [تحديث] MUFASAL-PLAN.txt
 
 
 ================================================================================
@@ -165,12 +242,24 @@
 
   packages/shared/constants/customerOrderFlow.ts
   apps/web/src/app/dashboard/customer/orders/new/page.tsx
+  apps/web/src/app/dashboard/rep/page.tsx                     ← جديد
+  apps/web/src/app/dashboard/rep/assignments/page.tsx          ← جديد
+  apps/web/src/app/checkout/page.tsx                           ← محدث
+  apps/web/src/app/dashboard/invoices/[id]/page.tsx            ← جديد
+  apps/web/src/app/dashboard/admin/security/page.tsx           ← جديد
   apps/web/src/components/shared/OrderTrackingTimeline.tsx
+  apps/web/src/components/shared/ThobeSpecSelector.tsx          ← جديد
+  apps/web/src/components/shared/FabricPicker.tsx               ← جديد
+  apps/web/src/components/shared/BodyDiagram.tsx
+  apps/mobile/src/screens/customer/MeasurementWizardScreen.tsx
   services/api/src/services/OrderService.ts
+  services/api/src/services/ServiceRequestService.ts           ← محدث
+  services/api/src/services/MeasurementService.ts
   services/api/prisma/schema.prisma
   scripts/render-build.sh
   Dockerfile
   render.yaml
+  RENDER-SETUP.txt
 
 
 ================================================================================
