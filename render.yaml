@@ -1,14 +1,17 @@
-# Render — صورة جاهزة من GitHub Actions (لا build على Render)
+# Render — Docker build (more RAM than Starter Node build; avoids exit 134 OOM)
 services:
   - type: web
     name: mofasal-web
-    runtime: image
+    runtime: docker
     region: frankfurt
     plan: starter
-    image:
-      url: ghcr.io/binniser10/mofasal-web:latest
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
+      - key: PORT
+        value: "3000"
