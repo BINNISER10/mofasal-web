@@ -1,22 +1,24 @@
-/** صور قالب Lomar — ثوب أبيض، أقمشة فاخرة، إضاءة ناعمة */
-const U = 'https://images.unsplash.com';
+/** صور مفصل — صور سعودية أصيلة من Google Drive
+ * تم تحميل 21 صورة تلقائياً
+ * التاريخ: 11 يونيو 2026
+ */
 
 export const HOME_IMAGES = {
-  hero: `${U}/photo-1594938298603-c8148c4dae35?w=1920&q=85&fit=crop`,
+  hero: '/images/hero-thobe.jpg',
   heroSlides: [
-    `${U}/photo-1594938298603-c8148c4dae35?w=1920&q=85&fit=crop`,
-    `${U}/photo-1507679799987-c73779587ccf?w=1920&q=85&fit=crop`,
-    `${U}/photo-1624378515194-6bb30582bedf?w=1920&q=85&fit=crop`,
+    '/images/hero-thobe.jpg',
+    '/images/thobe-black.jpg',
+    '/images/thobe-senior.jpg',
   ],
-  tailoring: `${U}/photo-1594938298603-c8148c4dae35?w=1200&q=85&fit=crop`,
-  fabric: `${U}/photo-1558171813-4c088753af8f?w=1200&q=85&fit=crop`,
-  craftsmanship: `${U}/photo-1507679799987-c73779587ccf?w=1200&q=85&fit=crop`,
-  whiteFabric: `${U}/photo-1624378515194-6bb30582bedf?w=800&q=85&fit=crop`,
-  shops: `${U}/photo-1507679799987-c73779587ccf?w=1200&q=85&fit=crop`,
+  tailoring: '/images/tailor-shop.jpg',
+  fabric: '/images/thobe-looking-up.jpg',
+  craftsmanship: '/images/workshop.jpg',
+  whiteFabric: '/images/hero-thobe.jpg',
+  shops: '/images/thobe-casual.jpg',
   products: [
-    `${U}/photo-1594938298603-c8148c4dae35?w=800&q=85&fit=crop`,
-    `${U}/photo-1507679799987-c73779587ccf?w=800&q=85&fit=crop`,
-    `${U}/photo-1624378515194-6bb30582bedf?w=800&q=85&fit=crop`,
-    `${U}/photo-1558171813-4c088753af8f?w=800&q=85&fit=crop`,
+    '/images/hero-thobe.jpg',
+    '/images/thobe-black.jpg',
+    '/images/thobe-grey.jpg',
+    '/images/thobe-blue.jpg',
   ],
 } as const;

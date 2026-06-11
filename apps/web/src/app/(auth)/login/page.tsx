@@ -27,6 +27,7 @@ export default function LoginPage() {
   ];
 
   const handleDemoLogin = (demo: typeof DEMO_USERS[0]) => {
+    // Demo login for development - will be removed in production
     const mockUser = {
       id: `demo-${demo.role}`,
       name: demo.role === 'admin' ? 'أحمد المدير' : demo.role === 'tailor' ? 'خالد الخياط' : demo.role === 'merchant' ? 'سعد التاجر' : 'محمد العميل',

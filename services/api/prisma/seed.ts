@@ -217,34 +217,69 @@ async function main() {
     },
   });
 
+  // ─── Accounting Chart of Accounts (شجرة الحسابات) ───
+  // الأصول (Assets)
   await prisma.account.create({
-    data: {
-      shopId: shop.id,
-      code: '1000',
-      name: 'صندوق النقدية',
-      type: 'ASSET',
-      balance: 50000,
-    },
+    data: { shopId: shop.id, code: '1000', name: 'صندوق النقدية', type: 'ASSET', balance: 50000 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '1100', name: 'حساب البنك', type: 'ASSET', balance: 150000 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '1200', name: 'الذمم المدينة', type: 'ASSET', balance: 25000 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '1300', name: 'المخزون', type: 'ASSET', balance: 75000 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '1400', name: 'المعدات والأثاث', type: 'ASSET', balance: 30000 },
   });
 
+  // الخصوم (Liabilities)
   await prisma.account.create({
-    data: {
-      shopId: shop.id,
-      code: '2000',
-      name: 'حساب البنك',
-      type: 'ASSET',
-      balance: 150000,
-    },
+    data: { shopId: shop.id, code: '2000', name: 'الذمم الدائنة', type: 'LIABILITY', balance: 15000 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '2100', name: 'الرواتب المستحقة', type: 'LIABILITY', balance: 8000 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '2200', name: 'الضرائب المستحقة', type: 'LIABILITY', balance: 5000 },
   });
 
+  // حقوق الملكية (Equity)
   await prisma.account.create({
-    data: {
-      shopId: shop.id,
-      code: '4000',
-      name: 'إيرادات المبيعات',
-      type: 'REVENUE',
-      balance: 0,
-    },
+    data: { shopId: shop.id, code: '3000', name: 'رأس المال', type: 'EQUITY', balance: 200000 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '3100', name: 'الأرباح المحتجزة', type: 'EQUITY', balance: 62000 },
+  });
+
+  // الإيرادات (Revenue)
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '4000', name: 'إيرادات المبيعات', type: 'REVENUE', balance: 0 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '4100', name: 'إيرادات الخدمات', type: 'REVENUE', balance: 0 },
+  });
+
+  // المصروفات (Expenses)
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '5000', name: 'تكلفة البضاعة المباعة', type: 'EXPENSE', balance: 0 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '5100', name: 'رواتب الموظفين', type: 'EXPENSE', balance: 0 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '5200', name: 'الإيجار', type: 'EXPENSE', balance: 0 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '5300', name: 'الكهرباء والماء', type: 'EXPENSE', balance: 0 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '5400', name: 'المواد الخام', type: 'EXPENSE', balance: 0 },
+  });
+  await prisma.account.create({
+    data: { shopId: shop.id, code: '5500', name: 'العمولات', type: 'EXPENSE', balance: 0 },
   });
 
   // ─── Clear & Seed new module data ───

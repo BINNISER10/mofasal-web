@@ -5,73 +5,148 @@
  * database has no `permissions` seeded yet, `requirePermission` will still grant
  * access based on this map — so applying the middleware can never lock out a
  * legitimate role. Database `permissions` (Json) override these defaults per-shop.
+ *
+ * New format: module:action (e.g., orders:create, payroll:approve)
  */
 
-export type PermissionMap = Record<string, boolean>;
+export type PermissionMap = Record<string, boolean | string[]>;
 
-// All known permission keys (resource-level).
-export const PERMISSIONS = {
-  ORDERS: 'orders',
-  PRODUCTS: 'products',
-  INVENTORY: 'inventory',
-  FINANCES: 'finances',
-  ACCOUNTING: 'accounting',
-  REPORTS: 'reports',
-  HR: 'hr',
-  STAFF: 'staff',
-  PROCUREMENT: 'procurement',
-  SUPPLIERS: 'suppliers',
-  POS: 'pos',
-  USERS: 'users',
-  SHOPS: 'shops',
-  SETTINGS: 'settings',
-  B2B: 'b2b',
-  SERVICES: 'services',
-  MEASUREMENTS: 'measurements',
-  AI: 'ai',
-} as const;
+// All modules
+export const MODULES = [
+  'orders',
+  'products',
+  'inventory',
+  'manufacturing',
+  'hr',
+  'payroll',
+  'accounting',
+  'reports',
+  'settings',
+  'roles',
+  'pos',
+  'procurement',
+  'b2b',
+  'services',
+  'measurements',
+  'ai',
+] as const;
+
+// All actions
+export const ACTIONS = ['view', 'create', 'update', 'delete', 'approve', 'export'] as const;
+
+// Generate all possible permission keys
+export const PERMISSIONS: Record<string, string> = MODULES.reduce((acc, module) => {
+  ACTIONS.forEach((action) => {
+    acc[`${module.toUpperCase()}_${action.toUpperCase()}`] = `${module}:${action}`;
+  });
+  return acc;
+}, {} as Record<string, string>);
 
 const ALL: PermissionMap = { all: true };
 
 /**
- * Default permissions per role name. Role names match `req.user.role`
- * (i.e. the `Role.name` stored in the database / encoded in the JWT).
+ * Helper to create a permission set for a module
+ */
+function modulePerms(actions: string[]): string[] {
+  return actions;
+}
+
+/**
+ * Default permissions per role name using module:action format.
+ * Role names match `req.user.role` (i.e. the `Role.name` stored in the database).
  */
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionMap> = {
   SUPER_ADMIN: ALL,
   ADMIN: ALL,
 
   TAILOR_SHOP: {
-    orders: true, products: true, inventory: true,
-    finances: true, accounting: true, reports: true,
-    hr: true, staff: true, procurement: true, suppliers: true,
-    pos: true, settings: true, services: true, measurements: true,
+    orders: modulePerms(ACTIONS),
+    products: modulePerms(ACTIONS),
+    inventory: modulePerms(ACTIONS),
+    manufacturing: modulePerms(ACTIONS),
+    hr: modulePerms(ACTIONS),
+    payroll: ['view', 'approve'],
+    accounting: modulePerms(ACTIONS),
+    reports: modulePerms(ACTIONS),
+    settings: modulePerms(ACTIONS),
+    roles: ['view'],
+    pos: modulePerms(ACTIONS),
+    procurement: modulePerms(ACTIONS),
+    services: modulePerms(ACTIONS),
+    measurements: modulePerms(ACTIONS),
   },
 
   TAILOR: {
-    orders: true, products: true, inventory: true,
-    staff: true, services: true, measurements: true,
+    orders: ['view', 'update'],
+    products: ['view'],
+    inventory: ['view'],
+    manufacturing: ['view', 'update'],
+    hr: ['view'],
+    services: ['view'],
+    measurements: ['view', 'create'],
   },
 
   STAFF: {
-    orders: true, products: true, inventory: true,
-    reports: true, services: true, measurements: true,
+    orders: ['view'],
+    products: ['view'],
+    inventory: ['view'],
+    reports: ['view'],
+    services: ['view'],
+    measurements: ['view'],
   },
 
   MERCHANT: {
-    products: true, inventory: true, finances: true,
-    accounting: true, reports: true, procurement: true,
-    suppliers: true, pos: true, b2b: true, settings: true,
+    products: modulePerms(ACTIONS),
+    inventory: modulePerms(ACTIONS),
+    accounting: modulePerms(ACTIONS),
+    reports: modulePerms(ACTIONS),
+    procurement: modulePerms(ACTIONS),
+    pos: modulePerms(ACTIONS),
+    b2b: modulePerms(ACTIONS),
+    settings: modulePerms(ACTIONS),
   },
 
   REPRESENTATIVE: {
-    services: true, orders: true, measurements: true,
+    services: ['view', 'create'],
+    orders: ['view', 'create'],
+    measurements: ['view', 'create'],
   },
 
   CUSTOMER: {
-    orders: true, measurements: true, ai: true,
+    orders: ['view', 'create'],
+    measurements: ['view', 'create'],
+    ai: ['view'],
   },
 };
+
+/**
+ * Check if a role has a specific permission (module:action format)
+ */
+export function hasPermission(
+  rolePermissions: PermissionMap,
+  permission: string
+): boolean {
+  // If all permissions are granted
+  if (rolePermissions.all === true) return true;
+
+  const [module, action] = permission.split(':');
+  if (!module || !action) return false;
+
+  const modulePerms = rolePermissions[module];
+  if (!modulePerms) return false;
+
+  // If module permissions is an array of actions
+  if (Array.isArray(modulePerms)) {
+    return modulePerms.includes(action);
+  }
+
+  // Legacy boolean format (backward compatibility)
+  if (typeof modulePerms === 'boolean') {
+    return modulePerms;
+  }
+
+  return false;
+}
 
 /**
  * Resolve the effective permission map for a role: DB permissions take

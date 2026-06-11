@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { ApiError } from '../utils/ApiError';
 import prisma from '../config/database';
-import { resolvePermissions } from '../config/permissions';
+import { resolvePermissions, hasPermission } from '../config/permissions';
 
 export interface JwtPayload {
   userId: string;
@@ -83,6 +83,7 @@ export const requirePermission = (...permissions: string[]) => {
     if (!req.user) {
       return next(ApiError.unauthorized());
     }
+    // Admin and Super Admin have all permissions
     if (req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN') {
       return next();
     }
@@ -97,7 +98,11 @@ export const requirePermission = (...permissions: string[]) => {
       // DB permissions override, with code-level defaults as a safe fallback
       // so a legitimate role is never locked out before permissions are seeded.
       const perms = resolvePermissions(req.user.role, role?.permissions as Record<string, unknown>);
-      if (perms.all === true || permissions.some((p) => perms[p] === true)) {
+      
+      // Check if user has any of the required permissions
+      const hasAnyPermission = permissions.some((p) => hasPermission(perms, p));
+      
+      if (hasAnyPermission) {
         return next();
       }
       return next(ApiError.forbidden('Insufficient permissions'));

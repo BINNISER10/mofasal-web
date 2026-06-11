@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -19,11 +19,8 @@ const STEPS = [
   { id: 4, ar: 'تأكيد الحجز', en: 'Confirm' },
 ];
 
-const MOCK_REPS = [
-  { id: 'r1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, availableToday: true, avatar: 'م', pricePerVisit: 30 },
-  { id: 'r2', name: 'فهد العتيبي', rating: 4.8, completedJobs: 218, distanceKm: 2.5, availableToday: true, avatar: 'ف', pricePerVisit: 25 },
-  { id: 'r3', name: 'سعد الغامدي', rating: 4.7, completedJobs: 189, distanceKm: 3.8, availableToday: false, avatar: 'س', pricePerVisit: 20 },
-];
+const [reps, setReps] = useState<any[]>([]);
+const [loadingReps, setLoadingReps] = useState(false);
 
 const TIME_SLOTS = [
   '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00',
@@ -46,6 +43,21 @@ export default function BookMeasurementPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
+  // Fetch available reps from API
+  useEffect(() => {
+    if (step === 2) {
+      setLoadingReps(true);
+      // TODO: Replace with actual API call
+      // servicesApi.getAvailableReps().then(setReps).finally(() => setLoadingReps(false));
+      setReps([
+        { id: 'r1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, availableToday: true, avatar: 'م', pricePerVisit: 30 },
+        { id: 'r2', name: 'فهد العتيبي', rating: 4.8, completedJobs: 218, distanceKm: 2.5, availableToday: true, avatar: 'ف', pricePerVisit: 25 },
+        { id: 'r3', name: 'سعد الغامدي', rating: 4.7, completedJobs: 189, distanceKm: 3.8, availableToday: false, avatar: 'س', pricePerVisit: 20 },
+      ]);
+      setLoadingReps(false);
+    }
+  }, [step]);
+
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
@@ -67,7 +79,7 @@ export default function BookMeasurementPage() {
     }
   };
 
-  const rep = MOCK_REPS.find(r => r.id === selectedRep);
+  const rep = reps.find(r => r.id === selectedRep);
 
   if (confirmed) {
     return (
@@ -161,41 +173,49 @@ export default function BookMeasurementPage() {
       {/* Step 2: Choose Rep */}
       {step === 2 && (
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-gray-600 dark:text-slate-400 mb-3">
-            {isRTL ? `${MOCK_REPS.length} مندوبين متاحون بالقرب منك` : `${MOCK_REPS.length} reps available near you`}
-          </p>
-          {MOCK_REPS.map(r => (
-            <button
-              key={r.id}
-              onClick={() => setSelectedRep(r.id)}
-              className={`w-full text-start p-4 rounded-2xl border-2 transition-all ${
-                selectedRep === r.id
-                  ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xl font-black flex-shrink-0">
-                  {r.avatar}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-gray-900 dark:text-slate-100">{r.name}</p>
-                    {r.availableToday && <Badge variant="success" size="sm">متاح اليوم</Badge>}
+          {loadingReps ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full mx-auto" />
+            </div>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-gray-600 dark:text-slate-400 mb-3">
+                {isRTL ? `${reps.length} مندوبين متاحون بالقرب منك` : `${reps.length} reps available near you`}
+              </p>
+              {reps.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setSelectedRep(r.id)}
+                  className={`w-full text-start p-4 rounded-2xl border-2 transition-all ${
+                    selectedRep === r.id
+                      ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xl font-black flex-shrink-0">
+                      {r.avatar}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-gray-900 dark:text-slate-100">{r.name}</p>
+                        {r.availableToday && <Badge variant="success" size="sm">متاح اليوم</Badge>}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-slate-400">
+                        <span className="flex items-center gap-1"><Star size={11} className="text-yellow-400 fill-yellow-400" />{r.rating}</span>
+                        <span>{r.completedJobs} قياس</span>
+                        <span className="flex items-center gap-1"><MapPin size={11} />{r.distanceKm} كم</span>
+                      </div>
+                    </div>
+                    <div className="text-end">
+                      <p className="text-sm font-black text-primary-700 dark:text-primary-400">{r.pricePerVisit} ر.س</p>
+                      <p className="text-xs text-gray-400 dark:text-slate-500">{isRTL ? 'زيارة' : 'visit'}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-slate-400">
-                    <span className="flex items-center gap-1"><Star size={11} className="text-yellow-400 fill-yellow-400" />{r.rating}</span>
-                    <span>{r.completedJobs} قياس</span>
-                    <span className="flex items-center gap-1"><MapPin size={11} />{r.distanceKm} كم</span>
-                  </div>
-                </div>
-                <div className="text-end">
-                  <p className="text-sm font-black text-primary-700 dark:text-primary-400">{r.pricePerVisit} ر.س</p>
-                  <p className="text-xs text-gray-400 dark:text-slate-500">{isRTL ? 'زيارة' : 'visit'}</p>
-                </div>
-              </div>
-            </button>
-          ))}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
 
