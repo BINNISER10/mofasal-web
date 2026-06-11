@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-import { DEFAULT_ROLE_PERMISSIONS } from '../src/config/permissions';
+import { DEFAULT_ROLE_PERMISSIONS } from '../dist/config/permissions';
 
 const prisma = new PrismaClient();
 
