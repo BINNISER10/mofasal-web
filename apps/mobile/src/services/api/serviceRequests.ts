@@ -108,4 +108,16 @@ export const serviceRequestsApi = {
     const response = await apiClient.put(`${BASE}/${id}`, data);
     return response.data as ServiceRequest;
   },
+
+  // إكمال القياسات وإنشاء طلب تصنيع تلقائي
+  complete: async (id: string, data: {
+    measurements: Record<string, number>;
+    notes?: string;
+    garmentType?: string;
+    fabricId?: string;
+    fabricSource?: string;
+  }): Promise<{ request: ServiceRequest; order: any }> => {
+    const response = await apiClient.post(`${BASE}/${id}/complete`, data);
+    return response.data as { request: ServiceRequest; order: any };
+  },
 };

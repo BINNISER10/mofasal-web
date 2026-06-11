@@ -136,6 +136,11 @@ async function main() {
     { name: 'Italian Silk Fabric', nameAr: 'قماش حرير إيطالي', price: 450, costPrice: 200, categoryId: catFabrics.id, sku: 'FAB-002', unit: 'meter' },
     { name: 'Wool Blend Fabric', nameAr: 'قماش صوف مخلوط', price: 280, costPrice: 140, categoryId: catFabrics.id, sku: 'FAB-003', unit: 'meter' },
     { name: 'Linen Fabric', nameAr: 'قماش كتان', price: 150, costPrice: 70, categoryId: catFabrics.id, sku: 'FAB-004', unit: 'meter' },
+    { name: 'Cashmere Wool', nameAr: 'صوف كشمير فاخر', price: 580, costPrice: 300, categoryId: catFabrics.id, sku: 'FAB-005', unit: 'meter' },
+    { name: 'Japanese Cotton', nameAr: 'قطن ياباني ناعم', price: 200, costPrice: 100, categoryId: catFabrics.id, sku: 'FAB-006', unit: 'meter' },
+    { name: 'French Velvet', nameAr: 'مخمل فرنسي', price: 350, costPrice: 180, categoryId: catFabrics.id, sku: 'FAB-007', unit: 'meter' },
+    { name: 'Summer Niaqa', nameAr: 'نياقة صيفي خفيف', price: 90, costPrice: 40, categoryId: catFabrics.id, sku: 'FAB-008', unit: 'meter' },
+    { name: 'Winter Niaqa', nameAr: 'نياقة شتوي ثقيل', price: 130, costPrice: 65, categoryId: catFabrics.id, sku: 'FAB-009', unit: 'meter' },
     { name: 'Boys White Thobe Fabric', nameAr: 'قماش ثوب أطفال أبيض', price: 95, costPrice: 45, categoryId: catKids.id, sku: 'KIDS-001', unit: 'meter' },
   ];
 
@@ -164,6 +169,36 @@ async function main() {
     create: { shopId: shop.id, name: 'أحمد العميل', email: 'customer@mufasal.com', phone: '966511111111', password, roleId: roleCustomer.id, status: 'ACTIVE' },
     update: { name: 'أحمد العميل', password, roleId: roleCustomer.id, status: 'ACTIVE' },
   });
+
+  // ─── Representatives (مناديب القياس) ───
+  const roleRep = await prisma.role.findFirst({ where: { shopId: shop.id, name: 'REPRESENTATIVE' } });
+  if (roleRep) {
+    await prisma.user.upsert({
+      where: { email: 'rep@mufasal.com' },
+      create: { shopId: shop.id, name: 'ماجد الشمري', email: 'rep@mufasal.com', phone: '966522222222', password, roleId: roleRep.id, status: 'ACTIVE' },
+      update: { name: 'ماجد الشمري', password, roleId: roleRep.id, status: 'ACTIVE' },
+    });
+    await prisma.user.upsert({
+      where: { email: 'rep2@mufasal.com' },
+      create: { shopId: shop.id, name: 'فهد العتيبي', email: 'rep2@mufasal.com', phone: '966522222223', password, roleId: roleRep.id, status: 'ACTIVE' },
+      update: { name: 'فهد العتيبي', password, roleId: roleRep.id, status: 'ACTIVE' },
+    });
+  }
+
+  // ─── Tailor & Merchant users ───
+  await prisma.user.upsert({
+    where: { email: 'tailor@mufasal.com' },
+    create: { shopId: shop.id, name: 'خالد الخياط', email: 'tailor@mufasal.com', phone: '966533333333', password, roleId: roleTailor.id, status: 'ACTIVE' },
+    update: { name: 'خالد الخياط', password, roleId: roleTailor.id, status: 'ACTIVE' },
+  });
+  const roleMerchant = await prisma.role.findFirst({ where: { shopId: shop.id, name: 'MERCHANT' } });
+  if (roleMerchant) {
+    await prisma.user.upsert({
+      where: { email: 'merchant@mufasal.com' },
+      create: { shopId: shop.id, name: 'سعد التاجر', email: 'merchant@mufasal.com', phone: '966544444444', password, roleId: roleMerchant.id, status: 'ACTIVE' },
+      update: { name: 'سعد التاجر', password, roleId: roleMerchant.id, status: 'ACTIVE' },
+    });
+  }
 
   const tailorServices = [
     { serviceType: 'TAILORING', name: 'Men Thobe', nameAr: 'ثوب رجالي', price: 350, duration: 5 },
@@ -370,9 +405,12 @@ async function main() {
   console.log('Seed completed successfully!');
   console.log(`  Admin: admin@mufasal.com / admin123`);
   console.log(`  Customer: customer@mufasal.com / admin123`);
+  console.log(`  Rep: rep@mufasal.com / admin123`);
+  console.log(`  Tailor: tailor@mufasal.com / admin123`);
+  console.log(`  Merchant: merchant@mufasal.com / admin123`);
   console.log(`  Shop: ${shop.name}`);
-  console.log(`  Products: ${products.length}`);
-  console.log(`  Employees: 3, Suppliers: 2, Departments: 3`);
+  console.log(`  Products: ${products.length} (including fabrics)`);
+  console.log(`  Employees: 3, Suppliers: 2, Representatives: 2`);
 }
 
 main()
