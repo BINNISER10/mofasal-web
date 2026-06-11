@@ -1,0 +1,13 @@
+{
+  "name": "mufasal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MUFASAL",
+  "scripts": {
+    "postinstall": "cd packages/shared && npm install",
+    "build": "cd apps/web && npm install && npm run build",
+    "start": "cd apps/web && npm start"
+  },
+  "engines": { "node": ">=18.0.0" },
+  "devDependencies": { "typescript": "^5.3.3" }
+}

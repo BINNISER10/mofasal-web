@@ -1,0 +1,72 @@
+{
+  "hero": {
+    "titleAr": "مفصّل على مقاسك",
+    "titleEn": "Tailored to Your Measure",
+    "subtitleAr": "منصة الخياطة الذكية للرجال والأطفال — تواصل مع أفضل الخياطين واختر أقمشتك وتابع طلبك رقمياً",
+    "subtitleEn": "Smart tailoring for men and boys — connect with top tailors, choose fabrics, and track your order digitally",
+    "ctaPrimaryAr": "ابدأ الآن",
+    "ctaPrimaryEn": "Get Started",
+    "ctaSecondaryAr": "تصفح الخياطين",
+    "ctaSecondaryEn": "Browse Tailors",
+    "videoUrl": "/videos/fashion.mp4",
+    "badge": "✦ منصة الخياطة الذكية رقم 1 في السعودية ✦"
+  },
+  "stats": [
+    { "valueAr": "+٢٠٠٠", "valueEn": "2000+", "labelAr": "خياط محترف", "labelEn": "Pro Tailors" },
+    { "valueAr": "+٥٠٠٠٠", "valueEn": "50K+", "labelAr": "طلب منجز", "labelEn": "Orders Done" },
+    { "valueAr": "٣٠+", "valueEn": "30+", "labelAr": "مدينة مغطاة", "labelEn": "Cities Covered" },
+    { "valueAr": "٤.٩★", "valueEn": "4.9★", "labelAr": "تقييم المستخدمين", "labelEn": "User Rating" }
+  ],
+  "howItWorks": {
+    "titleAr": "كيف يعمل مفصّل؟",
+    "titleEn": "How Does Mofasal Work?",
+    "steps": [
+      { "numAr": "٠١", "numEn": "01", "titleAr": "اختر خياطك", "titleEn": "Choose Your Tailor", "descAr": "تصفح مئات الخياطين المعتمدين بتقييمات حقيقية وعروض أسعار شفافة", "descEn": "Browse hundreds of certified tailors with real ratings and transparent pricing" },
+      { "numAr": "٠٢", "numEn": "02", "titleAr": "حدد القماش", "titleEn": "Select Your Fabric", "descAr": "اختر من سوق الأقمشة المتنوع أو أرسل قماشك الخاص مع ضمان الجودة", "descEn": "Choose from our diverse fabric marketplace or send your own fabric with quality guarantee" },
+      { "numAr": "٠٣", "numEn": "03", "titleAr": "تابع واستلم", "titleEn": "Track & Receive", "descAr": "تابع مراحل الخياطة خطوة بخطوة مع تحديثات لحظية واستلم طلبك أينما كنت", "descEn": "Track tailoring stages step by step with real-time updates and receive your order anywhere" }
+    ]
+  },
+  "features": {
+    "titleAr": "مميزات المنصة",
+    "titleEn": "Platform Features",
+    "subtitleAr": "كل ما تحتاجه في مكان واحد",
+    "subtitleEn": "Everything you need in one place",
+    "items": [
+      { "icon": "Ruler", "titleAr": "قياس في الموقع", "titleEn": "On-Site Measurement", "descAr": "فني متخصص يأتي إليك لأخذ المقاسات بدقة في منزلك أو مكتبك أو أي مكان تختاره", "descEn": "A specialist technician comes to you to take precise measurements at your home, office, or any location" },
+      { "icon": "Smartphone", "titleAr": "تأكيد رقمي", "titleEn": "Digital Confirmation", "descAr": "شاهد تفاصيل مقاسك واختيارات القماش والسعر النهائي ووافق رقمياً قبل بدء الإنتاج", "descEn": "View your measurement details, fabric choices, and final price, then approve digitally before production begins" },
+      { "icon": "Truck", "titleAr": "تتبع تفاعلي", "titleEn": "Interactive Tracking", "descAr": "تابع طلبك خطوة بخطوة مع رسوم متحركة من أخذ المقاسات حتى التوصيل لباب منزلك", "descEn": "Track your order step by step with animations from measurement to delivery at your door" },
+      { "icon": "Store", "titleAr": "سوق الأقمشة", "titleEn": "Fabric Marketplace", "descAr": "تصفح وانتق أجود الأقمشة والإكسسوارات من تجار موثوقين بأسعار تنافسية", "descEn": "Browse and select the finest fabrics and accessories from trusted merchants at competitive prices" }
+    ]
+  },
+  "lookbook": {
+    "titleAr": "أناقة السعودي",
+    "titleEn": "Saudi Elegance",
+    "subtitleAr": "تفصيل راقٍ يعكس الهوية الأصيلة",
+    "subtitleEn": "Premium tailoring that reflects authentic identity",
+    "badge": "✦ LOOKBOOK 2025 ✦"
+  },
+  "cta": {
+    "titleAr": "ابدأ رحلة الأناقة اليوم",
+    "titleEn": "Start Your Elegance Journey Today",
+    "subtitleAr": "انضم لآلاف العملاء الراضين واحصل على تجربة خياطة لا مثيل لها",
+    "subtitleEn": "Join thousands of satisfied customers and get an unparalleled tailoring experience",
+    "btnAr": "جرّب مجاناً",
+    "btnEn": "Try for Free"
+  },
+  "footer": {
+    "taglineAr": "منصة الخياطة الذكية للرجال والأطفال",
+    "taglineEn": "Smart Tailoring Platform for Men & Boys"
+  },
+  "theme": {
+    "primaryColor": "#00373E",
+    "secondaryColor": "#481719",
+    "accentColor": "#735B4D",
+    "goldColor": "#D4A017"
+  },
+  "seo": {
+    "titleAr": "مفصل | منصة الخياطة الذكية",
+    "titleEn": "Mofasal | Smart Tailoring Platform",
+    "descriptionAr": "منصة مفصل للخياطة الذكية في المملكة العربية السعودية",
+    "descriptionEn": "Mofasal smart tailoring platform in Saudi Arabia"
+  }
+}

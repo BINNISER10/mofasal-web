@@ -1,0 +1,49 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ⚠ Found lockfile missing swc dependencies, patching...
+ ⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
+TypeError: Cannot read properties of undefined (reading 'os')
+    at fetchPkgInfo (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\lib\patch-incorrect-lockfile.js:73:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Promise.all (index 7)
+    at async patchIncorrectLockfile (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\lib\patch-incorrect-lockfile.js:162:26)
+ ✓ Ready in 13s
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: Unable to snapshot resolve dependencies
+ ○ Compiling / ...
+ ✓ Compiled / in 15.5s (671 modules)
+ ⨯ Error: Cannot find module 'G:\My Drive\OPEN CODE\MOFASAL\apps\web\.next\server\middleware-manifest.json'
+Require stack:
+- G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\next-server.js
+- G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\dev\next-dev-server.js
+- G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\next.js
+- G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\lib\start-server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1143:15)
+    at G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\require-hook.js:55:36
+    at Module._load (node:internal/modules/cjs/loader:984:27)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at mod.require (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:179:18)
+    at DevServer.getMiddlewareManifest (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\next-server.js:938:26)
+    at DevServer.getEdgeFunctionsPages (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\next-server.js:954:31)
+    at NextNodeServer.handleCatchallRenderRequest (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\next-server.js:238:49)
+    at async DevServer.handleRequestImpl (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\base-server.js:818:17)
+    at async G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (G:\My Drive\OPEN CODE\MOFASAL\apps\web\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'G:\\My Drive\\OPEN CODE\\MOFASAL\\apps\\web\\node_modules\\next\\dist\\server\\next-server.js',
+    'G:\\My Drive\\OPEN CODE\\MOFASAL\\apps\\web\\node_modules\\next\\dist\\server\\dev\\next-dev-server.js',
+    'G:\\My Drive\\OPEN CODE\\MOFASAL\\apps\\web\\node_modules\\next\\dist\\server\\next.js',
+    'G:\\My Drive\\OPEN CODE\\MOFASAL\\apps\\web\\node_modules\\next\\dist\\server\\lib\\start-server.js'
+  ]
+}
+ ○ Compiling /_error ...
+[?25h
