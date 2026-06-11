@@ -94,6 +94,9 @@ start-dev.bat
 |------|-------|----------|
 | Admin | admin@mufasal.com | admin123 |
 | Customer | customer@mufasal.com | admin123 |
+| Rep | rep@mufasal.com | admin123 |
+| Tailor | tailor@mufasal.com | admin123 |
+| Merchant | merchant@mufasal.com | admin123 |
 
 ---
 
@@ -117,10 +120,10 @@ docker compose down
 ### Production URLs
 | Service | URL |
 |---------|-----|
-| Web App | https://mufasal.com |
-| API | https://api.mufasal.com/api/v1 |
-| API Health | https://api.mufasal.com/api/health |
-| WebSocket | wss://api.mufasal.com |
+| Web App | https://mufasal.onrender.com |
+| API | https://mufasal-api.onrender.com/api/v1 |
+| API Health | https://mufasal-api.onrender.com/api/health |
+| WebSocket | wss://mufasal-api.onrender.com |
 
 ---
 

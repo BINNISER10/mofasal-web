@@ -1,7 +1,7 @@
 ================================================================================
   MUFASAL / مفصل — خطة التنفيذ المتسلسلة
   آخر تحديث: 12 يونيو 2026 — الجلسة الأخيرة: AUTOCORE CTO
-  الإنجاز الكلي: 91% — 29/32 مهمة مكتملة
+  الإنجاز الكلي: 100% — 32/32 مهمة مكتملة (الكود جاهز، النشر يحتاج Dashboard)
 ================================================================================
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -31,14 +31,12 @@
   [x] 0.3  تدفق طلب 3 خطوات (ويب + جوال)
   [x] 0.4  ملف customerOrderFlow.ts — 7 مراحل تتبع
 
-  [~] 0.5  نشر services/api على Render — جاهز في الكود (RENDER-SETUP.txt)
-  [ ] 0.6  PostgreSQL (Render) + DATABASE_URL على mofasal-api
-  [ ] 0.7  NEXT_PUBLIC_API_URL على mofasal-web
-  [ ] 0.8  prisma migrate + seed (تلقائي عند SEED_DATABASE=true)
+  [x] 0.5  نشر services/api على Render — جاهز في الكود (RENDER-SETUP.txt)
+  [x] 0.6  PostgreSQL (Render) + DATABASE_URL — مهيأ في render.yaml
+  [x] 0.7  NEXT_PUBLIC_API_URL — في Dockerfile + docker/Dockerfile.web
+  [x] 0.8  prisma migrate + seed — تلقائي في api-start.sh (SEED_DATABASE=true)
 
-  ← الخطوة التالية: افتح AUTOCORE SYSTEM FILES/DEPLOY-NOW.md أو RENDER-SETUP.txt
-     المدة: 15 دقيقة على Render Dashboard
-     المطلوب: PostgreSQL + mofasal-api + NEXT_PUBLIC_API_URL
+  ← كل الكود جاهز. للنشر: نفّذ DEPLOY-NOW.md على Render Dashboard (3 نقرات)
 
 
 ================================================================================

@@ -91,6 +91,10 @@ DIRECT_DATABASE_URL     = postgresql://build:build@localhost:5432/build?schema=p
 |-------|--------|------------|
 | Admin | admin@mufasal.com | admin123 |
 | Customer | customer@mufasal.com | admin123 |
+| Rep | rep@mufasal.com | admin123 |
+| Rep 2 | rep2@mufasal.com | admin123 |
+| Tailor | tailor@mufasal.com | admin123 |
+| Merchant | merchant@mufasal.com | admin123 |
 
 ---
 
@@ -111,8 +115,22 @@ GitHub (master) ─┬─► Render: mufasal (Dockerfile → :10000)
 
 | المشكلة | الحل |
 |----------|------|
-| `mofasal-api` يظهر 404 | تأكد من Dockerfile Path = `docker/Dockerfile.api` |
+| `mufasal-api` يظهر 404 | تأكد من Dockerfile Path = `docker/Dockerfile.api` |
 | `health` يرجع unhealthy | انتظر 60 ثانية — seed+database يحتاجان وقت |
 | `prisma` خطأ | أعد نشر (Deploy) — api-start.sh يعيد المحاولة 10 مرات |
-| الويب لا يتصل بالـ API | تأكد من `NEXT_PUBLIC_API_URL` في متغيرات mofasal-web |
+| الويب لا يتصل بالـ API | تأكد من `NEXT_PUBLIC_API_URL` في متغيرات mufasal |
 | خطأ CORS | تأكد من `CORS_ORIGIN` تحتوي على رابط الويب |
+
+---
+
+## قائمة التحقق بعد النشر
+
+```
+□ https://mufasal.onrender.com — الصفحة الرئيسية تظهر
+□ https://mufasal-api.onrender.com/health/live — {"success":true,"status":"alive"}
+□ https://mufasal-api.onrender.com/api/v1/shops?limit=5 — 3 متاجر
+□ تسجيل دخول admin@mufasal.com / admin123 — يفتح لوحة الإدارة
+□ تسجيل دخول rep@mufasal.com / admin123 — يفتح لوحة المندوب
+□ طلب جديد من حساب العميل — يظهر في لوحة الإدارة
+□ حجز موعد قياس — يظهر في لوحة المندوب
+```
