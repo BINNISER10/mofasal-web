@@ -1,6 +1,11 @@
 # Multi-stage Next.js build — runs on Render Docker builders (not 512MB Node heap)
 FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl
+# Extra swap for Render starter build env (512MB) during npm ci.
+RUN dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none 2>/dev/null || true \
+ && chmod 600 /swapfile 2>/dev/null || true \
+ && mkswap /swapfile 2>/dev/null || true \
+ && swapon /swapfile 2>/dev/null || true
 WORKDIR /app
 
 COPY packages/shared/package.json packages/shared/
