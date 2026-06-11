@@ -11,11 +11,11 @@ databases:
 services:
   - type: web
     name: mofasal-web
-    runtime: node
+    runtime: docker
     region: frankfurt
     plan: standard
-    buildCommand: npm install && npm run build
-    startCommand: cd apps/web && npm start
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /
     envVars:
       - key: NODE_ENV

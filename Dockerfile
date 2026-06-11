@@ -16,9 +16,14 @@ COPY packages/ui packages/ui
 COPY apps/web apps/web
 
 WORKDIR /app/apps/web
+
+# NEXT_PUBLIC_* must be present at build time (Render passes service env vars into docker build).
+ARG NEXT_PUBLIC_API_URL=https://mofasal-api.onrender.com/api/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NODE_OPTIONS=--max-old-space-size=4096
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV GENERATE_SOURCEMAP=false
+
 RUN npx prisma generate --schema=./prisma/schema.prisma \
  && npm run build
 
@@ -37,5 +42,9 @@ COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
 RUN chown -R nextjs:nodejs /app
 USER nextjs
-EXPOSE 3000
+EXPOSE 10000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:10000/ || exit 1
+
 CMD ["node", "apps/web/server.js"]

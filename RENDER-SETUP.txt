@@ -2,8 +2,14 @@
   مفصل MUFASAL — إعداد Render (API + قاعدة البيانات)
 ================================================================================
 
-الويب يعمل: https://mofasal-web.onrender.com (Standard)
-الخطوة التالية: تشغيل API على https://mofasal-api.onrender.com
+الويب: https://mofasal-web.onrender.com
+الـ API: https://mofasal-api.onrender.com
+
+مهم — الويب يجب أن يُبنى بـ Docker (ليس Node) لتجنب OOM أثناء npm install:
+  Settings → Environment: Docker
+  Dockerfile: Dockerfile (جذر المستودع)
+  Docker Context: .
+  Plan: Standard
 
 ────────────────────────────────────────────────────────────────────────────────
 1) قاعدة بيانات PostgreSQL

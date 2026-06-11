@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Render Starter (512MB RAM) — بناء خفيف بدون OOM (exit 134)
+# Fallback Node build (512MB Render build env often OOMs on apps/web npm install).
+# Prefer Docker: root Dockerfile — Settings → Environment: Docker on Render.
 set -euo pipefail
 
-export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=384}"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=460}"
+export npm_config_maxsockets="${npm_config_maxsockets:-1}"
 export NEXT_TELEMETRY_DISABLED=1
 export GENERATE_SOURCEMAP=false
 
@@ -18,7 +20,7 @@ npm install --no-audit --no-fund --prefer-offline 2>/dev/null || npm install --n
 
 echo "==> apps/web install (skip postinstall)"
 cd ../../apps/web
-npm install --no-audit --no-fund --ignore-scripts
+npm install --no-audit --no-fund --ignore-scripts --omit=optional --no-bin-links
 
 echo "==> prisma generate"
 npx prisma generate --schema=./prisma/schema.prisma
