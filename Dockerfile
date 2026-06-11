@@ -1,3 +1,4 @@
+# Legacy path for CI — canonical image: docker/Dockerfile.web (mofasal-web on Render)
 # Multi-stage Next.js build — runs on Render Docker builders (not 512MB Node heap)
 FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl

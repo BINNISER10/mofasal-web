@@ -1,45 +1,63 @@
-# ═════════════════════════════════════════════════════════
-# MUFASAL Next.js Web — Multi-stage Docker Build
-# ═════════════════════════════════════════════════════════
-
-FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-COPY apps/web/package.json ./
-RUN npm ci
-
+# MUFASAL Web — Docker build for Render (same layout as docker/Dockerfile.api)
 FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat openssl
+RUN dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none 2>/dev/null || true \
+ && chmod 600 /swapfile 2>/dev/null || true \
+ && mkswap /swapfile 2>/dev/null || true \
+ && swapon /swapfile 2>/dev/null || true
 WORKDIR /app
 
-COPY apps/web/ ./
-COPY --from=deps /app/node_modules ./node_modules
+COPY packages/shared/package.json packages/shared/
+COPY packages/ui/package.json packages/ui/
+COPY apps/web/package.json apps/web/package-lock.json apps/web/.npmrc apps/web/
 
+ENV NPM_CONFIG_MAXSOCKETS=1
+RUN cd packages/shared && npm install --no-audit --no-fund
+RUN cd /app/packages/ui && npm install --no-audit --no-fund
+RUN cd /app/apps/web && npm config set fetch-retries 5 \
+ && npm config set fetch-retry-maxtimeout 120000 \
+ && npm install --no-audit --no-fund --ignore-scripts --omit=optional --no-bin-links --loglevel=info
+
+COPY packages/shared packages/shared
+COPY packages/ui packages/ui
+COPY apps/web apps/web
+
+WORKDIR /app/apps/web
+
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=public
+ARG DIRECT_DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=public
+ENV DATABASE_URL=$DATABASE_URL
+ENV DIRECT_DATABASE_URL=$DIRECT_DATABASE_URL
+
+ARG NEXT_PUBLIC_API_URL=https://mofasal-api.onrender.com/api/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NODE_OPTIONS=--max-old-space-size=4096
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+ENV GENERATE_SOURCEMAP=false
+
+RUN npx prisma generate --schema=./prisma/schema.prisma \
+ && npm run build
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache wget
 WORKDIR /app
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=10000
+ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY docker/web-start.sh ./start.sh
 
-RUN chown -R nextjs:nodejs /app
-
+RUN chmod +x ./start.sh && chown -R nextjs:nodejs /app
 USER nextjs
+EXPOSE 10000
 
-EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:10000/ || exit 1
 
-ENV PORT=3000
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
-
-CMD ["node", "server.js"]
+CMD ["./start.sh"]

@@ -14,7 +14,7 @@ services:
     runtime: docker
     region: frankfurt
     plan: standard
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./docker/Dockerfile.web
     dockerContext: .
     healthCheckPath: /
     envVars:
