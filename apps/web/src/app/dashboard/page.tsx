@@ -18,6 +18,7 @@ export default function DashboardPage() {
         admin: '/dashboard/admin',
         tailor: '/dashboard/tailor',
         merchant: '/dashboard/merchant',
+        rep: '/dashboard/rep',
         customer: '/dashboard/customer',
       };
       router.push(routes[user.role as string] || '/');

@@ -23,6 +23,7 @@ export default function LoginPage() {
     { role: 'admin' as const, label: isRTL ? 'مدير' : 'Admin', color: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100', route: '/dashboard/admin' },
     { role: 'tailor' as const, label: isRTL ? 'خياط' : 'Tailor', color: 'bg-primary-50 text-primary-700 border-primary-200 hover:bg-primary-100', route: '/dashboard/tailor' },
     { role: 'merchant' as const, label: isRTL ? 'تاجر' : 'Merchant', color: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100', route: '/dashboard/merchant' },
+    { role: 'rep' as const, label: isRTL ? 'مندوب' : 'Rep', color: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100', route: '/dashboard/rep' },
     { role: 'customer' as const, label: isRTL ? 'عميل' : 'Customer', color: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100', route: '/dashboard/customer' },
   ];
 
@@ -141,7 +142,7 @@ export default function LoginPage() {
             <p className="text-xs text-gray-500 text-center mb-3 font-semibold">
               {isRTL ? '⚡ دخول تجريبي سريع' : '⚡ Quick Demo Login'}
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {DEMO_USERS.map((demo) => (
                 <button
                   key={demo.role}
