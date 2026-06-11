@@ -7,9 +7,9 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/ui/package.json packages/ui/
 COPY apps/web/package.json apps/web/package-lock.json apps/web/
 
-RUN cd packages/shared && npm install --no-audit --no-fund \
- && cd /app/packages/ui && npm install --no-audit --no-fund \
- && cd /app/apps/web && npm install --no-audit --no-fund --ignore-scripts
+RUN cd packages/shared && npm install --no-audit --no-fund
+RUN cd /app/packages/ui && npm install --no-audit --no-fund
+RUN cd /app/apps/web && npm install --no-audit --no-fund --ignore-scripts --omit=optional --no-bin-links
 
 COPY packages/shared packages/shared
 COPY packages/ui packages/ui
