@@ -1,5 +1,14 @@
-# Render Blueprint — مفصل MUFASAL
-# ملاحظة: إن كانت الخدمات موجودة مسبقاً، طبّق الإعدادات يدوياً من RENDER-SETUP.txt
+# =============================================================================
+# Render Blueprint — منصة مفصل MUFASAL
+# =============================================================================
+# الروابط بعد النشر:
+#   الويب:  https://mufasal.onrender.com
+#   API:    https://mufasal-api.onrender.com
+#   DB:     mufasal-db (داخلي)
+#
+# التطبيق: Render Dashboard → Blueprints → New Blueprint Instance
+#           → اختر repo: BINNISER10/mofasal-web → فرع master
+# =============================================================================
 
 databases:
   - name: mufasal-db
@@ -7,35 +16,17 @@ databases:
     user: mufasal
     plan: free
     region: frankfurt
+    ipAllowList: []
 
 services:
-  - type: web
-    name: mufasal
-    runtime: docker
-    region: frankfurt
-    plan: standard
-    dockerfilePath: ./docker/Dockerfile.web
-    dockerContext: .
-    healthCheckPath: /
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NEXT_TELEMETRY_DISABLED
-        value: "1"
-      - key: PORT
-        value: "10000"
-      - key: NEXT_PUBLIC_API_URL
-        value: https://mufasal-api.onrender.com/api/v1
-      - key: DATABASE_URL
-        value: postgresql://build:build@localhost:5432/build?schema=public
-      - key: DIRECT_DATABASE_URL
-        value: postgresql://build:build@localhost:5432/build?schema=public
-
+  # ── API ──────────────────────────────────────────────────────────────────
   - type: web
     name: mufasal-api
     runtime: docker
     region: frankfurt
-    plan: standard
+    plan: free
+    branch: master
+    autoDeploy: true
     dockerfilePath: ./docker/Dockerfile.api
     dockerContext: .
     healthCheckPath: /health/live
@@ -44,6 +35,8 @@ services:
         value: production
       - key: PORT
         value: "4001"
+      - key: API_PREFIX
+        value: /api/v1
       - key: DATABASE_URL
         fromDatabase:
           name: mufasal-db
@@ -56,5 +49,30 @@ services:
         value: https://mufasal.onrender.com,http://localhost:3000
       - key: SEED_DATABASE
         value: "true"
-      - key: API_PREFIX
-        value: /api/v1
+
+  # ── الويب (Next.js + تصميم لومار) ───────────────────────────────────────
+  - type: web
+    name: mufasal
+    runtime: docker
+    region: frankfurt
+    plan: free
+    branch: master
+    autoDeploy: true
+    dockerfilePath: ./docker/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: PORT
+        value: "10000"
+      - key: HOSTNAME
+        value: "0.0.0.0"
+      - key: NEXT_PUBLIC_API_URL
+        value: https://mufasal-api.onrender.com/api/v1
+      - key: DATABASE_URL
+        value: postgresql://build:build@localhost:5432/build?schema=public
+      - key: DIRECT_DATABASE_URL
+        value: postgresql://build:build@localhost:5432/build?schema=public
