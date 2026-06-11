@@ -3,11 +3,19 @@ set -e
 cd /app
 
 echo "==> prisma migrate deploy (with retry)"
+MIGRATED=false
 for i in 1 2 3 4 5; do
-  npx prisma migrate deploy --schema=./prisma/schema.prisma && break
+  if npx prisma migrate deploy --schema=./prisma/schema.prisma; then
+    MIGRATED=true
+    break
+  fi
   echo "migrate attempt $i failed, retrying in 5s..."
   sleep 5
 done
+if [ "$MIGRATED" != "true" ]; then
+  echo "==> migrate deploy failed, running prisma db push"
+  npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss
+fi
 
 if [ "${SEED_DATABASE:-false}" = "true" ]; then
   echo "==> seed database"

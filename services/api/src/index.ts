@@ -40,6 +40,7 @@ import supplierRoutes from './routes/v1/supplier.routes';
 import posRoutes from './routes/v1/pos.routes';
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // Initialize Socket.IO
