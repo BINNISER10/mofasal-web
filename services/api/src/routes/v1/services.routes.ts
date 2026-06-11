@@ -34,6 +34,7 @@ router.get('/:id/tracking', authenticate, ServiceRequestController.tracking);
 router.post('/:id/dispatch', authenticate, ServiceRequestController.dispatch);
 router.patch('/:id/location', authenticate, validate(locationSchema), ServiceRequestController.updateLocation);
 router.patch('/:id/arrive', authenticate, ServiceRequestController.arrive);
+router.post('/:id/complete', authenticate, ServiceRequestController.complete);
 router.put('/:id', authenticate, ServiceRequestController.update);
 router.delete('/:id', authenticate, authorize('ADMIN'), ServiceRequestController.delete);
 

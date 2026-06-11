@@ -65,6 +65,28 @@ const menuItems: MenuItem[] = [
     roles: ['customer'],
   },
   {
+    label: 'Rep Dashboard',
+    labelAr: 'لوحة المندوب',
+    icon: <MapPin size={20} />,
+    href: '/dashboard/rep',
+    roles: ['rep'],
+    exact: true,
+  },
+  {
+    label: 'My Assignments',
+    labelAr: 'مهامي',
+    icon: <ClipboardList size={20} />,
+    href: '/dashboard/rep/assignments',
+    roles: ['rep'],
+  },
+  {
+    label: 'Book Measurement',
+    labelAr: 'حجز قياس',
+    icon: <Ruler size={20} />,
+    href: '/dashboard/customer/book-measurement',
+    roles: ['customer'],
+  },
+  {
     label: 'Orders',
     labelAr: 'الطلبات',
     icon: <ShoppingBag size={20} />,

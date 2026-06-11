@@ -26,21 +26,24 @@ export default function LoginPage() {
     { role: 'customer' as const, label: isRTL ? 'عميل' : 'Customer', color: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100', route: '/dashboard/customer' },
   ];
 
-  const handleDemoLogin = (demo: typeof DEMO_USERS[0]) => {
-    // Demo login for development - will be removed in production
-    const mockUser = {
-      id: `demo-${demo.role}`,
-      name: demo.role === 'admin' ? 'أحمد المدير' : demo.role === 'tailor' ? 'خالد الخياط' : demo.role === 'merchant' ? 'سعد التاجر' : 'محمد العميل',
-      email: `${demo.role}@mufasal.sa`,
-      phone: '966500000000',
-      role: demo.role,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
-    setUser(mockUser);
-    setToken('demo-token');
-    toast.success(isRTL ? `دخول تجريبي: ${demo.label}` : `Demo login: ${demo.label}`);
-    router.push(demo.route);
+  const handleDemoLogin = async (demo: typeof DEMO_USERS[0]) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.login({ phone: '966500000000', password: 'admin123' });
+      setUser(response.user);
+      setToken(response.token);
+      localStorage.setItem('token', response.token);
+      toast.success(isRTL ? `دخول تجريبي: ${demo.label}` : `Demo login: ${demo.label}`);
+      const roleRoutes: Record<string, string> = {
+        admin: '/dashboard/admin', tailor: '/dashboard/tailor',
+        merchant: '/dashboard/merchant', customer: '/dashboard/customer',
+      };
+      router.push(roleRoutes[response.user.role] || '/dashboard');
+    } catch {
+      toast.error(isRTL ? 'تعذر الاتصال بالخادم - تأكد من تشغيل API' : 'Cannot connect to API - make sure API is running');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

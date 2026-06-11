@@ -40,11 +40,13 @@ export default function DashboardLayout({
   const isTailor = pathname.startsWith('/dashboard/tailor');
   const isMerchant = pathname.startsWith('/dashboard/merchant');
   const isCustomer = pathname.startsWith('/dashboard/customer');
+  const isRep = pathname.startsWith('/dashboard/rep');
 
   const getDashboardTitle = () => {
     if (isAdmin) return isRTL ? 'لوحة الإدارة' : 'Admin Dashboard';
     if (isTailor) return isRTL ? 'لوحة المتجر' : 'Shop Dashboard';
     if (isMerchant) return isRTL ? 'لوحة التاجر' : 'Merchant Dashboard';
+    if (isRep) return isRTL ? 'لوحة المندوب' : 'Rep Dashboard';
     if (isCustomer) return isRTL ? 'حسابي' : 'My Account';
     return isRTL ? 'لوحة التحكم' : 'Dashboard';
   };

@@ -1,6 +1,8 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 import { NotificationService } from './NotificationService';
+import { OrderService } from './OrderService';
+import { MeasurementService } from './MeasurementService';
 /**
  * منطق طلبات الخدمة وتوزيع مندوب القياس + التتبّع اللحظي.
  * المندوب = User يملك دوراً باسم REPRESENTATIVE (أو ينتمي لنفس المحل).
@@ -158,6 +160,66 @@ export class ServiceRequestService {
     await NotificationService.notifyMeasurementArrived(request.customerId);
 
     return updated;
+  }
+
+  /** إكمال القياسات وحفظها وإنشاء طلب تصنيع تلقائي */
+  static async completeWithMeasurements(requestId: string, data: {
+    measurements: Record<string, number>;
+    notes?: string;
+    garmentType?: string;
+    fabricId?: string;
+    fabricSource?: string;
+  }) {
+    const request = await prisma.serviceRequest.findUnique({ where: { id: requestId } });
+    if (!request) throw ApiError.notFound('Service request not found');
+    if (request.status !== 'ARRIVED') {
+      throw ApiError.badRequest('يجب تسجيل الوصول أولاً قبل إدخال القياسات');
+    }
+
+    // 1. حفظ القياسات في ملف العميل
+    if (data.measurements && Object.keys(data.measurements).length > 0) {
+      await MeasurementService.createUserMeasurement(request.customerId, {
+        name: `قياس ${new Date().toLocaleDateString('ar-SA')}`,
+        data: data.measurements,
+      });
+    }
+
+    // 2. إنشاء طلب تصنيع
+    const order = await OrderService.createOrder({
+      userId: request.customerId,
+      shopId: request.shopId,
+      measurements: data.measurements,
+      customerNotes: data.notes,
+      fabricId: data.fabricId,
+      fabricSource: data.fabricSource,
+    });
+
+    // 3. ربط القياسات بالطلب
+    await MeasurementService.addOrderMeasurement(order.id, {
+      measurementData: data.measurements,
+      notes: data.notes,
+    });
+
+    // 4. تحديث حالة طلب الخدمة إلى مكتمل وربطه بالطلب
+    const updated = await prisma.serviceRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'COMPLETED',
+        notes: data.notes || request.notes,
+      },
+    });
+
+    // 5. تحديث الطلب إلى مرحلة أخذ القياسات ← جاهز للتصنيع
+    await OrderService.updateOrderStatus(order.id, 'TAKING_MEASUREMENTS', request.customerId);
+    await OrderService.updateOrderStatus(order.id, 'IN_PROGRESS', request.customerId);
+
+    await NotificationService.sendToUser(request.customerId, 'ORDER_UPDATE', {
+      title: 'بدء التصنيع',
+      body: `تم حفظ قياساتك وبدأ الخياط في تصنيع طلبك #${order.orderNumber}`,
+      link: `/dashboard/customer/orders/${order.id}`,
+    });
+
+    return { request: updated, order };
   }
 
   /** بيانات التتبّع اللحظي للعميل */

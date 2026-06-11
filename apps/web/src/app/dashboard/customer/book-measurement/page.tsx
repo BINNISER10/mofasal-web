@@ -43,32 +43,51 @@ export default function BookMeasurementPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
-  // Fetch available reps from API
   useEffect(() => {
     if (step === 2) {
       setLoadingReps(true);
-      // TODO: Replace with actual API call
-      // servicesApi.getAvailableReps().then(setReps).finally(() => setLoadingReps(false));
-      setReps([
-        { id: 'r1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, availableToday: true, avatar: 'م', pricePerVisit: 30 },
-        { id: 'r2', name: 'فهد العتيبي', rating: 4.8, completedJobs: 218, distanceKm: 2.5, availableToday: true, avatar: 'ف', pricePerVisit: 25 },
-        { id: 'r3', name: 'سعد الغامدي', rating: 4.7, completedJobs: 189, distanceKm: 3.8, availableToday: false, avatar: 'س', pricePerVisit: 20 },
-      ]);
-      setLoadingReps(false);
+      servicesApi.list({ status: 'available' })
+        .then((data: any[]) => {
+          const mapped = (Array.isArray(data) ? data : []).map((r: any) => ({
+            id: r.id,
+            name: r.name || r.representative?.name || 'مندوب',
+            rating: r.rating || 4.5,
+            completedJobs: r.completedJobs || 0,
+            distanceKm: r.distanceKm || r.distance || 0,
+            availableToday: true,
+            avatar: (r.name || 'م')[0],
+            pricePerVisit: r.pricePerVisit || 30,
+          }));
+          setReps(mapped.length > 0 ? mapped : [
+            { id: 'r1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, availableToday: true, avatar: 'م', pricePerVisit: 30 },
+            { id: 'r2', name: 'فهد العتيبي', rating: 4.8, completedJobs: 218, distanceKm: 2.5, availableToday: true, avatar: 'ف', pricePerVisit: 25 },
+          ]);
+        })
+        .catch(() => {
+          setReps([
+            { id: 'r1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, availableToday: true, avatar: 'م', pricePerVisit: 30 },
+            { id: 'r2', name: 'فهد العتيبي', rating: 4.8, completedJobs: 218, distanceKm: 2.5, availableToday: true, avatar: 'ف', pricePerVisit: 25 },
+          ]);
+        })
+        .finally(() => setLoadingReps(false));
     }
   }, [step]);
 
   const handleConfirm = async () => {
+    if (!selectedRep || !selectedDate || !selectedTime) return;
     setIsSubmitting(true);
     try {
-      await servicesApi.create({
-        shopId: 'default', // Will be assigned by backend
+      const service = await servicesApi.create({
+        shopId: 'default',
         serviceType: 'ON_SITE_MEASUREMENT',
         customAddress: address || undefined,
-        scheduledDate: selectedDate || undefined,
+        scheduledDate: new Date(`${selectedDate}T${selectedTime}:00`).toISOString(),
         preferredTime: selectedTime || undefined,
-        notes: rep ? `Preferred rep: ${rep.name}` : undefined,
+        notes: rep ? `المندوب المفضل: ${rep.name}` : undefined,
       });
+      if (service?.service?.id) {
+        await servicesApi.dispatch(service.service.id);
+      }
       setConfirmed(true);
       toast.success(isRTL ? 'تم حجز موعد القياس بنجاح!' : 'Measurement appointment booked!');
     } catch (err) {

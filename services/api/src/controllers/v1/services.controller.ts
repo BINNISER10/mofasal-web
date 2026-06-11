@@ -44,6 +44,14 @@ export class ServiceRequestController {
     } catch (error) { next(error); }
   }
 
+  // إكمال القياسات وحفظها وإنشاء طلب تصنيع
+  static async complete(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await ServiceRequestService.completeWithMeasurements(req.params.id, req.body);
+      sendSuccess(res, result, 'تم حفظ القياسات وإنشاء الطلب');
+    } catch (error) { next(error); }
+  }
+
   // بيانات التتبّع اللحظي للعميل
   static async tracking(req: AuthRequest, res: Response, next: NextFunction) {
     try {
