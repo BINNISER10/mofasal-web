@@ -2,8 +2,8 @@
   مفصل MUFASAL — إعداد Render (API + قاعدة البيانات)
 ================================================================================
 
-الويب: https://mofasal-web.onrender.com
-الـ API: https://mofasal-api.onrender.com
+الويب: https://mufasal.onrender.com
+الـ API: https://mufasal-api.onrender.com
 
 مهم — الويب يجب أن يُبنى بـ Docker (ليس Node) لتجنب OOM أثناء npm install:
   Settings → Environment: Docker
@@ -53,7 +53,7 @@
   API_PREFIX            = /api/v1
   JWT_SECRET            = (أنشئ سلسلة عشوائية 32+ حرف)
   JWT_REFRESH_SECRET    = (سلسلة عشوائية أخرى)
-  CORS_ORIGIN           = https://mofasal-web.onrender.com,http://localhost:3000
+  CORS_ORIGIN           = https://mufasal.onrender.com,http://localhost:3000
   SEED_DATABASE         = true    (أول نشر فقط — ثم غيّرها false)
 
   اختياري (بدونها يعمل API):
@@ -63,7 +63,7 @@
 4) متغيرات البيئة — mofasal-web
 ────────────────────────────────────────────────────────────────────────────────
 
-  NEXT_PUBLIC_API_URL   = https://mofasal-api.onrender.com/api/v1
+  NEXT_PUBLIC_API_URL   = https://mufasal-api.onrender.com/api/v1
 
   بعد الحفظ → Manual Deploy للويب
 

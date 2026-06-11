@@ -26,7 +26,7 @@ Render Dashboard → New + → PostgreSQL
 ### 2. خدمة API — Render Dashboard
 ```
 Render Dashboard → New + → Web Service
-  الاسم:             mofasal-api
+  الاسم:             mufasal-api
   Region:            Frankfurt
   Branch:            master
   Root Directory:    (اتركه فارغاً)
@@ -37,7 +37,7 @@ Render Dashboard → New + → Web Service
   Health Check Path: /health/live
 ```
 
-#### متغيرات البيئة (mofasal-api):
+#### متغيرات البيئة (mufasal-api):
 ```
 DATABASE_URL          = (من قاعدة البيانات — Internal Database URL)
 NODE_ENV              = production
@@ -45,27 +45,42 @@ PORT                  = 4001
 API_PREFIX            = /api/v1
 JWT_SECRET            = (Generate)
 JWT_REFRESH_SECRET    = (Generate)
-CORS_ORIGIN           = https://mofasal-web.onrender.com,http://localhost:3000
+CORS_ORIGIN           = https://mufasal.onrender.com,http://localhost:3000
 SEED_DATABASE         = true   (أول نشر فقط — بعدها غيّر إلى false)
 ```
 
-### 3. ربط الويب بالـ API — Render Dashboard
+### 3. خدمة الويب — Render Dashboard
 ```
-افتح mofasal-web → Environment
-  NEXT_PUBLIC_API_URL = https://mofasal-api.onrender.com/api/v1
+Render Dashboard → New + → Web Service
+  الاسم:             mufasal
+  Region:            Frankfurt
+  Branch:            master
+  Root Directory:    (اتركه فارغاً)
+  Environment:       Docker
+  Dockerfile Path:   Dockerfile
+  Docker Context:    .
+  Plan:              Standard
+  Health Check Path: /
+```
 
-احفظ → Manual Deploy → Deploy latest commit
+#### متغيرات البيئة (mufasal):
+```
+NODE_ENV                = production
+PORT                    = 10000
+NEXT_PUBLIC_API_URL     = https://mufasal-api.onrender.com/api/v1
+DATABASE_URL            = postgresql://build:build@localhost:5432/build?schema=public
+DIRECT_DATABASE_URL     = postgresql://build:build@localhost:5432/build?schema=public
 ```
 
 ### 4. بعد النشر الأول
 ```
-1. تحقق:   https://mofasal-api.onrender.com/health/live
+1. تحقق:   https://mufasal.onrender.com
+           → يجب ظهور الصفحة الرئيسية
+
+2. تحقق:   https://mufasal-api.onrender.com/health/live
            → يجب: {"success":true,"status":"alive"}
 
-2. تحقق:   https://mofasal-api.onrender.com/health
-           → database: healthy
-
-3. تحقق:   https://mofasal-api.onrender.com/api/v1/shops?limit=5
+3. تحقق:   https://mufasal-api.onrender.com/api/v1/shops?limit=5
            → يجب إرجاع 3 متاجر
 
 4. غير:    SEED_DATABASE = false (لمنع إعادة seed كل نشر)
@@ -81,11 +96,11 @@ SEED_DATABASE         = true   (أول نشر فقط — بعدها غيّر إ�
 
 ## هيكل النشر
 ```
-GitHub (master) ─┬─► Render: mofasal-web (Dockerfile → :10000)
-                 │   https://mofasal-web.onrender.com
+GitHub (master) ─┬─► Render: mufasal (Dockerfile → :10000)
+                 │   https://mufasal.onrender.com
                  │
-                 └─► Render: mofasal-api (docker/Dockerfile.api → :4001)
-                     https://mofasal-api.onrender.com
+                 └─► Render: mufasal-api (docker/Dockerfile.api → :4001)
+                     https://mufasal-api.onrender.com
                           │
                           └─► PostgreSQL: mufasal-db
 ```

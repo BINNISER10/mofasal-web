@@ -27,7 +27,7 @@ ARG DIRECT_DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=pub
 ENV DATABASE_URL=$DATABASE_URL
 ENV DIRECT_DATABASE_URL=$DIRECT_DATABASE_URL
 
-ARG NEXT_PUBLIC_API_URL=https://mofasal-api.onrender.com/api/v1
+ARG NEXT_PUBLIC_API_URL=https://mufasal-api.onrender.com/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NODE_OPTIONS=--max-old-space-size=6144
 ENV NEXT_TELEMETRY_DISABLED=1

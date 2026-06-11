@@ -10,7 +10,7 @@ databases:
 
 services:
   - type: web
-    name: mofasal-web
+    name: mufasal
     runtime: docker
     region: frankfurt
     plan: standard
@@ -25,14 +25,14 @@ services:
       - key: PORT
         value: "10000"
       - key: NEXT_PUBLIC_API_URL
-        value: https://mofasal-api.onrender.com/api/v1
+        value: https://mufasal-api.onrender.com/api/v1
       - key: DATABASE_URL
         value: postgresql://build:build@localhost:5432/build?schema=public
       - key: DIRECT_DATABASE_URL
         value: postgresql://build:build@localhost:5432/build?schema=public
 
   - type: web
-    name: mofasal-api
+    name: mufasal-api
     runtime: docker
     region: frankfurt
     plan: standard
@@ -53,7 +53,7 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://mofasal-web.onrender.com,http://localhost:3000
+        value: https://mufasal.onrender.com,http://localhost:3000
       - key: SEED_DATABASE
         value: "true"
       - key: API_PREFIX

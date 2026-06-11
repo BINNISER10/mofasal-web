@@ -15,8 +15,8 @@
                    خط: IBM Plex Sans Arabic
 
   المستودع:      https://github.com/BINNISER10/mofasal-web  (فرع master)
-  الويب الحي:    https://mofasal-web.onrender.com  (Render Standard — يعمل)
-  الـ API:        https://mofasal-api.onrender.com  (معطّل / 404 — لم يُنشر بعد)
+  الويب الحي:    https://mufasal.onrender.com  (جديد — يُنشأ الآن)
+  الـ API:        https://mufasal-api.onrender.com  (جديد — يُنشأ الآن)
 
   سير العمل:     لا npm install محلي (ذاكرة الجهاز ضعيفة)
                  push إلى GitHub → Render ينشر تلقائياً
@@ -319,9 +319,9 @@
 ================================================================================
 
   GitHub:     https://github.com/BINNISER10/mofasal-web
-  الويب:      https://mofasal-web.onrender.com
+  الويب:      https://mufasal.onrender.com
   Render:     https://dashboard.render.com
-  API (لاحق): https://mofasal-api.onrender.com
+  API:        https://mufasal-api.onrender.com
 
 
 ================================================================================

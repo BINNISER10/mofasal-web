@@ -33,7 +33,7 @@ ENV DATABASE_URL=$DATABASE_URL
 ENV DIRECT_DATABASE_URL=$DIRECT_DATABASE_URL
 
 # NEXT_PUBLIC_* baked into client bundle at build time.
-ARG NEXT_PUBLIC_API_URL=https://mofasal-api.onrender.com/api/v1
+ARG NEXT_PUBLIC_API_URL=https://mufasal-api.onrender.com/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NODE_OPTIONS=--max-old-space-size=4096
 ENV NEXT_TELEMETRY_DISABLED=1
