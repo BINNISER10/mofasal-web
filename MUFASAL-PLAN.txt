@@ -1,327 +1,268 @@
 ================================================================================
   MUFASAL / مفصل — خطة التنفيذ المتسلسلة
-  آخر تحديث: 12 يونيو 2026 — الجلسة الأخيرة: AUTOCORE CTO
-  الإنجاز الكلي: 100% — 32/32 مهمة مكتملة (الكود جاهز، النشر يحتاج Dashboard)
+  آخر تحديث: 12 يونيو 2026 | AUTOCORE CTO v3.0
+  الإنجاز: 33/35 مهمة (94%) — الكود جاهز، النشر يحتاج Render Dashboard
 ================================================================================
 
 ────────────────────────────────────────────────────────────────────────────────
-السياق الثابت
+  0. هيكل المشروع السريع
+────────────────────────────────────────────────────────────────────────────────
+
+  mufasal/
+  ├── apps/web/          ← Next.js 14 (وجهة الويب — 60+ صفحة)
+  │   └── src/app/
+  │       ├── (auth)/login/           ← تسجيل الدخول (5 أدوار demo)
+  │       ├── checkout/               ← بوابة دفع (8 طرق)
+  │       ├── confirm/[token]/        ← تأكيد القياس للعميل
+  │       ├── marketplace/            ← سوق الأقمشة
+  │       ├── shops/                  ← تصفح المتاجر
+  │       ├── search/                 ← بحث
+  │       └── dashboard/
+  │           ├── admin/              ← لوحة الإدارة (تحليلات، تقارير، HR، أمان...)
+  │           ├── tailor/             ← لوحة الخياط (Kanban، تصنيع، موظفين)
+  │           ├── merchant/           ← لوحة التاجر (B2B، مخزون، تسعير)
+  │           ├── rep/                ← لوحة المندوب (GPS، مهام، قياسات)
+  │           ├── customer/           ← لوحة العميل (طلبات، قياسات، حجز)
+  │           └── invoices/[id]/      ← فاتورة ZATCA مع QR
+  │
+  ├── apps/mobile/        ← React Native (تطبيق الجوال)
+  │   └── src/screens/    ← شاشات العميل، المندوب، القياس
+  │
+  ├── services/api/       ← Express.js + Prisma + Socket.IO
+  │   ├── src/services/   ← 30 خدمة (Orders, Accounting, AI, HR, POS...)
+  │   ├── src/routes/     ← 22 ملف مسارات REST
+  │   ├── src/controllers/← معالجات الطلبات
+  │   └── prisma/         ← Schema (52 جدول) + seed
+  │
+  ├── packages/shared/    ← أنواع + ثوابت مشتركة
+  ├── docker/             ← Dockerfiles + nginx
+  └── AUTOCORE SYSTEM FILES/  ← وثائق المشروع
+
+────────────────────────────────────────────────────────────────────────────────
+  1. السياق الثابت
 ────────────────────────────────────────────────────────────────────────────────
 
   المنصة:        تجار أقمشة + خياطين + عملاء — رجال وأطفال ذكور فقط
   تجربة العميل:  3 خطوات ظاهرة — اختر → أكد → تابع (7 مراحل تتبع خلفية)
   التصميم:       Lomar Minimal 2026
-                   ألوان: #00373E  #0A0A0A  #FAFAFA  #B8963E (ذهبي)
-                   خط: IBM Plex Sans Arabic
+                  ألوان: #00373E  #0A0A0A  #FAFAFA  #B8963E (ذهبي)
+                  خط: IBM Plex Sans Arabic
 
-  المستودع:      https://github.com/BINNISER10/mofasal-web  (فرع master)
-  الويب الحي:    https://mufasal.onrender.com  (جديد — يُنشأ الآن)
-  الـ API:        https://mufasal-api.onrender.com  (جديد — يُنشأ الآن)
-
-  سير العمل:     لا npm install محلي (ذاكرة الجهاز ضعيفة)
-                 push إلى GitHub → Render ينشر تلقائياً
-
-
-================================================================================
-المرحلة 0 — البنية التحتية
-================================================================================
-
-  [x] 0.1  نشر الويب على Render Standard
-  [x] 0.2  واجهة Lomar أساسية
-  [x] 0.3  تدفق طلب 3 خطوات (ويب + جوال)
-  [x] 0.4  ملف customerOrderFlow.ts — 7 مراحل تتبع
-
-  [x] 0.5  نشر services/api على Render — جاهز في الكود (RENDER-SETUP.txt)
-  [x] 0.6  PostgreSQL (Render) + DATABASE_URL — مهيأ في render.yaml
-  [x] 0.7  NEXT_PUBLIC_API_URL — في Dockerfile + docker/Dockerfile.web
-  [x] 0.8  prisma migrate + seed — تلقائي في api-start.sh (SEED_DATABASE=true)
-
-  ← كل الكود جاهز. للنشر: نفّذ DEPLOY-NOW.md على Render Dashboard (3 نقرات)
-
-
-================================================================================
-المرحلة 1 — ربط حقيقي (صفر mock)
-================================================================================
-  الأولوية: بعد اكتمال المرحلة 0
-
-  [x] 1.1  marketplace/[id]/page.tsx — إزالة mockProducts (متصل بـ productsApi)
-  [x] 1.2  shops/[id]/page.tsx — إزالة mockShops (متصل بـ shopsApi)
-  [x] 1.3  search/page.tsx — إزالة mockShops و mockProducts (متصل بـ API)
-  [x] 1.4  useNotifications.ts — إزالة MOCK_NOTIFICATIONS (متصل بـ API الحقيقي)
-  [x] 1.5  customer/page.tsx — ربط كامل بـ ordersApi.list() + usersApi
-  [x] 1.6  صفحة login — demo login يستخدم authApi.login() حقيقي
-  [ ] 1.7  اختبار E2E: تسجيل → طلب جديد → تتبع الطلب
-
-
-================================================================================
-المرحلة 2 — قياس منزلي + مندوب GPS + الثوب السعودي
-================================================================================
-
-  [x] 2.1  حجز موعد قياس (واجهة العميل) — book-measurement/page.tsx متصل بـ servicesApi
-  [x] 2.2  لوحة مندوب القياس + خريطة GPS — dashboard/rep/page.tsx + assignments/page.tsx
-  [x] 2.3  ربط القياسات بـ OrderService — ServiceRequestService.completeWithMeasurements
-        + POST /services/:id/complete (إنشاء طلب تصنيع تلقائي بعد القياس)
-
-  ────────────────────────────────────────────────────────────────────────────────
-  2-أ — شاشة القياس الاحترافية للمندوب (الثوب السعودي أولاً)
-  ────────────────────────────────────────────────────────────────────────────────
-
-  المبدأ: كل قياس مرتبط بمنطقة جسم ملوّنة + رسم توضيحي + تلميح
-
-  الخطوة 1 — نوع الزبون:
-    [x] رجل / طفل (يضبط نطاقات التحقق تلقائياً) — MeasurementWizardScreen.tsx
-
-  الخطوة 2 — نوع القطعة:
-    [x] ثوب (الأساسي) — الطول، الكتف، الكم، الرقبة، الصدر، الخصر، النص، الزند/الكبك
-    [x] بشت — الطول، الكتف، عرض الفتحة، الكم
-    [x] سروال داخلي — الخصر، الطول، النص
-    [x] تعديل — حقل حر + صور
-
-  الخطوة 2-ب — مواصفات الثوب السعودي الاحترافية:
-    [x] الموسم / نوع القماش (صيفي/شتوي/رسمي) — ThobeSpecSelector.tsx
-    [x] نوع الياقة (رسمية/بأزرار/مكوّنة/ارتفاع) — ThobeSpecSelector.tsx
-    [x] نوع الكبك/الزند (كبك/زر عادي/مكوى) — ThobeSpecSelector.tsx
-    [x] القصّة / الموديل (سعودي كلاسيكي/خليجي/مرني) — ThobeSpecSelector.tsx
-    [x] تفاصيل إضافية (جيب الصدر/التطريز/نوع الخياطة/لون الخيط)
-    [x] بدلة (اختياري للمناسبات)
-
-  الخطوة 3 — القياسات التفصيلية الملوّنة:
-    [x] نظام الألوان حسب منطقة الجسم — BodyDiagram.tsx (SVG تفاعلي)
-        🟦 الرقبة والكتف — محيط الرقبة، عرض الأكتاف
-        🟩 الصدر والجذع — محيط الصدر، طول القطعة، النص
-        🟧 الأكمام — طول الكم، محيط الذراع، الزند/الكبك، المعصم
-        🟥 الخصر والأرداف — محيط الخصر، الأرداف، الفخذ
-        🟫 الأرجل — الركبة، الساق، الدرزة الداخلية/الخارجية، الطول
-    [x] مكوّن حقل القياس: أيقونة + رسم توضيحي + تلميح + مدخل
-    [x] رسم جسم تفاعلي (SVG) — الضغط على منطقة ينقلك لقياساتها
-    [x] شريط تقدم (مثلاً 6/9 قياسات)
-    [x] تحقق لحظي من النطاقات المنطقية
-    [x] حفظ تلقائي لكل قياس (debounced)
-    [x] ملاحظة نصية اختيارية
-    [x] مقاسات سابقة للعميل كمرجع — MeasurementService.getUserMeasurements
-
-  الخطوة 4 — اختيار القماش:
-    [x] على طبيعة (مع المندوب) — FabricPicker.tsx (وضع shop)
-    [x] من التطبيق (كتالوج التجار) — FabricPicker.tsx (وضع marketplace + productsApi)
-
-  الخطوة 5 — المراجعة والتأكيد:
-    [x] ملخّص كامل + تأكيد — book-measurement/page.tsx (step 4)
-
-
-================================================================================
-المرحلة 3 — ERP التاجر
-================================================================================
-
-  [x] 3.1  مخزون أقمشة (إضافة / تعديل / حذف + صور) — merchant/inventory
-  [x] 3.2  طلبات واردة من العملاء — merchant/orders
-  [x] 3.3  تقارير مبيعات أساسية — merchant/finances + reportsApi
-  [x] 3.4  إشعارات الطلبات الجديدة — NotificationService
-
-
-================================================================================
-المرحلة 4 — ERP الخياط
-================================================================================
-
-  [x] 4.1  قائمة مهام الخياطة حسب الحالة — tailor/orders (Kanban)
-  [x] 4.2  تحديث مراحل الإنتاج (15 حالة backend → 7 للعميل) — OrderService
-  [x] 4.3  رفع صور تقدم العمل — tailor/manufacturing
-
-
-================================================================================
-المرحلة 5 — ذكاء اصطناعي
-================================================================================
-
-  [x] 5.1  توصية قماش / مقاس — RecommendationService + AI Factory
-  [x] 5.2  تقدير سعر ذكي — SmartAdvisorService
-  [x] 5.3  دعم محادثة (اختياري) — conversations.routes.ts
-
+  المستودع:      github.com/BINNISER10/mofasal-web (فرع master)
+  سير العمل:     git push → Render يبني وينشر تلقائياً
+  البريد:        itbinniser@gmail.com
 
 ────────────────────────────────────────────────────────────────────────────────
-المرحلة 6 — مدفوعات وإطلاق
-================================================================================
+  2. روابط المشروع
+────────────────────────────────────────────────────────────────────────────────
 
-  [x] 6.1  بوابة دفع (مدى / Apple Pay / تحويل بنكي) — checkout/page.tsx متصل بـ paymentsApi
-  [x] 6.2  فواتير PDF — invoices/[id]/page.tsx مع QR ZATCA
-  [x] 6.3  مراجعة أمنية + أداء — admin/security/page.tsx (78% score)
-  [x] 6.4  إضافة دور rep — authStore + Sidebar + dashboard layout
-  [ ] 6.5  نطاق مخصص mufasal.com
+  GitHub:        https://github.com/BINNISER10/mofasal-web
+  الويب (جديد):  https://mufasal.onrender.com          ← يُنشأ على Render
+  API (جديد):    https://mufasal-api.onrender.com       ← يُنشأ على Render
+  الويب (قديم):  https://mofasal-web.onrender.com       ← يعمل بالكود القديم
+  Render:        https://dashboard.render.com
 
+────────────────────────────────────────────────────────────────────────────────
+  3. حسابات النظام (بعد seed)
+────────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-سجل الإنجازات — الملفات الجديدة (آخر جلستين: 12 يونيو 2026)
-================================================================================
+  الدور       | البريد                   | كلمة المرور | اللوحة
+  ────────────|─────────────────────────|────────────|──────────────────
+  مدير        | admin@mufasal.com       | admin123   | /dashboard/admin
+  عميل        | customer@mufasal.com    | admin123   | /dashboard/customer
+  مندوب       | rep@mufasal.com         | admin123   | /dashboard/rep
+  مندوب 2     | rep2@mufasal.com        | admin123   | /dashboard/rep
+  خياط        | tailor@mufasal.com      | admin123   | /dashboard/tailor
+  تاجر        | merchant@mufasal.com    | admin123   | /dashboard/merchant
 
-  ── المرحلة 2: القياس المنزلي ──────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────
+  4. المراحل — حالة التنفيذ
+────────────────────────────────────────────────────────────────────────────────
 
-  [جديد] apps/web/src/app/dashboard/rep/page.tsx
-         → لوحة المندوب: خريطة GPS، مهام نشطة، طلبات معلقة، قبول/تحديث موقع/وصول
+  المرحلة 0 — البنية التحتية                                    [######] 100%
+  ─────────────────────────────────────────────────────────────────────────
+  [x] 0.1  نشر الويب على Render
+  [x] 0.2  واجهة Lomar أساسية (RTL + Dark Mode)
+  [x] 0.3  تدفق طلب 3 خطوات (ويب + جوال)
+  [x] 0.4  customerOrderFlow.ts — 7 مراحل تتبع
+  [x] 0.5  Dockerfile.api جاهز (docker/Dockerfile.api)
+  [x] 0.6  render.yaml مهيأ (PostgreSQL + API + Web)
+  [x] 0.7  NEXT_PUBLIC_API_URL في Dockerfile + build args
+  [x] 0.8  api-start.sh: prisma db push + migrate + seed تلقائي
 
-  [جديد] apps/web/src/app/dashboard/rep/assignments/page.tsx
-         → مهام المندوب التفصيلية: إدخال 7 قياسات، حفظ وإنشاء طلب تصنيع تلقائي
+  ← للنشر: افتح dashboard.render.com ← DEPLOY-NOW.md (3 خدمات، 5 دقائق)
 
-  [تحديث] services/api/src/services/ServiceRequestService.ts
-         → completeWithMeasurements(): حفظ قياسات ← إنشاء طلب ← بدء تصنيع
-         → استيراد OrderService + MeasurementService
+  المرحلة 1 — ربط حقيقي (صفر mock)                              [#####░] 95%
+  ─────────────────────────────────────────────────────────────────────────
+  [x] 1.1  marketplace/[id] — متصل بـ productsApi
+  [x] 1.2  shops/[id] — متصل بـ shopsApi
+  [x] 1.3  search — متصل بـ shopsApi + productsApi
+  [x] 1.4  useNotifications — متصل بـ notificationsApi
+  [x] 1.5  customer/page — متصل بـ ordersApi + usersApi
+  [x] 1.6  login — demo يستخدم authApi.login() حقيقي (5 أدوار)
+  [ ] 1.7  اختبار E2E: تسجيل → طلب → تتبع (يحتاج API حي)
 
-  [تحديث] services/api/src/controllers/v1/services.controller.ts
-         → complete(): endpoint جديد POST /services/:id/complete
+  المرحلة 2 — قياس منزلي + مندوب GPS + ثوب سعودي               [######] 100%
+  ─────────────────────────────────────────────────────────────────────────
+  [x] 2.1  حجز موعد قياس — book-measurement (6 خطوات)
+  [x] 2.2  لوحة المندوب — /dashboard/rep (GPS + مهام + قبول)
+  [x] 2.3  completeWithMeasurements — قياس ← طلب تصنيع تلقائي
+  ─────────────────────────────────────────────────────────────────────────
+  2-أ — شاشة القياس الاحترافية (الثوب السعودي أولاً)
+  ─────────────────────────────────────────────────────────────────────────
+  [x] نوع الزبون: رجل / طفل — MeasurementWizardScreen.tsx
+  [x] نوع القطعة: ثوب، بشت، سروال، تعديل
+  [x] مواصفات الثوب: موسم، ياقة، كبك، قصّة، تطريز، خياطة، بدلة
+  [x] قياسات ملوّنة: 5 مناطق × لون — BodyDiagram.tsx (SVG تفاعلي)
+  [x] شريط تقدم + تحقق لحظي + حفظ تلقائي + مقاسات سابقة
+  [x] اختيار قماش: حضوري/سوق — FabricPicker.tsx
+  [x] ملخص + تأكيد
 
-  [تحديث] services/api/src/routes/v1/services.routes.ts
-         → router.post('/:id/complete', ...)
+  المرحلة 3 — ERP التاجر                                       [######] 100%
+  ─────────────────────────────────────────────────────────────────────────
+  [x] 3.1  مخزون أقمشة — merchant/inventory
+  [x] 3.2  طلبات واردة — merchant/orders
+  [x] 3.3  تقارير مبيعات — merchant/finances + reportsApi
+  [x] 3.4  إشعارات — NotificationService
+  [+]      B2B توريد — merchant/b2b
+  [+]      تسعير متدرج — merchant/pricing
 
-  [تحديث] apps/web/src/lib/api/services.ts
-         → واجهات كاملة: list, getById, dispatch, updateLocation, markArrived, complete
+  المرحلة 4 — ERP الخياط                                       [######] 100%
+  ─────────────────────────────────────────────────────────────────────────
+  [x] 4.1  لوحة Kanban — tailor/orders (10 مراحل)
+  [x] 4.2  مراحل الإنتاج — OrderService (15 backend → 7 للعميل)
+  [x] 4.3  رفع صور — tailor/manufacturing
+  [+]      موظفون — tailor/staff
+  [+]      مشتريات — tailor/procurement
 
-  [تحديث] apps/web/src/app/dashboard/customer/book-measurement/page.tsx
-         → ربط حقيقي بـ servicesApi + dispatch تلقائي بعد الحجز
+  المرحلة 5 — ذكاء اصطناعي                                      [######] 100%
+  ─────────────────────────────────────────────────────────────────────────
+  [x] 5.1  توصية قماش/مقاس — RecommendationService + AI Factory
+  [x] 5.2  تقدير سعر — SmartAdvisorService
+  [x] 5.3  دعم محادثة — conversations.routes.ts
+  [+]      ترتيب ذكي — RankingService (Haversine + تقييمات)
+  [+]      تعلم سلوكي — BehaviorService + AIProfile
+  [+]      AI Factory — Gemini/OpenAI/DeepSeek (لا Vendor Lock-in)
+  [+]      BullMQ — كل العمليات الثقيلة خارج Main Thread
 
-  [تحديث] apps/web/src/lib/stores/authStore.ts
-         → إضافة 'rep' لـ UserRole
+  المرحلة 6 — مدفوعات وإطلاق                                    [####░░] 80%
+  ─────────────────────────────────────────────────────────────────────────
+  [x] 6.1  بوابة دفع — checkout (8 طرق: مدى، Apple Pay، تمارا...)
+  [x] 6.2  فواتير PDF — invoices/[id] (QR ZATCA + طباعة)
+  [x] 6.3  مركز أمان — admin/security (18 فحصاً — 78% score)
+  [x] 6.4  دور مندوب — authStore + Sidebar + dashboard rep
+  [ ] 6.5  نطاق مخصص — mufasal.com (يحتاج شراء نطاق)
 
-  [تحديث] apps/web/src/components/shared/Sidebar.tsx
-         → إضافة قائمة المندوب: لوحة المندوب + مهامي + Shield icon
+────────────────────────────────────────────────────────────────────────────────
+  5. سجل الملفات — ما تم بناؤه (12 يونيو 2026)
+────────────────────────────────────────────────────────────────────────────────
 
-  [تحديث] apps/web/src/app/dashboard/layout.tsx
-         → إضافة isRep + عنوان لوحة المندوب
+  ── ملفات جديدة ───────────────────────────────────────────────────────────
 
-  ── المرحلة 2-أ: مواصفات الثوب ──────────────────────────────────────────────
+  apps/web/src/app/dashboard/rep/page.tsx
+    لوحة المندوب: خريطة GPS، مهام نشطة، طلبات معلقة، قبول/تحديث موقع/وصول
 
-  [جديد] apps/web/src/components/shared/ThobeSpecSelector.tsx
-         → مكوّن مواصفات الثوب السعودي: موسم، ياقة، كبك، قصّة، تطريز، خياطة، بدلة
-         → يصدر DEFAULT_THOBE_SPEC + ThobeSpec type
+  apps/web/src/app/dashboard/rep/assignments/page.tsx
+    مهام المندوب: إدخال 7 قياسات، حفظ ← إنشاء طلب تصنيع تلقائي
 
-  ── المرحلة 6: مدفوعات وفوترة ───────────────────────────────────────────────
+  apps/web/src/app/dashboard/invoices/[id]/page.tsx
+    فاتورة ضريبية: جدول بنود، ضريبة 15%، QR ZATCA، طباعة
 
-  [تحديث] apps/web/src/app/checkout/page.tsx
-         → ربط حقيقي بـ paymentsApi.processPayment مع 8 بوابات دفع
-         → قراءة orderId من URL params
+  apps/web/src/app/dashboard/admin/security/page.tsx
+    مركز أمان: 18 فحصاً (Headers, Auth, API, Data, Network, Performance)
 
-  [جديد] apps/web/src/app/dashboard/invoices/[id]/page.tsx
-         → فاتورة ضريبية احترافية: جدول بنود، ضريبة 15%، QR ZATCA، طباعة
+  apps/web/src/components/shared/ThobeSpecSelector.tsx
+    مواصفات الثوب السعودي: موسم، ياقة، كبك، قصّة، تطريز، خياطة، بدلة
 
-  [جديد] apps/web/src/app/dashboard/admin/security/page.tsx
-         → مركز أمان: 18 فحصاً (Headers, Auth, API, Data, Network, DB, Performance)
-         → درجة الأمان: 78% (14/18)
+  apps/web/src/components/shared/FabricPicker.tsx
+    اختيار قماش: حضوري/سوق، كتالوج، فئات، بحث، أمتار
 
-  ── تحسينات تدفق الطلب ──────────────────────────────────────────────────────
+  AUTOCORE SYSTEM FILES/DEPLOY-NOW.md
+    دليل نشر كامل: 3 خطوات، 5 دقائق، قائمة تحقق
 
-  [جديد] apps/web/src/components/shared/FabricPicker.tsx
-         → مكون اختيار قماش: حضوري/سوق، كتالوج منتجات، فئات، بحث، أمتار
+  ── ملفات محدثة ───────────────────────────────────────────────────────────
 
-  [تحديث] apps/web/src/app/dashboard/customer/orders/new/page.tsx
-         → دمج FabricPicker + ThobeSpecSelector + thobeSpec في OrderState
+  services/api/src/services/ServiceRequestService.ts
+    + completeWithMeasurements(): حفظ قياسات ← إنشاء طلب ← بدء تصنيع
 
-  [تحديث] apps/web/src/app/(auth)/login/page.tsx
-         → demo login يستخدم authApi.login() حقيقي بدل mockUser
+  services/api/src/controllers/v1/services.controller.ts
+    + complete() endpoint: POST /services/:id/complete
 
-  ── تحديثات التوثيق ─────────────────────────────────────────────────────────
+  services/api/src/routes/v1/services.routes.ts
+    + router.post('/:id/complete', ...)
 
-  [تحديث] .gitignore
-         → إضافة .github/workflows/render-build.yml للتجاهل
+  services/api/prisma/seed.ts
+    + 2 مندوبين (rep@mufasal.com, rep2@mufasal.com)
+    + خياط + تاجر + 5 أقمشة جديدة (كشمير، قطن ياباني، مخمل، نياقة)
 
-  [تحديث] AUTOCORE SYSTEM FILES/ROADMAP-مفصل.md
-  [تحديث] MUFASAL-PLAN.txt
+  apps/web/src/lib/api/services.ts
+    + list, dispatch, updateLocation, markArrived, complete
 
+  apps/web/src/app/checkout/page.tsx
+    + ربط حقيقي بـ paymentsApi.processPayment + 8 بوابات
 
-================================================================================
-قواعد التنفيذ
-================================================================================
+  apps/web/src/app/dashboard/customer/book-measurement/page.tsx
+    + 6 خطوات (عنوان←مندوب←ثوب←قماش←موعد←تأكيد) + ThobeSpec + FabricPicker
 
-  1. مهمة واحدة صغيرة في كل مرة — لا تعليق طويل
-  2. لا تغييرات خارج نطاق المرحلة الحالية
-  3. كل commit يُدفع إلى master بعد اكتمال المهمة
-  4. لا محتوى نسائي — تحقق من site-config.json و seed
-  5. عند النشر على Render:
-       Build:  npm run build  (أو Docker)
-       Start:  cd apps/web && npm start
-
-
-================================================================================
-ملفات مرجعية مهمة
-================================================================================
-
-  packages/shared/constants/customerOrderFlow.ts
   apps/web/src/app/dashboard/customer/orders/new/page.tsx
-  apps/web/src/app/dashboard/rep/page.tsx                     ← جديد
-  apps/web/src/app/dashboard/rep/assignments/page.tsx          ← جديد
-  apps/web/src/app/checkout/page.tsx                           ← محدث
-  apps/web/src/app/dashboard/invoices/[id]/page.tsx            ← جديد
-  apps/web/src/app/dashboard/admin/security/page.tsx           ← جديد
-  apps/web/src/components/shared/OrderTrackingTimeline.tsx
-  apps/web/src/components/shared/ThobeSpecSelector.tsx          ← جديد
-  apps/web/src/components/shared/FabricPicker.tsx               ← جديد
-  apps/web/src/components/shared/BodyDiagram.tsx
-  apps/mobile/src/screens/customer/MeasurementWizardScreen.tsx
-  services/api/src/services/OrderService.ts
-  services/api/src/services/ServiceRequestService.ts           ← محدث
-  services/api/src/services/MeasurementService.ts
-  services/api/prisma/schema.prisma
-  scripts/render-build.sh
-  Dockerfile
+    + دمج FabricPicker + ThobeSpecSelector في OrderState
+
+  apps/web/src/app/(auth)/login/page.tsx
+    + demo login يستخدم authApi.login() حقيقي + 5 أدوار
+
+  apps/web/src/lib/stores/authStore.ts
+    + UserRole: 'rep'
+
+  apps/web/src/components/shared/Sidebar.tsx
+    + قائمة المندوب: Shield + ربط /dashboard/rep
+
+  apps/web/src/app/dashboard/layout.tsx
+    + isRep detection + عنوان لوحة المندوب
+
+  apps/web/src/app/dashboard/page.tsx
+    + توجيه rep → /dashboard/rep
+
+  apps/mobile/src/screens/customer/SearchScreen.tsx
+    + ربط shopsApi + productsApi مع FALLBACK
+
+  apps/mobile/src/screens/customer/ShopDetailScreen.tsx
+    + ربط shopsApi.getById() مع FALLBACK_SHOP
+
+  apps/mobile/src/services/api/serviceRequests.ts
+    + complete() endpoint للجوال
+
+  apps/mobile/src/services/api/config.ts
+    + API_BASE_URL = mufasal-api.onrender.com للإنتاج
+
+  .gitignore
+    + .github/workflows/render-build.yml
+
   render.yaml
-  RENDER-SETUP.txt
+    + أسماء خدمات جديدة: mufasal + mufasal-api
 
+  Dockerfile + docker/Dockerfile.web
+    + NEXT_PUBLIC_API_URL = mufasal-api.onrender.com
 
-================================================================================
-المحفوظات — تحديثات الصور (11-12 يونيو 2026)
-================================================================================
+  RENDER-SETUP.txt + README.md
+    + روابط وحسابات محدثة
 
-  المسؤول: AUTOCORE CTO
-  الهدف:   استبدال جميع الصور بثياب سعودية أصيلة ملتزمة بهوية مفصل
+────────────────────────────────────────────────────────────────────────────────
+  6. للنشر — 3 خطوات على Render Dashboard
+────────────────────────────────────────────────────────────────────────────────
 
-  ── الملفات المُنشأة/المُحدثة ───────────────────────────────────────────────
+  1. New + → PostgreSQL     ← mufasal-db (Free, Frankfurt)
+  2. New + → Web Service    ← mufasal-api (docker/Dockerfile.api, Standard)
+  3. New + → Web Service    ← mufasal (Dockerfile, Standard)
 
-  [جديد]  apps/web/public/images/hero-thobe.jpg          ← الصورة الرئيسية
-  [جديد]  apps/web/public/images/thobe-black.jpg          ← ثوب أسود
-  [جديد]  apps/web/public/images/thobe-grey.jpg           ← ثوب رمادي
-  [جديد]  apps/web/public/images/thobe-blue.jpg           ← ثوب أزرق
-  [جديد]  apps/web/public/images/thobe-senior.jpg         ← كبير بالسن
-  [جديد]  apps/web/public/images/thobe-casual.jpg         ← كاجوال
-  [جديد]  apps/web/public/images/thobe-looking-up.jpg     ← ينظر لأعلى
-  [جديد]  apps/web/public/images/tailor-shop.jpg          ← خياطة
-  [جديد]  apps/web/public/images/workshop.jpg             ← ورشة
-  [جديد]  apps/web/public/images/thobe-modern.jpg         ← إضافي
-  [جديد]  apps/web/public/images/thobe-outdoor.jpg        ← إضافي
-  [جديد]  apps/web/public/images/thobe-mosque.jpg         ← إضافي
-  [جديد]  apps/web/public/images/fabric-colorful.jpg      ← إضافي
+  التفاصيل الكاملة: AUTOCORE SYSTEM FILES/DEPLOY-NOW.md
 
-  [تحديث] apps/web/src/components/home/homeImages.ts      ← روابط الصور الجديدة
+────────────────────────────────────────────────────────────────────────────────
+  7. المتبقي فقط
+────────────────────────────────────────────────────────────────────────────────
 
-  ── المجلدات المصدر ────────────────────────────────────────────────────────
+  [ ] 1.7  اختبار E2E بعد النشر (يحتاج API + DB حيّين)
+  [ ] 6.5  شراء نطاق mufasal.com وربطه بـ Render
 
-  [جديد]  صور/                                          ← 21 صورة من Google Drive
-  [جديد]  AUTOCORE SYSTEM FILES/UNSPLASH-IMAGES.md       ← دليل صور Unsplash
-  [جديد]  AUTOCORE SYSTEM FILES/download-images.bat      ← سكربت تحميل Unsplash
-  [جديد]  AUTOCORE SYSTEM FILES/IMAGES-GUIDELINES.md     ← دليل هوية الصور
-  [جديد]  START-QUICK.md                                 ← دليل تشغيل سريع
-
-  ── طريقة التحميل (لأي مبرمج/AI مستقبلي) ───────────────────────────────────
-
-  1. الصور الأساسية موجودة في: apps/web/public/images/
-  2. الصور الاحتياطية في: صور/
-  3. روابط الصور مُحددة في: apps/web/src/components/home/homeImages.ts
-  4. لإضافة صورة جديدة:
-     - ضعها في apps/web/public/images/
-     - أضفها في homeImages.ts
-     - أعد تشغيل npm run dev
-
-  ── ملاحظات تقنية ─────────────────────────────────────────────────────────
-
-  - جميع الصور بصيغة JPG، جودة عالية (1-2 MB لكل صورة)
-  - homeImages.ts يُصدّر كائن HOME_IMAGES ثابت (as const)
-  - لا تعديلات على التصميم (CSS) — فقط استبدال الروابط
-  - الصور السابقة (SVG placeholders) أُحيلت للأرشيف
-
-================================================================================
-روابط سريعة
-================================================================================
-
-  GitHub:     https://github.com/BINNISER10/mofasal-web
-  الويب:      https://mufasal.onrender.com
-  Render:     https://dashboard.render.com
-  API:        https://mufasal-api.onrender.com
-
-
-================================================================================
-  نهاية الملف
+────────────────────────────────────────────────────────────────────────────────
+  نهاية الملف — 12 يونيو 2026 — AUTOCORE CTO
 ================================================================================
