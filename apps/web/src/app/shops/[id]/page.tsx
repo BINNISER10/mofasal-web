@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/shared/Navbar';
@@ -8,74 +8,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { shopsApi } from '@/lib/api/shops';
+import { mapShopDetail, type ShopDetailView } from '@/lib/mappers/shopDetail';
 import {
   Star, MapPin, Clock, Phone, CheckCircle2, ArrowRight, ArrowLeft,
   Scissors, Ruler, Package, MessageCircle, Heart, Share2, ChevronLeft,
   ChevronRight, Users, Award, TrendingUp, ShoppingBag
 } from 'lucide-react';
-
-const mockShops: Record<string, any> = {
-  '1': {
-    id: '1', name: 'خياطة الرجال الراقية', nameEn: 'Premium Menswear',
-    owner: 'خالد العمر', ownerEn: 'Khalid Al-Omar',
-    avatar: null, coverImage: null,
-    city: 'الرياض', district: 'حي الورود', cityEn: 'Riyadh',
-    phone: '+966 55 123 4567',
-    rating: 4.8, reviewCount: 324, orders: 1256,
-    experience: 12, verified: true, featured: true,
-    description: 'متخصصون في الخياطة الرجالية الراقية منذ أكثر من 12 عاماً. نقدم خدمات التفصيل للبدل الرسمية والمشالح والثياب التقليدية بأعلى جودة وأدق المقاسات.',
-    descriptionEn: 'Specialized in premium menswear tailoring for over 12 years. We offer suits, thobes, and traditional garments with the highest quality.',
-    workingHours: { from: '9:00', to: '22:00', days: 'السبت - الخميس' },
-    specialties: ['بدل رسمية', 'مشالح', 'أثواب', 'بشوت', 'يونيفورم'],
-    services: [
-      { id: '1', name: 'بدلة رسمية', nameEn: 'Formal Suit', price: 1200, duration: '7 أيام', icon: '👔', popular: true },
-      { id: '2', name: 'مشلح فاخر', nameEn: 'Bisht', price: 800, duration: '5 أيام', icon: '🥻', popular: false },
-      { id: '3', name: 'ثوب قياس', nameEn: 'Custom Thobe', price: 350, duration: '3 أيام', icon: '👘', popular: true },
-      { id: '4', name: 'بدلة رياضية', nameEn: 'Sports Suit', price: 650, duration: '5 أيام', icon: '🎽', popular: false },
-      { id: '5', name: 'يونيفورم شركات', nameEn: 'Corporate Uniform', price: 420, duration: '5 أيام', icon: '👕', popular: false },
-    ],
-    reviews: [
-      { id: '1', name: 'أحمد محمد', rating: 5, comment: 'خياطة ممتازة وجودة عالية جداً. الثوب جاء بالمقاس الصحيح تماماً.', date: '2024-03-10' },
-      { id: '2', name: 'فيصل الحربي', rating: 5, comment: 'تعاملت معهم عدة مرات والنتيجة دائماً مميزة. سرعة في التنفيذ.', date: '2024-03-05' },
-      { id: '3', name: 'محمد العنزي', rating: 4, comment: 'خدمة جيدة والعمل نظيف. التوصيل كان سريع.', date: '2024-02-28' },
-    ],
-    portfolio: [
-      { label: 'بدلة رسمية زرقاء', color: '#1e3a5f' },
-      { label: 'مشلح ذهبي', color: '#c9a84c' },
-      { label: 'ثوب أبيض', color: '#f5f0e8' },
-      { label: 'بدلة رمادية', color: '#5a5a6e' },
-    ],
-    stats: { completionRate: 98, onTimeDelivery: 95, repeatCustomers: 72 },
-  },
-  '2': {
-    id: '2', name: 'ثياب الأطفال', nameEn: "Kids Thobes",
-    owner: 'فهد أحمد', ownerEn: 'Fahad Ahmed',
-    city: 'جدة', district: 'حي الروضة', cityEn: 'Jeddah',
-    phone: '+966 54 987 6543',
-    rating: 4.5, reviewCount: 210, orders: 892,
-    experience: 8, verified: true, featured: false,
-    description: 'متخصصون في تفصيل ثياب الأطفال السعودية وبدل الأولاد للمناسبات. تصاميم عصرية وراقية بأدق المقاسات.',
-    descriptionEn: 'Specialized in boys\' thobes and occasion suits.',
-    workingHours: { from: '10:00', to: '21:00', days: 'السبت - الخميس' },
-    specialties: ['ثياب أطفال', 'بدل أولاد', 'بشوت أطفال', 'ملابس تقليدية'],
-    services: [
-      { id: '1', name: 'ثوب أطفال', nameEn: 'Kids Thobe', price: 280, duration: '3 أيام', icon: '�', popular: true },
-      { id: '2', name: 'بدلة طفل', nameEn: 'Boy\'s Suit', price: 320, duration: '3 أيام', icon: '👔', popular: false },
-      { id: '3', name: 'بشت أطفال', nameEn: 'Kids Bisht', price: 650, duration: '5 أيام', icon: '🧥', popular: true },
-    ],
-    reviews: [
-      { id: '1', name: 'سعد القحطاني', rating: 5, comment: 'ماشاء الله عمل رائع للأطفال. الخياطة دقيقة والخامة ممتازة.', date: '2024-03-12' },
-      { id: '2', name: 'فيصل العتيبي', rating: 4, comment: 'ثوب ابني جاء جميل جداً بالمقاس المطلوب.', date: '2024-03-01' },
-    ],
-    portfolio: [
-      { label: 'ثوب أبيض', color: '#f0ece0' },
-      { label: 'بدلة كحلي', color: '#2c3e50' },
-      { label: 'ثوب بيج', color: '#d2b48c' },
-      { label: 'بدلة زرقاء', color: '#90caf9' },
-    ],
-    stats: { completionRate: 96, onTimeDelivery: 91, repeatCustomers: 65 },
-  },
-};
 
 export default function ShopDetailPage() {
   const params = useParams();
@@ -85,49 +23,53 @@ export default function ShopDetailPage() {
   const [liked, setLiked] = useState(false);
 
   const shopId = String(params.id);
-  const fallback = mockShops[shopId] ?? mockShops['1'];
-  const [shop, setShop] = useState<any>(fallback);
+  const [shop, setShop] = useState<ShopDetailView | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError(false);
     shopsApi.getById(shopId)
       .then((res) => {
         if (!active) return;
-        const api: any = res.shop;
-        if (!api || !api.id) return;
-        const services = Array.isArray(api.shopServices) && api.shopServices.length
-          ? api.shopServices.map((s: any, i: number) => ({
-              id: s.id || String(i + 1),
-              name: s.nameAr || s.name || s.serviceType || 'خدمة',
-              nameEn: s.nameEn || s.name || 'Service',
-              price: s.price ?? 0,
-              duration: s.duration ? `${s.duration} ${isRTL ? 'أيام' : 'days'}` : '—',
-              icon: s.serviceType === 'TAILORING' ? '👘' : '🧵',
-              popular: Boolean(s.isPopular || i === 0),
-            }))
-          : fallback.services;
-        setShop({
-          ...fallback,
-          id: api.id,
-          name: api.nameAr || api.name || fallback.name,
-          owner: api.ownerName || fallback.owner,
-          city: api.city || fallback.city,
-          district: api.region || api.district || fallback.district,
-          phone: api.phone || fallback.phone,
-          rating: api.rating ?? fallback.rating,
-          reviewCount: api.reviewCount ?? fallback.reviewCount,
-          orders: api.orderCount ?? fallback.orders,
-          verified: api.isVerified ?? fallback.verified,
-          featured: api.subscriptionPlan === 'PREMIUM' || fallback.featured,
-          description: api.description || fallback.description,
-          services,
-        });
+        if (!res.shop?.id) {
+          setError(true);
+          return;
+        }
+        setShop(mapShopDetail(res.shop, isRTL));
       })
-      .catch(() => { /* الإبقاء على القالب الاحتياطي عند فشل الاتصال */ });
+      .catch(() => { if (active) setError(true); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [shopId]);
+  }, [shopId, isRTL]);
 
   const ArrowIcon = isRTL ? ArrowRight : ArrowLeft;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
+        <Navbar />
+        <div className="text-center py-32 text-neutral-400">{isRTL ? 'Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªØ­Ù…ÙŠÙ„...' : 'Loading...'}</div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !shop) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
+        <Navbar />
+        <div className="text-center py-32">
+          <p className="text-neutral-500 mb-4">{isRTL ? 'Ø§Ù„Ù…ØªØ¬Ø± ØºÙŠØ± Ù…ØªÙˆÙØ±' : 'Shop not found'}</p>
+          <Button onClick={() => router.push('/shops')}>{isRTL ? 'Ø§Ù„Ø¹ÙˆØ¯Ø© Ù„Ù„Ù…ØªØ§Ø¬Ø±' : 'Back to shops'}</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   const ChevronBack = isRTL ? ChevronRight : ChevronLeft;
 
   return (
@@ -145,7 +87,7 @@ export default function ShopDetailPage() {
           className="absolute top-4 right-4 flex items-center gap-1 bg-black/30 hover:bg-black/50 text-white px-3 py-1.5 rounded-xl text-sm font-medium transition-all"
         >
           <ChevronBack size={16} />
-          {isRTL ? 'رجوع' : 'Back'}
+          {isRTL ? 'Ø±Ø¬ÙˆØ¹' : 'Back'}
         </button>
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-gray-50 to-transparent" />
       </div>
@@ -165,16 +107,16 @@ export default function ShopDetailPage() {
                     {shop.verified && (
                       <Badge variant="success" size="sm">
                         <CheckCircle2 size={12} className="mr-1" />
-                        {isRTL ? 'موثق' : 'Verified'}
+                        {isRTL ? 'Ù…ÙˆØ«Ù‚' : 'Verified'}
                       </Badge>
                     )}
-                    {shop.featured && <Badge variant="gold" size="sm">{isRTL ? 'مميز' : 'Featured'}</Badge>}
+                    {shop.featured && <Badge variant="gold" size="sm">{isRTL ? 'Ù…Ù…ÙŠØ²' : 'Featured'}</Badge>}
                   </div>
                   <p className="text-gray-500 text-sm mt-1">{shop.owner}</p>
                   <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
-                    <span className="flex items-center gap-1"><MapPin size={14} />{shop.city}، {shop.district}</span>
+                    <span className="flex items-center gap-1"><MapPin size={14} />{shop.city}ØŒ {shop.district}</span>
                     <span className="flex items-center gap-1"><Clock size={14} />{shop.workingHours.from} - {shop.workingHours.to}</span>
-                    <span className="flex items-center gap-1"><Award size={14} />{shop.experience} {isRTL ? 'سنوات خبرة' : 'yrs exp'}</span>
+                    <span className="flex items-center gap-1"><Award size={14} />{shop.experience} {isRTL ? 'Ø³Ù†ÙˆØ§Øª Ø®Ø¨Ø±Ø©' : 'yrs exp'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -206,15 +148,15 @@ export default function ShopDetailPage() {
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <ShoppingBag size={14} />
-                  <span>{shop.orders.toLocaleString()} {isRTL ? 'طلب' : 'orders'}</span>
+                  <span>{shop.orders.toLocaleString()} {isRTL ? 'Ø·Ù„Ø¨' : 'orders'}</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <TrendingUp size={14} className="text-green-500" />
-                  <span>{shop.stats.completionRate}% {isRTL ? 'إنجاز' : 'completion'}</span>
+                  <span>{shop.stats.completionRate}% {isRTL ? 'Ø¥Ù†Ø¬Ø§Ø²' : 'completion'}</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <Users size={14} className="text-primary-500" />
-                  <span>{shop.stats.repeatCustomers}% {isRTL ? 'عملاء متكررون' : 'repeat'}</span>
+                  <span>{shop.stats.repeatCustomers}% {isRTL ? 'Ø¹Ù…Ù„Ø§Ø¡ Ù…ØªÙƒØ±Ø±ÙˆÙ†' : 'repeat'}</span>
                 </div>
               </div>
             </div>
@@ -226,7 +168,7 @@ export default function ShopDetailPage() {
           <div className="md:col-span-2 space-y-6">
             {/* About */}
             <Card className="p-5">
-              <h2 className="font-bold text-gray-800 mb-3">{isRTL ? 'عن المتجر' : 'About'}</h2>
+              <h2 className="font-bold text-gray-800 mb-3">{isRTL ? 'Ø¹Ù† Ø§Ù„Ù…ØªØ¬Ø±' : 'About'}</h2>
               <p className="text-sm text-gray-600 leading-relaxed">{shop.description}</p>
               <div className="flex flex-wrap gap-2 mt-4">
                 {shop.specialties.map((s: string, i: number) => (
@@ -244,9 +186,9 @@ export default function ShopDetailPage() {
                     onClick={() => setActiveTab(tab)}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === tab ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
-                    {tab === 'services' ? (isRTL ? 'الخدمات' : 'Services')
-                      : tab === 'reviews' ? (isRTL ? 'التقييمات' : 'Reviews')
-                      : (isRTL ? 'الأعمال' : 'Portfolio')}
+                    {tab === 'services' ? (isRTL ? 'Ø§Ù„Ø®Ø¯Ù…Ø§Øª' : 'Services')
+                      : tab === 'reviews' ? (isRTL ? 'Ø§Ù„ØªÙ‚ÙŠÙŠÙ…Ø§Øª' : 'Reviews')
+                      : (isRTL ? 'Ø§Ù„Ø£Ø¹Ù…Ø§Ù„' : 'Portfolio')}
                   </button>
                 ))}
               </div>
@@ -262,18 +204,18 @@ export default function ShopDetailPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-gray-900">{service.name}</p>
-                            {service.popular && <Badge variant="gold" size="sm">{isRTL ? 'الأكثر طلباً' : 'Popular'}</Badge>}
+                            {service.popular && <Badge variant="gold" size="sm">{isRTL ? 'Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ø§Ù‹' : 'Popular'}</Badge>}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                             <span className="flex items-center gap-1"><Clock size={11} />{service.duration}</span>
-                            <span className="flex items-center gap-1"><Ruler size={11} />{isRTL ? 'قياس في الموقع' : 'On-site measurement'}</span>
+                            <span className="flex items-center gap-1"><Ruler size={11} />{isRTL ? 'Ù‚ÙŠØ§Ø³ ÙÙŠ Ø§Ù„Ù…ÙˆÙ‚Ø¹' : 'On-site measurement'}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-left flex flex-col items-end gap-2">
-                        <p className="font-black text-primary-700 text-lg">{service.price} {isRTL ? 'ر.س' : 'SAR'}</p>
+                        <p className="font-black text-primary-700 text-lg">{service.price} {isRTL ? 'Ø±.Ø³' : 'SAR'}</p>
                         <Button size="sm" variant="primary" onClick={() => router.push(`/dashboard/customer/orders/new?shop=${shop.id}&service=${service.id}`)}>
-                          {isRTL ? 'اطلب الآن' : 'Order Now'}
+                          {isRTL ? 'Ø§Ø·Ù„Ø¨ Ø§Ù„Ø¢Ù†' : 'Order Now'}
                         </Button>
                       </div>
                     </Card>
@@ -293,7 +235,7 @@ export default function ShopDetailPage() {
                             <Star key={i} size={14} className={i <= Math.round(shop.rating) ? 'text-gold-500 fill-gold-500' : 'text-gray-200 fill-gray-200'} />
                           ))}
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">{shop.reviewCount} {isRTL ? 'تقييم' : 'reviews'}</p>
+                        <p className="text-xs text-gray-400 mt-1">{shop.reviewCount} {isRTL ? 'ØªÙ‚ÙŠÙŠÙ…' : 'reviews'}</p>
                       </div>
                       <div className="flex-1 space-y-2">
                         {[5,4,3,2,1].map(star => {
@@ -356,22 +298,22 @@ export default function ShopDetailPage() {
           <div className="space-y-4">
             {/* Book CTA */}
             <Card className="p-5 bg-gradient-to-br from-primary-600 to-primary-800 text-white">
-              <h3 className="font-bold text-lg mb-2">{isRTL ? 'احجز موعدك الآن' : 'Book Your Appointment'}</h3>
-              <p className="text-primary-200 text-sm mb-4">{isRTL ? 'ابدأ طلبك مع هذا المتجر في خطوات بسيطة' : 'Start your order with this shop in simple steps'}</p>
+              <h3 className="font-bold text-lg mb-2">{isRTL ? 'Ø§Ø­Ø¬Ø² Ù…ÙˆØ¹Ø¯Ùƒ Ø§Ù„Ø¢Ù†' : 'Book Your Appointment'}</h3>
+              <p className="text-primary-200 text-sm mb-4">{isRTL ? 'Ø§Ø¨Ø¯Ø£ Ø·Ù„Ø¨Ùƒ Ù…Ø¹ Ù‡Ø°Ø§ Ø§Ù„Ù…ØªØ¬Ø± ÙÙŠ Ø®Ø·ÙˆØ§Øª Ø¨Ø³ÙŠØ·Ø©' : 'Start your order with this shop in simple steps'}</p>
               <Button
                 variant="gold"
                 fullWidth
                 icon={<ArrowIcon size={16} />}
                 onClick={() => router.push(`/dashboard/customer/orders/new?shop=${shop.id}`)}
               >
-                {isRTL ? 'إنشاء طلب' : 'Create Order'}
+                {isRTL ? 'Ø¥Ù†Ø´Ø§Ø¡ Ø·Ù„Ø¨' : 'Create Order'}
               </Button>
               <button
                 onClick={() => router.push('/login')}
                 className="flex items-center justify-center gap-1.5 w-full mt-2 py-2 text-sm text-primary-200 hover:text-white transition-colors"
               >
                 <MessageCircle size={14} />
-                {isRTL ? 'تواصل مع المتجر' : 'Chat with Shop'}
+                {isRTL ? 'ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ø§Ù„Ù…ØªØ¬Ø±' : 'Chat with Shop'}
               </button>
             </Card>
 
@@ -379,7 +321,7 @@ export default function ShopDetailPage() {
             <Card className="p-5">
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <Clock size={16} className="text-primary-600" />
-                {isRTL ? 'ساعات العمل' : 'Working Hours'}
+                {isRTL ? 'Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ø¹Ù…Ù„' : 'Working Hours'}
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -388,7 +330,7 @@ export default function ShopDetailPage() {
                 </div>
                 <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  {isRTL ? 'مفتوح الآن' : 'Open Now'}
+                  {isRTL ? 'Ù…ÙØªÙˆØ­ Ø§Ù„Ø¢Ù†' : 'Open Now'}
                 </div>
               </div>
             </Card>
@@ -397,23 +339,23 @@ export default function ShopDetailPage() {
             <Card className="p-5">
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <MapPin size={16} className="text-primary-600" />
-                {isRTL ? 'الموقع' : 'Location'}
+                {isRTL ? 'Ø§Ù„Ù…ÙˆÙ‚Ø¹' : 'Location'}
               </h3>
-              <p className="text-sm text-gray-600">{shop.city}، {shop.district}</p>
+              <p className="text-sm text-gray-600">{shop.city}ØŒ {shop.district}</p>
               <div className="mt-3 h-28 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm border border-gray-200">
                 <MapPin size={20} className="mr-2 text-primary-500" />
-                {isRTL ? 'عرض على الخريطة' : 'View on Map'}
+                {isRTL ? 'Ø¹Ø±Ø¶ Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø±ÙŠØ·Ø©' : 'View on Map'}
               </div>
             </Card>
 
             {/* Stats */}
             <Card className="p-5">
-              <h3 className="font-bold text-gray-800 mb-3">{isRTL ? 'إحصائيات الأداء' : 'Performance'}</h3>
+              <h3 className="font-bold text-gray-800 mb-3">{isRTL ? 'Ø¥Ø­ØµØ§Ø¦ÙŠØ§Øª Ø§Ù„Ø£Ø¯Ø§Ø¡' : 'Performance'}</h3>
               <div className="space-y-3">
                 {[
-                  { label: isRTL ? 'نسبة الإنجاز' : 'Completion Rate', value: shop.stats.completionRate, color: 'bg-green-500' },
-                  { label: isRTL ? 'التسليم في الموعد' : 'On-time Delivery', value: shop.stats.onTimeDelivery, color: 'bg-blue-500' },
-                  { label: isRTL ? 'العملاء المتكررون' : 'Repeat Customers', value: shop.stats.repeatCustomers, color: 'bg-gold-500' },
+                  { label: isRTL ? 'Ù†Ø³Ø¨Ø© Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²' : 'Completion Rate', value: shop.stats.completionRate, color: 'bg-green-500' },
+                  { label: isRTL ? 'Ø§Ù„ØªØ³Ù„ÙŠÙ… ÙÙŠ Ø§Ù„Ù…ÙˆØ¹Ø¯' : 'On-time Delivery', value: shop.stats.onTimeDelivery, color: 'bg-blue-500' },
+                  { label: isRTL ? 'Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡ Ø§Ù„Ù…ØªÙƒØ±Ø±ÙˆÙ†' : 'Repeat Customers', value: shop.stats.repeatCustomers, color: 'bg-gold-500' },
                 ].map((stat) => (
                   <div key={stat.label}>
                     <div className="flex justify-between text-xs mb-1">

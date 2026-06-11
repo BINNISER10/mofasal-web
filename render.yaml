@@ -1,17 +1,54 @@
-# Render — Docker build (more RAM than Starter Node build; avoids exit 134 OOM)
+# Render Blueprint — مفصل MUFASAL
+# ملاحظة: إن كانت الخدمات موجودة مسبقاً، طبّق الإعدادات يدوياً من RENDER-SETUP.txt
+
+databases:
+  - name: mufasal-db
+    databaseName: mufasal
+    user: mufasal
+    plan: free
+    region: frankfurt
+
 services:
   - type: web
     name: mofasal-web
-    runtime: docker
+    runtime: node
     region: frankfurt
-    plan: starter
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    plan: standard
+    buildCommand: npm install && npm run build
+    startCommand: cd apps/web && npm start
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
+      - key: NEXT_PUBLIC_API_URL
+        value: https://mofasal-api.onrender.com/api/v1
+
+  - type: web
+    name: mofasal-api
+    runtime: docker
+    region: frankfurt
+    plan: standard
+    dockerfilePath: ./docker/Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
       - key: PORT
-        value: "3000"
+        value: "4001"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mufasal-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://mofasal-web.onrender.com,http://localhost:3000
+      - key: SEED_DATABASE
+        value: "true"
+      - key: API_PREFIX
+        value: /api/v1

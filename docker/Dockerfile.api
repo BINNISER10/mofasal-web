@@ -1,25 +1,20 @@
-# ═════════════════════════════════════════════════════════
-# MUFASAL API — Multi-stage Docker Build
-# ═════════════════════════════════════════════════════════
-
+# MUFASAL API — Docker build for Render (Standard)
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-
 COPY services/api/package.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 FROM node:20-alpine AS builder
+RUN apk add --no-cache openssl
 WORKDIR /app
-
 COPY services/api/ ./
 COPY --from=deps /app/node_modules ./node_modules
-
-COPY services/api/prisma ./prisma
-RUN npx prisma generate
+RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl wget
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs && \
@@ -29,17 +24,16 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY services/api/package.json ./
+COPY docker/api-start.sh ./start.sh
 
-RUN chown -R express:nodejs /app
+RUN chmod +x ./start.sh && chown -R express:nodejs /app
 
 USER express
-
 EXPOSE 4001
-
 ENV NODE_ENV=production
 ENV PORT=4001
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4001/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4001/health/live || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["./start.sh"]
