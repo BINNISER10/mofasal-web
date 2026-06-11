@@ -36,7 +36,9 @@
   [ ] 0.7  NEXT_PUBLIC_API_URL على mofasal-web
   [ ] 0.8  prisma migrate + seed (تلقائي عند SEED_DATABASE=true)
 
-  ← الخطوة التالية: نفّذ RENDER-SETUP.txt على Dashboard
+  ← الخطوة التالية: افتح AUTOCORE SYSTEM FILES/DEPLOY-NOW.md أو RENDER-SETUP.txt
+     المدة: 15 دقيقة على Render Dashboard
+     المطلوب: PostgreSQL + mofasal-api + NEXT_PUBLIC_API_URL
 
 
 ================================================================================
