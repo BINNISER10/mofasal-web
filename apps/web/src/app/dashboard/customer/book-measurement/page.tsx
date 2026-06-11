@@ -6,17 +6,22 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAppStore } from '@/lib/stores/appStore';
 import { servicesApi } from '@/lib/api/services';
+import { ThobeSpecSelector, DEFAULT_THOBE_SPEC, ThobeSpec } from '@/components/shared/ThobeSpecSelector';
+import { FabricPicker, SelectedFabric } from '@/components/shared/FabricPicker';
 import toast from 'react-hot-toast';
 import {
   MapPin, Clock, Star, User, Phone, Calendar, Ruler,
   ChevronRight, CheckCircle2, ArrowRight, Car, Search,
+  Scissors, Package, FileText,
 } from 'lucide-react';
 
 const STEPS = [
   { id: 1, ar: 'اختر المنطقة', en: 'Select Area' },
   { id: 2, ar: 'اختر المندوب', en: 'Choose Rep' },
-  { id: 3, ar: 'حدد الموعد', en: 'Pick Time' },
-  { id: 4, ar: 'تأكيد الحجز', en: 'Confirm' },
+  { id: 3, ar: 'مواصفات الثوب', en: 'Thobe Specs' },
+  { id: 4, ar: 'اختر القماش', en: 'Pick Fabric' },
+  { id: 5, ar: 'حدد الموعد', en: 'Pick Time' },
+  { id: 6, ar: 'تأكيد الحجز', en: 'Confirm' },
 ];
 
 const [reps, setReps] = useState<any[]>([]);
@@ -42,6 +47,8 @@ export default function BookMeasurementPage() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [thobeSpec, setThobeSpec] = useState<ThobeSpec>({ ...DEFAULT_THOBE_SPEC });
+  const [fabric, setFabric] = useState<SelectedFabric>({ type: 'shop' });
 
   useEffect(() => {
     if (step === 2) {
@@ -77,13 +84,15 @@ export default function BookMeasurementPage() {
     if (!selectedRep || !selectedDate || !selectedTime) return;
     setIsSubmitting(true);
     try {
+      const specNotes = `الياقة: ${thobeSpec.collarType}, الكبك: ${thobeSpec.cuffType}, القصة: ${thobeSpec.cutStyle}, الموسم: ${thobeSpec.season}`;
+      const fabricNotes = fabric.productName ? `القماش: ${fabric.productName} (${fabric.meters || 3}م)` : '';
       const service = await servicesApi.create({
         shopId: 'default',
         serviceType: 'ON_SITE_MEASUREMENT',
         customAddress: address || undefined,
         scheduledDate: new Date(`${selectedDate}T${selectedTime}:00`).toISOString(),
         preferredTime: selectedTime || undefined,
-        notes: rep ? `المندوب المفضل: ${rep.name}` : undefined,
+        notes: [`المندوب: ${rep?.name}`, specNotes, fabricNotes].filter(Boolean).join(' | '),
       });
       if (service?.service?.id) {
         await servicesApi.dispatch(service.service.id);
@@ -238,8 +247,28 @@ export default function BookMeasurementPage() {
         </div>
       )}
 
-      {/* Step 3: Date & Time */}
+      {/* Step 3: Thobe Specs */}
       {step === 3 && (
+        <Card className="p-5 dark:bg-slate-800/60">
+          <ThobeSpecSelector value={thobeSpec} onChange={setThobeSpec} />
+        </Card>
+      )}
+
+      {/* Step 4: Fabric */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <Card className="p-5 dark:bg-slate-800/60">
+            <h2 className="font-bold text-gray-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+              <Package size={18} className="text-primary-600" />
+              {isRTL ? 'اختر القماش' : 'Pick Fabric'}
+            </h2>
+            <FabricPicker value={fabric} onChange={setFabric} compact />
+          </Card>
+        </div>
+      )}
+
+      {/* Step 5: Date & Time */}
+      {step === 5 && (
         <div className="space-y-6">
           <Card className="p-5 dark:bg-slate-800/60">
             <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-4 flex items-center gap-2">
@@ -269,8 +298,8 @@ export default function BookMeasurementPage() {
         </div>
       )}
 
-      {/* Step 4: Confirm */}
-      {step === 4 && rep && (
+      {/* Step 6: Confirm */}
+      {step === 6 && rep && (
         <Card className="p-5 dark:bg-slate-800/60 space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg">{isRTL ? 'ملخص الحجز' : 'Booking Summary'}</h3>
           {[
@@ -279,6 +308,8 @@ export default function BookMeasurementPage() {
             { icon: <Calendar size={16} />, label: isRTL ? 'التاريخ' : 'Date', value: selectedDate || '' },
             { icon: <Clock size={16} />, label: isRTL ? 'الوقت' : 'Time', value: selectedTime || '' },
             { icon: <Ruler size={16} />, label: isRTL ? 'تكلفة الزيارة' : 'Visit Cost', value: `${rep.pricePerVisit} ر.س` },
+            { icon: <Scissors size={16} />, label: isRTL ? 'نوع الياقة' : 'Collar', value: thobeSpec.collarType === 'classic' ? 'رسمية' : thobeSpec.collarType === 'buttons' ? 'بأزرار' : thobeSpec.collarType === 'double' ? 'مكوّنة' : 'مرتفعة' },
+            { icon: <Package size={16} />, label: isRTL ? 'القماش' : 'Fabric', value: fabric.productName || (fabric.type === 'shop' ? (isRTL ? 'من المتجر' : 'From shop') : (isRTL ? 'من السوق' : 'Marketplace')) },
           ].map((row, i) => (
             <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-slate-700 last:border-0">
               <div className="text-primary-600">{row.icon}</div>
@@ -294,11 +325,11 @@ export default function BookMeasurementPage() {
       {/* Navigation */}
       <div className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-t border-gray-100 dark:border-slate-800 p-4">
         <div className="max-w-2xl mx-auto">
-          {step < 4 ? (
+          {step < 6 ? (
             <Button
               variant="primary" fullWidth size="lg"
               icon={<ChevronRight size={18} />}
-              disabled={(step === 1 && !address) || (step === 2 && !selectedRep) || (step === 3 && (!selectedDate || !selectedTime))}
+              disabled={(step === 1 && !address) || (step === 2 && !selectedRep) || (step === 5 && (!selectedDate || !selectedTime))}
               onClick={() => setStep(s => s + 1)}
             >
               {isRTL ? 'التالي' : 'Next'}
