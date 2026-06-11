@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
-import { DEFAULT_ROLE_PERMISSIONS } from '../dist/config/permissions';
+
+// Runtime require — ts-node cannot resolve compiled dist paths at type-check time in Docker.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { DEFAULT_ROLE_PERMISSIONS } = require('../dist/config/permissions.js') as {
+  DEFAULT_ROLE_PERMISSIONS: Record<string, Record<string, boolean>>;
+};
 
 const prisma = new PrismaClient();
 
