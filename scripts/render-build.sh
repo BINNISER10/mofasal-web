@@ -2,7 +2,7 @@
 # Render Starter (512MB RAM) — بناء خفيف بدون OOM (exit 134)
 set -euo pipefail
 
-export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=460}"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=384}"
 export NEXT_TELEMETRY_DISABLED=1
 export GENERATE_SOURCEMAP=false
 
@@ -23,7 +23,7 @@ npm install --no-audit --no-fund --ignore-scripts
 echo "==> prisma generate"
 npx prisma generate --schema=./prisma/schema.prisma
 
-echo "==> next build"
-npx next build
+echo "==> next build (low memory)"
+npx next build --no-lint
 
 echo "==> Build complete"

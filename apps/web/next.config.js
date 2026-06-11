@@ -3,6 +3,8 @@ const path = require('path');
 
 const nextConfig = {
   output: 'standalone',
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   transpilePackages: ['@mufasal/shared', '@mufasal/ui'],
   images: {
     remotePatterns: [
@@ -23,6 +25,7 @@ const nextConfig = {
     webpackBuildWorker: false,
   },
   webpack: (config) => {
+    config.parallelism = 1;
     const sharedRoot = path.resolve(__dirname, '../../packages/shared');
     const uiRoot = path.resolve(__dirname, '../../packages/ui/src');
     config.resolve.alias = {

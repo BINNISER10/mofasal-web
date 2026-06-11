@@ -1,19 +1,14 @@
-# Render Blueprint — mofasal-web (خفيف لخطة Starter 512MB)
+# Render — صورة جاهزة من GitHub Actions (لا build على Render)
 services:
   - type: web
     name: mofasal-web
-    runtime: node
+    runtime: image
     region: frankfurt
     plan: starter
-    branch: master
-    buildCommand: bash scripts/render-build.sh
-    startCommand: cd apps/web && npm start
+    image:
+      url: ghcr.io/binniser10/mofasal-web:latest
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NODE_OPTIONS
-        value: --max-old-space-size=460
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
-      - key: GENERATE_SOURCEMAP
-        value: "false"
