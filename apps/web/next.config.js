@@ -16,7 +16,12 @@ const nextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
-  experimental: { optimizeCss: false, externalDir: true },
+  productionBrowserSourceMaps: false,
+  experimental: {
+    optimizeCss: false,
+    externalDir: true,
+    webpackBuildWorker: false,
+  },
   webpack: (config) => {
     const sharedRoot = path.resolve(__dirname, '../../packages/shared');
     const uiRoot = path.resolve(__dirname, '../../packages/ui/src');
