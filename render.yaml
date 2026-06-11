@@ -22,8 +22,14 @@ services:
         value: production
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
+      - key: PORT
+        value: "10000"
       - key: NEXT_PUBLIC_API_URL
         value: https://mofasal-api.onrender.com/api/v1
+      - key: DATABASE_URL
+        value: postgresql://build:build@localhost:5432/build?schema=public
+      - key: DIRECT_DATABASE_URL
+        value: postgresql://build:build@localhost:5432/build?schema=public
 
   - type: web
     name: mofasal-api

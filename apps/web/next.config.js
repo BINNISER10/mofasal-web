@@ -3,6 +3,7 @@ const path = require('path');
 
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   transpilePackages: ['@mufasal/shared', '@mufasal/ui'],

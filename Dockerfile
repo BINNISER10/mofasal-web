@@ -17,7 +17,13 @@ COPY apps/web apps/web
 
 WORKDIR /app/apps/web
 
-# NEXT_PUBLIC_* must be present at build time (Render passes service env vars into docker build).
+# Prisma needs URLs at generate time (no real DB connection during build).
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=public
+ARG DIRECT_DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=public
+ENV DATABASE_URL=$DATABASE_URL
+ENV DIRECT_DATABASE_URL=$DIRECT_DATABASE_URL
+
+# NEXT_PUBLIC_* baked into client bundle at build time.
 ARG NEXT_PUBLIC_API_URL=https://mofasal-api.onrender.com/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NODE_OPTIONS=--max-old-space-size=4096
