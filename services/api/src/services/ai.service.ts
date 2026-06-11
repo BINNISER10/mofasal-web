@@ -24,7 +24,7 @@ function createRedisClient(label: string): Redis {
 }
 
 const redisClient = createRedisClient('ai');
-export const aiBehaviorQueue = new Queue('ai-behavior-tasks', { connection: redisClient });
+export const aiBehaviorQueue = new Queue('ai-behavior-tasks', { connection: redisClient as any });
 
 let redisAvailable = false;
 redisClient.ping().then(() => { redisAvailable = true; }).catch(() => {});
@@ -76,5 +76,5 @@ if (redisAvailable) {
         logger.warn(`[Behavior AI] Failed for user ${userId}: ${err?.message}`);
       }
     }
-  }, { connection: redisClient, concurrency: 10 });
+  }, { connection: redisClient as any, concurrency: 10 });
 }

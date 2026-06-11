@@ -49,7 +49,7 @@ export class OllamaProvider implements IAIProvider {
         throw new Error(`OLLAMA_ERROR: HTTP ${status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { response?: string };
       return data.response || '';
     } catch (error: any) {
       if (error.message?.startsWith('OLLAMA_')) {
@@ -77,7 +77,7 @@ export class OllamaProvider implements IAIProvider {
         return { running: false, modelAvailable: false, error: 'Ollama not responding' };
       }
 
-      const tags = await tagsResponse.json();
+      const tags = (await tagsResponse.json()) as { models?: { name?: string }[] };
       const models = tags.models || [];
       const modelAvailable = models.some((m: any) => m.name?.startsWith(modelName));
 
@@ -95,8 +95,8 @@ export class OllamaProvider implements IAIProvider {
     try {
       const response = await fetch(`${baseUrl}/api/tags`);
       if (!response.ok) return [];
-      const data = await response.json();
-      return (data.models || []).map((m: any) => m.name);
+      const data = (await response.json()) as { models?: { name?: string }[] };
+      return (data.models || []).map((m) => m.name || '');
     } catch {
       return [];
     }
