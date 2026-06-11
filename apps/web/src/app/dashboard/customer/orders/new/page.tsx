@@ -9,6 +9,8 @@ import { shopsApi } from '@/lib/api/shops';
 import { ordersApi } from '@/lib/api/orders';
 import { WIZARD_STEPS } from '@mufasal/shared';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ThobeSpecSelector, DEFAULT_THOBE_SPEC, ThobeSpec } from '@/components/shared/ThobeSpecSelector';
+import { FabricPicker, SelectedFabric } from '@/components/shared/FabricPicker';
 import {
   Store, Scissors, Ruler, Package, CreditCard, CheckCircle2,
   ChevronRight, ChevronLeft, Search, Star, MapPin, Clock, Check, Truck,
@@ -43,6 +45,8 @@ interface OrderState {
   serviceId: string | null;
   measurements: Record<string, string>;
   fabricChoice: 'shop' | 'marketplace' | null;
+  fabric: SelectedFabric;
+  thobeSpec: ThobeSpec;
   notes: string;
   deliveryAddress: string;
   deliveryCity: string;
@@ -54,6 +58,8 @@ const initialOrder: OrderState = {
   serviceId: null,
   measurements: {},
   fabricChoice: null,
+  fabric: { type: 'shop' },
+  thobeSpec: { ...DEFAULT_THOBE_SPEC },
   notes: '',
   deliveryAddress: '',
   deliveryCity: 'الرياض',
@@ -152,11 +158,12 @@ function NewOrderPageContent() {
       const res = await ordersApi.create({
         shopId: String(order.shopId),
         fabricSource: order.fabricChoice || undefined,
+        fabricId: order.fabric.productId || undefined,
         measurements,
         items: [{
           name: selectedService?.nameAr || 'خدمة تفصيل',
           quantity: 1,
-          unitPrice: selectedService?.price || 0,
+          unitPrice: (order.fabric.productPrice || 0) + (selectedService?.price || 0),
         }],
         deliveryAddress: {
           label: 'عنوان العميل',
@@ -165,6 +172,7 @@ function NewOrderPageContent() {
         },
         notes: order.notes || undefined,
         paymentMethod: order.paymentMethod || undefined,
+        thobeSpec: order.thobeSpec,
       });
       setCreatedOrder(res.order);
       setStep(3);
@@ -359,24 +367,22 @@ function NewOrderPageContent() {
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <Package size={16} /> {isRTL ? 'القماش' : 'Fabric'}
               </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'shop' as const, label: isRTL ? 'من المتجر' : 'From shop' },
-                  { id: 'marketplace' as const, label: isRTL ? 'من السوق' : 'Marketplace' },
-                ].map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setOrder({ ...order, fabricChoice: opt.id })}
-                    className={`p-3 rounded-xl border text-sm font-medium ${
-                      order.fabricChoice === opt.id ? 'border-[#00373E] bg-[#00373E]/5' : 'border-[#E8E8E8]'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <FabricPicker
+                value={order.fabric}
+                onChange={(fabric) => setOrder({ ...order, fabric, fabricChoice: fabric.type })}
+                shopId={order.shopId || undefined}
+                compact
+              />
             </section>
+
+            {order.serviceId && services.find(s => s.id === order.serviceId)?.nameAr?.includes('ثوب') && (
+              <section>
+                <ThobeSpecSelector
+                  value={order.thobeSpec}
+                  onChange={(spec) => setOrder({ ...order, thobeSpec: spec })}
+                />
+              </section>
+            )}
 
             <section>
               <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
