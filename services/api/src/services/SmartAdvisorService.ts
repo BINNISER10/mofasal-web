@@ -189,7 +189,7 @@ ${userContext ? `سياق العميل: ${userContext}` : ''}
         });
       } else {
         await prisma.aIProfile.create({
-          data: { userId, preferences, lastUpdated: new Date() },
+          data: { userId, preferences, insights: '', lastUpdated: new Date() },
         });
       }
 

@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import prisma from '../../config/database';
 import { AuthRequest } from '../../middleware/auth';
 import { sendSuccess, sendPaginated } from '../../utils/response';
+import { ApiError } from '../../utils/ApiError';
 import { ConfigService } from '../../services/ConfigService';
 
 interface AdminUserWhereClause {

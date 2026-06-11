@@ -22,6 +22,7 @@ interface ShopFilters {
   maxDistance?: number;
   search?: string;
   isOpen?: boolean;
+  sort?: 'smart' | 'rating' | 'distance' | 'popular' | 'newest';
 }
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
