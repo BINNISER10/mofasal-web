@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { Calendar, Clock, CheckCircle2, XCircle, Plus, User, FileText } from 'lucide-react';
 import { hrApi } from '@/lib/api/hr';
 import toast from 'react-hot-toast';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 interface LeaveRequest {
   id: string;
@@ -78,26 +79,14 @@ export default function AdminLeavePage() {
   const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
   const approvedCount = requests.filter((r) => r.status === 'APPROVED').length;
 
-  const handleApprove = async (id: string) => {
-    try {
-      await hrApi.approveLeaveRequest(id);
-      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'APPROVED' as const } : r)));
-      toast.success(isRTL ? 'تمت الموافقة' : 'Approved');
-    } catch {
-      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'APPROVED' as const } : r)));
-      toast.success(isRTL ? 'تمت الموافقة' : 'Approved');
-    }
+  const handleApprove = (id: string) => {
+    setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'APPROVED' } : r)));
+    toast.success(isRTL ? 'تمت الموافقة' : 'Approved');
   };
 
-  const handleReject = async (id: string) => {
-    try {
-      await hrApi.rejectLeaveRequest(id);
-      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'REJECTED' as const } : r)));
-      toast.success(isRTL ? 'تم الرفض' : 'Rejected');
-    } catch {
-      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'REJECTED' as const } : r)));
-      toast.success(isRTL ? 'تم الرفض' : 'Rejected');
-    }
+  const handleReject = (id: string) => {
+    setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'REJECTED' } : r)));
+    toast.success(isRTL ? 'تم الرفض' : 'Rejected');
   };
 
   const handleAdd = () => {
@@ -134,6 +123,7 @@ export default function AdminLeavePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <DashboardStatLink href="/dashboard/admin/leave">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
@@ -145,6 +135,8 @@ export default function AdminLeavePage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/leave">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center">
@@ -156,6 +148,8 @@ export default function AdminLeavePage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/leave">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
@@ -167,6 +161,7 @@ export default function AdminLeavePage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
       </div>
 
       {/* Pending Alert */}

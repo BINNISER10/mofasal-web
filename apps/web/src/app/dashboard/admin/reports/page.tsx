@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/utils/formatting';
 import { DollarSign, TrendingUp, Download, FileText, BarChart3, Loader2 } from 'lucide-react';
 import { reportsApi } from '@/lib/api/reports';
 import { adminApi } from '@/lib/api/admin';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 const MONTHS_AR = ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'];
 
@@ -60,6 +61,7 @@ export default function AdminReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <DashboardStatLink href="/dashboard/admin/reports">
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center"><DollarSign size={22} /></div>
@@ -70,6 +72,8 @@ export default function AdminReportsPage() {
           </div>
           <div className="flex items-center gap-1 text-sm text-green-600"><TrendingUp size={14} />{isRTL ? 'إجمالي الإيرادات' : 'Total revenue'}</div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/orders">
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><BarChart3 size={22} /></div>
@@ -80,6 +84,8 @@ export default function AdminReportsPage() {
           </div>
           <div className="flex items-center gap-1 text-sm text-green-600"><TrendingUp size={14} />{summary?.paidOrders || 0} {isRTL ? 'مدفوع' : 'paid'}</div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/orders">
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-600 flex items-center justify-center"><FileText size={22} /></div>
@@ -90,6 +96,7 @@ export default function AdminReportsPage() {
           </div>
           <div className="flex items-center gap-1 text-sm text-green-600">{summary?.totalVat ? `${formatCurrency(summary.totalVat)} VAT` : ''}</div>
         </Card>
+        </DashboardStatLink>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

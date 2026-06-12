@@ -111,8 +111,8 @@ export const DEMO_PRODUCTS = [
   },
   {
     id: 'prod-2',
-    name: 'قطن نياقة صيفي',
-    nameAr: 'قطن نياقة صيفي',
+    name: 'قطن صيفي',
+    nameAr: 'قطن صيفي',
     nameEn: 'Summer Cotton',
     description: 'قطن خفيف للصيف',
     descriptionAr: 'قطن خفيف للصيف',
@@ -136,8 +136,8 @@ export const DEMO_PRODUCTS = [
   },
   {
     id: 'prod-3',
-    name: 'قطن مصري فاخر',
-    nameAr: 'قطن مصري فاخر',
+    name: 'قطن فاخر',
+    nameAr: 'قطن فاخر',
     nameEn: 'Premium Egyptian Cotton',
     description: 'قطن ناعم للثوب اليومي',
     descriptionAr: 'قطن ناعم للثوب اليومي',
@@ -343,7 +343,7 @@ export const DEMO_MANUFACTURING = [
 export const DEMO_PRICING_TIERS = [
   { id: 'tier-1', productId: 'prod-1', productName: 'قماش صوف إيطالي', minQuantity: 10, discountPercent: 5, b2bPrice: 171, b2cPrice: 180, isActive: true },
   { id: 'tier-2', productId: 'prod-1', productName: 'قماش صوف إيطالي', minQuantity: 50, discountPercent: 10, b2bPrice: 162, b2cPrice: 180, isActive: true },
-  { id: 'tier-3', productId: 'prod-2', productName: 'قطن نياقة صيفي', minQuantity: 20, discountPercent: 7, b2bPrice: 88, b2cPrice: 95, isActive: true },
+  { id: 'tier-3', productId: 'prod-2', productName: 'قطن صيفي', minQuantity: 20, discountPercent: 7, b2bPrice: 88, b2cPrice: 95, isActive: true },
 ];
 
 const DEMO_REVENUE_MONTHS = [

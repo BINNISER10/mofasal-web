@@ -24,6 +24,7 @@ interface ProductCard {
   inStock: boolean;
   isFeatured: boolean;
   colors: string[];
+  imageUrl: string | null;
   merchant: string;
   tag: string | null;
   descAr: string;
@@ -39,7 +40,7 @@ const CATEGORIES = [
 
 const MATERIALS = ['الكل', 'قطن', 'صوف', 'حرير', 'كتان', 'بوليستر', 'تريكو', 'جلد'];
 const ORIGINS = ['الكل', 'إيطالي', 'مصري', 'هندي', 'تركي', 'إماراتي', 'سعودي'];
-const TRENDING = ['صوف إيطالي', 'قطن مصري', 'ثوب صيفي', 'بدلة رسمية'];
+const TRENDING = ['صوف إيطالي', 'قطن فاخر', 'ثوب صيفي', 'ثوب سعودي'];
 
 const SLUG_CATEGORY: Record<string, string> = {
   mens: "Men's Fabrics",
@@ -86,6 +87,7 @@ function mapProduct(raw: any): ProductCard {
     inStock,
     isFeatured: raw.isFeatured ?? false,
     colors: raw.colors || attrs.colors || ['#F5F5F5', '#E8E8E8', '#D4D4D4', '#A3A3A3'],
+    imageUrl: Array.isArray(raw.images) && raw.images[0] ? raw.images[0] : null,
     merchant: raw.merchantName || raw.shop?.nameAr || raw.shop?.name || '',
     tag: resolveTag(raw),
     descAr: raw.descriptionAr || raw.description || '',
@@ -96,14 +98,18 @@ function FabricCard({ product, isRTL }: { product: ProductCard; isRTL: boolean }
   const [liked, setLiked] = useState(false);
 
   return (
-    <Link href={`/marketplace/${product.id}`} className="group block">
-      <article className="h-full flex flex-col">
+    <article className="group h-full flex flex-col">
+      <Link href={`/marketplace/${product.id}`} className="block flex-1 flex flex-col">
         <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-neutral-100 mb-3">
+          {product.imageUrl ? (
+            <img src={product.imageUrl} alt={product.nameAr} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          ) : (
           <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
             {product.colors.slice(0, 4).map((c, i) => (
               <div key={i} style={{ backgroundColor: c }} className="transition-transform duration-500 group-hover:scale-[1.02]" />
             ))}
           </div>
+          )}
 
           {product.tag && (
             <span className={`absolute top-3 start-3 text-[10px] font-medium px-2.5 py-1 rounded-full ${
@@ -117,8 +123,8 @@ function FabricCard({ product, isRTL }: { product: ProductCard; isRTL: boolean }
 
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); setLiked(!liked); }}
-            className="absolute top-3 end-3 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); }}
+            className="absolute top-3 end-3 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
           >
             <Heart size={14} className={liked ? 'fill-red-500 text-red-500' : 'text-neutral-400'} />
           </button>
@@ -155,8 +161,8 @@ function FabricCard({ product, isRTL }: { product: ProductCard; isRTL: boolean }
             </span>
           </div>
         </div>
-      </article>
-    </Link>
+      </Link>
+    </article>
   );
 }
 

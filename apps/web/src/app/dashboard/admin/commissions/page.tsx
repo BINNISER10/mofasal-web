@@ -68,10 +68,10 @@ export default function CommissionsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label={isRTL ? 'إجمالي العمولات' : 'Total Commissions'} value={`${totalEarned.toLocaleString()} ر.س`} icon={<DollarSign size={20} />} trend={12} />
-        <StatsCard label={isRTL ? 'متجر نشط' : 'Active Shops'} value={commissions.length.toString()} icon={<Building2 size={20} />} trend={3} />
-        <StatsCard label={isRTL ? 'متوسط العمولة' : 'Avg Rate'} value={`${avgRate}%`} icon={<Percent size={20} />} />
-        <StatsCard label={isRTL ? 'إجمالي الطلبات' : 'Total Orders'} value={commissions.reduce((a: number, b: any) => a + b.ordersCount, 0).toString()} icon={<ShoppingBag size={20} />} />
+        <StatsCard label={isRTL ? 'إجمالي العمولات' : 'Total Commissions'} value={`${totalEarned.toLocaleString()} ر.س`} icon={<DollarSign size={20} />} trend={12} href="/dashboard/admin/reports" />
+        <StatsCard label={isRTL ? 'متجر نشط' : 'Active Shops'} value={commissions.length.toString()} icon={<Building2 size={20} />} trend={3} href="/dashboard/admin/shops" />
+        <StatsCard label={isRTL ? 'متوسط العمولة' : 'Avg Rate'} value={`${avgRate}%`} icon={<Percent size={20} />} href="/dashboard/admin/commissions" />
+        <StatsCard label={isRTL ? 'إجمالي الطلبات' : 'Total Orders'} value={commissions.reduce((a: number, b: any) => a + b.ordersCount, 0).toString()} icon={<ShoppingBag size={20} />} href="/dashboard/admin/orders" />
       </div>
 
       {/* Shop Commissions */}

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { MufasalDualAreaChart, MufasalPieChart, CHART_COLORS } from '@/components/shared/Charts';
 import { accountingApi } from '@/lib/api/accounting';
 import { paymentsApi } from '@/lib/api/payments';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 const MONTHS_AR = ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'];
 
@@ -59,10 +60,10 @@ export default function FinancesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات الشهر' : 'Monthly Revenue'} value={formatCurrency(totalRevenue)} color="success" />
-        <StatsCard icon={<TrendingDown size={22} />} label={isRTL ? 'المصروفات' : 'Expenses'} value={formatCurrency(totalExpenses)} color="danger" />
-        <StatsCard icon={<TrendingUp size={22} />} label={isRTL ? 'صافي الربح' : 'Net Profit'} value={formatCurrency(netProfit)} color="primary" />
-        <StatsCard icon={<FileText size={22} />} label={isRTL ? 'الفواتير' : 'Invoices'} value={String(invoices.length)} color="info" />
+        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات الشهر' : 'Monthly Revenue'} value={formatCurrency(totalRevenue)} color="success" href="/dashboard/finances" />
+        <StatsCard icon={<TrendingDown size={22} />} label={isRTL ? 'المصروفات' : 'Expenses'} value={formatCurrency(totalExpenses)} color="danger" href="/dashboard/finances" />
+        <StatsCard icon={<TrendingUp size={22} />} label={isRTL ? 'صافي الربح' : 'Net Profit'} value={formatCurrency(netProfit)} color="primary" href="/dashboard/finances" />
+        <StatsCard icon={<FileText size={22} />} label={isRTL ? 'الفواتير' : 'Invoices'} value={String(invoices.length)} color="info" href="/dashboard/finances" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -96,9 +97,9 @@ export default function FinancesPage() {
       <Card className="p-5">
         <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'حساب ضريبة القيمة المضافة' : 'VAT Calculation'}</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
-          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'الإيرادات الخاضعة للضريبة' : 'Taxable Revenue'}</p><p className="text-lg font-bold dark:text-slate-100">{formatCurrency(totalRevenue)}</p></div>
-          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">VAT 15%</p><p className="text-lg font-bold text-primary-700">{formatCurrency(vatAmount)}</p></div>
-          <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'صافي الإيرادات' : 'Net Revenue'}</p><p className="text-lg font-bold text-green-600">{formatCurrency(totalRevenue - vatAmount)}</p></div>
+          <DashboardStatLink href="/dashboard/finances" className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'الإيرادات الخاضعة للضريبة' : 'Taxable Revenue'}</p><p className="text-lg font-bold dark:text-slate-100">{formatCurrency(totalRevenue)}</p></DashboardStatLink>
+          <DashboardStatLink href="/dashboard/finances" className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">VAT 15%</p><p className="text-lg font-bold text-primary-700">{formatCurrency(vatAmount)}</p></DashboardStatLink>
+          <DashboardStatLink href="/dashboard/finances" className="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl text-center"><p className="text-gray-500 dark:text-slate-400">{isRTL ? 'صافي الإيرادات' : 'Net Revenue'}</p><p className="text-lg font-bold text-green-600">{formatCurrency(totalRevenue - vatAmount)}</p></DashboardStatLink>
         </div>
       </Card>
     </div>

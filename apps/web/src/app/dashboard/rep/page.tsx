@@ -107,9 +107,9 @@ export default function RepDashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatsCard icon={<ClipboardList size={22} />} label={isRTL ? 'مهام نشطة' : 'Active Jobs'} value={String(activeJobs.length)} color="primary" />
-        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'بانتظار التعيين' : 'Pending'} value={String(pendingJobs.length)} color="gold" />
-        <StatsCard icon={<CheckCircle2 size={22} />} label={isRTL ? 'مكتمل اليوم' : 'Completed Today'} value={String(requests.filter(r => r.status === 'COMPLETED').length)} color="success" />
+        <StatsCard icon={<ClipboardList size={22} />} label={isRTL ? 'مهام نشطة' : 'Active Jobs'} value={String(activeJobs.length)} color="primary" href="/dashboard/rep" />
+        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'بانتظار التعيين' : 'Pending'} value={String(pendingJobs.length)} color="gold" href="/dashboard/rep" />
+        <StatsCard icon={<CheckCircle2 size={22} />} label={isRTL ? 'مكتمل اليوم' : 'Completed Today'} value={String(requests.filter(r => r.status === 'COMPLETED').length)} color="success" href="/dashboard/rep" />
       </div>
 
       {/* GPS Map Area */}
@@ -167,7 +167,7 @@ export default function RepDashboardPage() {
                         <span className="text-xs text-gray-400">#{req.id.slice(0, 8)}</span>
                       </div>
                       <p className="font-bold text-gray-900 dark:text-slate-100">
-                        {req.customer?.name || isRTL ? 'عميل' : 'Customer'}
+                        {req.customer?.name || (isRTL ? 'عميل' : 'Customer')}
                       </p>
                       {req.customAddress && (
                         <p className="text-sm text-gray-500 dark:text-slate-400 flex items-center gap-1">

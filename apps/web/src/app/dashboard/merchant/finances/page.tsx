@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils/formatting';
 import { DollarSign, TrendingUp, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { reportsApi, ReportOverview } from '@/lib/api/reports';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 export default function MerchantFinancesPage() {
   const { isRTL } = useAppStore();
@@ -57,9 +58,9 @@ export default function MerchantFinancesPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إجمالي المبيعات' : 'Total Sales'} value={formatCurrency(stats.totalSales)} color="success" />
-            <StatsCard icon={<TrendingUp size={22} />} label={isRTL ? 'متوسط الطلب' : 'Avg Order'} value={formatCurrency(Math.round(stats.avgOrder))} color="primary" />
-            <StatsCard icon={<FileText size={22} />} label={isRTL ? 'طلبات مدفوعة' : 'Paid Orders'} value={stats.count.toLocaleString()} color="info" />
+            <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إجمالي المبيعات' : 'Total Sales'} value={formatCurrency(stats.totalSales)} color="success" href="/dashboard/merchant/finances" />
+            <StatsCard icon={<TrendingUp size={22} />} label={isRTL ? 'متوسط الطلب' : 'Avg Order'} value={formatCurrency(Math.round(stats.avgOrder))} color="primary" href="/dashboard/merchant/orders" />
+            <StatsCard icon={<FileText size={22} />} label={isRTL ? 'طلبات مدفوعة' : 'Paid Orders'} value={stats.count.toLocaleString()} color="info" href="/dashboard/merchant/orders" />
           </div>
 
           <Card className="p-5">
@@ -81,7 +82,9 @@ export default function MerchantFinancesPage() {
           {stats.methods.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {stats.methods.map((pm) => (
-                <Card key={pm.label} className="p-4 text-center"><p className="text-sm text-gray-500 dark:text-slate-400">{pm.label}</p><p className="text-2xl font-bold text-primary-700">{pm.pct}%</p></Card>
+                <DashboardStatLink key={pm.label} href="/dashboard/merchant/orders">
+                <Card className="p-4 text-center"><p className="text-sm text-gray-500 dark:text-slate-400">{pm.label}</p><p className="text-2xl font-bold text-primary-700">{pm.pct}%</p></Card>
+                </DashboardStatLink>
               ))}
             </div>
           )}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { hrApi } from '@/lib/api/hr';
 import { Clock, CheckCircle2, XCircle, Calendar, Users, TrendingUp } from 'lucide-react';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 interface AttendanceRecord {
   id: string;
@@ -74,6 +75,7 @@ export default function AdminAttendancePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <DashboardStatLink href="/dashboard/admin/hr">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
@@ -85,6 +87,8 @@ export default function AdminAttendancePage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/attendance">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center">
@@ -96,6 +100,8 @@ export default function AdminAttendancePage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/attendance">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-600 flex items-center justify-center">
@@ -107,6 +113,8 @@ export default function AdminAttendancePage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/attendance">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
@@ -118,6 +126,7 @@ export default function AdminAttendancePage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
       </div>
 
       {/* Attendance Table */}

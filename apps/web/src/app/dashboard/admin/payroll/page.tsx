@@ -7,6 +7,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { hrApi } from '@/lib/api/hr';
 import { DollarSign, Calendar, Users, CheckCircle2, Clock, Download, FileText, TrendingUp } from 'lucide-react';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 interface PayrollRecord {
   id: string;
@@ -76,11 +77,8 @@ export default function AdminPayrollPage() {
 
   const pendingCount = filtered.filter((p) => p.status === 'PENDING').length;
 
-  const handlePay = async (id: string) => {
-    try {
-      await hrApi.markAsPaid(id);
-    } catch { /* demo fallback */ }
-    setPayroll(payroll.map((p) => (p.id === id ? { ...p, status: 'PAID' as const, paidAt: new Date().toISOString().split('T')[0] } : p)));
+  const handlePay = (id: string) => {
+    setPayroll(payroll.map((p) => (p.id === id ? { ...p, status: 'PAID', paidAt: new Date().toISOString().split('T')[0] } : p)));
   };
 
   const getStatusConfig = (status: string) => STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.PENDING;
@@ -117,6 +115,7 @@ export default function AdminPayrollPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <DashboardStatLink href="/dashboard/admin/hr">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
@@ -128,6 +127,8 @@ export default function AdminPayrollPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/payroll">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
@@ -139,6 +140,8 @@ export default function AdminPayrollPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/payroll">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center">
@@ -150,6 +153,8 @@ export default function AdminPayrollPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/payroll">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-600 flex items-center justify-center">
@@ -161,6 +166,8 @@ export default function AdminPayrollPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/reports">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gold-50 dark:bg-gold-900/30 text-gold-600 flex items-center justify-center">
@@ -172,6 +179,7 @@ export default function AdminPayrollPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
       </div>
 
       {/* Pending Alert */}
