@@ -1,11 +1,11 @@
 /** صور محلية — كل مفتاح = قسم في الصفحة الرئيسية */
 export const HOME_IMAGES = {
-  /** Hero — خلفية متدرجة (بدون صورة حالياً) */
-  hero: '/images/sections/shops-hero.png',
+  /** Hero — الولد مع أبيه (دقلة بنية) */
+  hero: '/images/sections/hero.png',
   heroSlides: [
+    '/images/sections/hero.png',
     '/images/sections/category-tailoring.png',
     '/images/sections/product-2.png',
-    '/images/sections/product-4.png',
   ],
   /** قسم الخدمات — بطاقة 1: تفصيل الثوب (بشت فاخر) */
   tailoring: '/images/sections/category-tailoring.png',
