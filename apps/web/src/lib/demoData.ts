@@ -36,6 +36,7 @@ export const DEMO_SHOPS = [
     deliveryFee: 25,
     minOrderAmount: 200,
     commission: 10,
+    branding: { primaryColor: '#00373E', secondaryColor: '#481719', accentColor: '#735B4D', goldColor: '#D4AF37' },
     createdAt: now,
   },
   {

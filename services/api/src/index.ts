@@ -39,6 +39,11 @@ import hrRoutes from './routes/v1/hr.routes';
 import procurementRoutes from './routes/v1/procurement.routes';
 import supplierRoutes from './routes/v1/supplier.routes';
 import posRoutes from './routes/v1/pos.routes';
+import accountingRoutes from './routes/v1/accounting.routes';
+import reportsRoutes from './routes/v1/reports.routes';
+import rolesRoutes from './routes/v1/roles.routes';
+import manufacturingRoutes from './routes/v1/manufacturing.routes';
+import pricingRoutes from './routes/v1/pricing.routes';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -208,6 +213,11 @@ app.use(`${apiPrefix}/hr`, hrRoutes);
 app.use(`${apiPrefix}/procurement`, procurementRoutes);
 app.use(`${apiPrefix}/suppliers`, supplierRoutes);
 app.use(`${apiPrefix}/pos`, posRoutes);
+app.use(`${apiPrefix}/accounting`, accountingRoutes);
+app.use(`${apiPrefix}/reports`, reportsRoutes);
+app.use(`${apiPrefix}/roles`, rolesRoutes);
+app.use(`${apiPrefix}/manufacturing`, manufacturingRoutes);
+app.use(`${apiPrefix}/pricing`, pricingRoutes);
 
 // Error handling
 app.use((err: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {

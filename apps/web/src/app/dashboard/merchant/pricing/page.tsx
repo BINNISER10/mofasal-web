@@ -38,7 +38,7 @@ export default function MerchantPricingPage() {
 
   useEffect(() => {
     let active = true;
-    apiClient.get<PricingTier[]>('/pricing/tiers')
+    pricingApi.getTiers()
       .then((data) => { if (active) setTiers(data); })
       .catch(() => { if (active) setTiers([]); })
       .finally(() => { if (active) setLoading(false); });

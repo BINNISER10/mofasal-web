@@ -25,6 +25,13 @@ export default function TailorSettingsPage() {
     district: '',
     address: '',
   });
+  const [branding, setBranding] = useState({
+    primaryColor: '#00373E',
+    secondaryColor: '#481719',
+    accentColor: '#735B4D',
+    goldColor: '#D4AF37',
+    logoUrl: '',
+  });
 
   const [deliveryToggles, setDeliveryToggles] = useState({
     shop_vehicle: true,
@@ -60,6 +67,16 @@ export default function TailorSettingsPage() {
           district: shop.district || '',
           address: shop.address || '',
         });
+        const b = (shop as { branding?: Record<string, string> }).branding;
+        if (b) {
+          setBranding((prev) => ({
+            primaryColor: b.primaryColor || prev.primaryColor,
+            secondaryColor: b.secondaryColor || prev.secondaryColor,
+            accentColor: b.accentColor || prev.accentColor,
+            goldColor: b.goldColor || prev.goldColor,
+            logoUrl: b.logoUrl || prev.logoUrl,
+          }));
+        }
       })
       .catch((err) => {
         console.error('Failed to fetch shop', err);
@@ -117,6 +134,42 @@ export default function TailorSettingsPage() {
             rows={3}
             className="w-full px-4 py-3 rounded-xl border border-[#D0D6D7]/30 bg-white text-[#00373E] placeholder-[#735B4D]/40 focus:outline-none focus:ring-2 focus:ring-[#00373E]/20 resize-none"
           />
+        </div>
+      </Card>
+
+      {/* Branding — White-Label */}
+      <Card className="p-5">
+        <h3 className="font-bold text-[#00373E] mb-1">{isRTL ? 'هوية المحل' : 'Shop Branding'}</h3>
+        <p className="text-sm text-[#735B4D]/70 mb-4">{isRTL ? 'ألوان وشعار محلّك تظهر لعملائك في صفحة المتجر' : 'Your shop colors and logo appear on your public shop page'}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          {([
+            ['primaryColor', isRTL ? 'أساسي' : 'Primary'],
+            ['secondaryColor', isRTL ? 'ثانوي' : 'Secondary'],
+            ['accentColor', isRTL ? 'تفاصيل' : 'Accent'],
+            ['goldColor', isRTL ? 'ذهبي' : 'Gold'],
+          ] as const).map(([key, label]) => (
+            <div key={key}>
+              <label className="text-xs font-medium text-[#735B4D] mb-1 block">{label}</label>
+              <input
+                type="color"
+                value={branding[key]}
+                onChange={(e) => setBranding({ ...branding, [key]: e.target.value })}
+                className="w-full h-10 rounded-lg border border-[#D0D6D7]/30 cursor-pointer"
+              />
+            </div>
+          ))}
+        </div>
+        <Input
+          label={isRTL ? 'رابط الشعار' : 'Logo URL'}
+          value={branding.logoUrl}
+          onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
+          placeholder="https://..."
+        />
+        <div
+          className="mt-4 rounded-xl p-4 text-white text-sm font-medium"
+          style={{ background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` }}
+        >
+          {isRTL ? 'معاينة الهوية' : 'Brand preview'} — {profile.shopName || 'مفصل'}
         </div>
       </Card>
 

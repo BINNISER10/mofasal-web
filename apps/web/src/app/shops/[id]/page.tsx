@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { shopsApi } from '@/lib/api/shops';
 import { mapShopDetail, type ShopDetailView } from '@/lib/mappers/shopDetail';
+import { ShopBrandingScope } from '@/components/shared/ShopBranding';
 import {
   Star, MapPin, Clock, Phone, CheckCircle2, ArrowRight, ArrowLeft,
   Scissors, Ruler, Package, MessageCircle, Heart, Share2, ChevronLeft,
@@ -39,6 +40,7 @@ export default function ShopDetailPage() {
           return;
         }
         setShop(mapShopDetail(res.shop, isRTL));
+        setShopBranding((res.shop as { branding?: unknown }).branding);
       })
       .catch(() => { if (active) setError(true); })
       .finally(() => { if (active) setLoading(false); });
@@ -73,7 +75,7 @@ export default function ShopDetailPage() {
   const ChevronBack = isRTL ? ChevronRight : ChevronLeft;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ShopBrandingScope branding={shopBranding} className="min-h-screen bg-gray-50">
       <Navbar />
 
       {/* Cover / Hero */}
@@ -374,6 +376,6 @@ export default function ShopDetailPage() {
       </div>
 
       <Footer />
-    </div>
+    </ShopBrandingScope>
   );
 }

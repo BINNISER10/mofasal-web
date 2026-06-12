@@ -80,27 +80,27 @@ async function main() {
   });
 
   const roleAdmin = await prisma.role.create({
-    data: { shopId: shop.id, name: 'ADMIN', permissions: DEFAULT_ROLE_PERMISSIONS.ADMIN },
+    data: { shopId: shop.id, name: 'ADMIN', displayName: 'System Admin', displayNameAr: 'مدير النظام', isSystem: true, permissions: DEFAULT_ROLE_PERMISSIONS.ADMIN },
   });
 
   await prisma.role.create({
-    data: { shopId: shop.id, name: 'TAILOR_SHOP', permissions: DEFAULT_ROLE_PERMISSIONS.TAILOR_SHOP },
+    data: { shopId: shop.id, name: 'TAILOR_SHOP', displayName: 'Tailor Shop Manager', displayNameAr: 'مدير محل الخياطة', isSystem: true, permissions: DEFAULT_ROLE_PERMISSIONS.TAILOR_SHOP },
   });
 
   const roleTailor = await prisma.role.create({
-    data: { shopId: shop.id, name: 'TAILOR', permissions: DEFAULT_ROLE_PERMISSIONS.TAILOR },
+    data: { shopId: shop.id, name: 'TAILOR', displayName: 'Tailor', displayNameAr: 'خياط', isSystem: true, permissions: DEFAULT_ROLE_PERMISSIONS.TAILOR },
   });
 
   await prisma.role.create({
-    data: { shopId: shop.id, name: 'MERCHANT', permissions: DEFAULT_ROLE_PERMISSIONS.MERCHANT },
+    data: { shopId: shop.id, name: 'MERCHANT', displayName: 'Merchant', displayNameAr: 'تاجر', isSystem: true, permissions: DEFAULT_ROLE_PERMISSIONS.MERCHANT },
   });
 
   await prisma.role.create({
-    data: { shopId: shop.id, name: 'REPRESENTATIVE', permissions: DEFAULT_ROLE_PERMISSIONS.REPRESENTATIVE },
+    data: { shopId: shop.id, name: 'REPRESENTATIVE', displayName: 'Representative', displayNameAr: 'مندوب', isSystem: true, permissions: DEFAULT_ROLE_PERMISSIONS.REPRESENTATIVE },
   });
 
   const roleCustomer = await prisma.role.create({
-    data: { shopId: shop.id, name: 'CUSTOMER', permissions: DEFAULT_ROLE_PERMISSIONS.CUSTOMER },
+    data: { shopId: shop.id, name: 'CUSTOMER', displayName: 'Customer', displayNameAr: 'عميل', isSystem: true, permissions: DEFAULT_ROLE_PERMISSIONS.CUSTOMER },
   });
 
   const adminUser = await prisma.user.upsert({

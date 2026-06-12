@@ -126,8 +126,15 @@ export function hasPermission(
   rolePermissions: PermissionMap,
   permission: string
 ): boolean {
-  // If all permissions are granted
   if (rolePermissions.all === true) return true;
+
+  // module-only check (e.g. requirePermission('hr'))
+  if (!permission.includes(':')) {
+    const modulePerms = rolePermissions[permission];
+    if (!modulePerms) return false;
+    if (Array.isArray(modulePerms)) return modulePerms.length > 0;
+    return modulePerms === true;
+  }
 
   const [module, action] = permission.split(':');
   if (!module || !action) return false;

@@ -167,6 +167,7 @@ export class ShopService {
     commissionRate: number;
     minOrderAmount: number;
     deliveryRadius: number;
+    branding: Record<string, unknown>;
   }>) {
     const shop = await prisma.shop.findUnique({ where: { id } });
     if (!shop) throw ApiError.notFound('Shop not found');

@@ -37,9 +37,11 @@ model Shop {
   aiProvider       String        @default("gemini")
   aiApiKey         String?
   trialEndsAt      DateTime?
+  branding         Json?
   createdAt        DateTime      @default(now())
 
   users         User[]
+  pricingTiers  PricingTier[]
   products      Product[]
   customers     Customer[]
   invoices      Invoice[]
@@ -115,18 +117,23 @@ model User {
 }
 
 model Role {
-  id          String   @id @default(uuid())
-  shopId      String
-  shop        Shop     @relation(fields: [shopId], references: [id])
-  name        String
-  permissions Json
-  parentId    String?
+  id            String   @id @default(uuid())
+  shopId        String
+  shop          Shop     @relation(fields: [shopId], references: [id])
+  name          String
+  displayName   String?
+  displayNameAr String?
+  permissions   Json
+  isSystem      Boolean  @default(false)
+  parentId      String?
+  createdAt     DateTime @default(now())
 
   parent   Role?  @relation("RoleHierarchy", fields: [parentId], references: [id])
   children Role[] @relation("RoleHierarchy")
   users    User[]
 
   @@index([shopId])
+  @@index([shopId, name])
 }
 
 model UserBehaviorLog {
@@ -219,9 +226,29 @@ model Product {
   cartItems             CartItem[]
   purchaseOrderItems    PurchaseOrderItem[]
   supplierProducts      SupplierProduct[]
+  pricingTiers          PricingTier[]
 
   @@index([shopId, sku])
   @@index([categoryId])
+}
+
+model PricingTier {
+  id              String   @id @default(uuid())
+  shopId          String
+  shop            Shop     @relation(fields: [shopId], references: [id])
+  productId       String?
+  product         Product? @relation(fields: [productId], references: [id])
+  productName     String?
+  minQuantity     Int      @default(1)
+  discountPercent Float    @default(0)
+  b2bPrice        Float?
+  b2cPrice        Float?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([shopId, productId])
+  @@index([shopId, isActive])
 }
 
 model ProductVariant {

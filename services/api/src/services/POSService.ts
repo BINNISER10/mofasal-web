@@ -16,6 +16,39 @@ interface POSOrderData {
 }
 
 export class POSService {
+  static async getProducts(shopId: string, filters?: { category?: string; search?: string }) {
+    const where: { shopId: string; isActive: boolean; OR?: object[]; category?: { name: { equals: string; mode: 'insensitive' } } } = {
+      shopId,
+      isActive: true,
+    };
+    if (filters?.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { nameAr: { contains: filters.search, mode: 'insensitive' } },
+        { sku: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+    if (filters?.category) {
+      where.category = { name: { equals: filters.category, mode: 'insensitive' } };
+    }
+    const products = await prisma.product.findMany({
+      where,
+      include: { category: { select: { id: true, name: true, nameAr: true } } },
+      orderBy: { name: 'asc' },
+      take: 100,
+    });
+    return products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      nameAr: p.nameAr || undefined,
+      price: p.price,
+      stockQuantity: p.stockQuantity,
+      sku: p.sku,
+      images: p.images,
+      category: p.category ? { id: p.category.id, name: p.category.name, nameAr: p.category.nameAr || undefined } : undefined,
+    }));
+  }
+
   static async openSession(shopId: string, cashierId: string, openingBalance = 0) {
     const active = await prisma.pOSSession.findFirst({ where: { shopId, cashierId, status: 'OPEN' } });
     if (active) throw ApiError.badRequest('Already have an open session');
