@@ -45,34 +45,48 @@ export default function MerchantPricingPage() {
     return () => { active = false; };
   }, []);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.minQuantity || !form.discountPercent) {
       toast.error(isRTL ? 'أكمل البيانات المطلوبة' : 'Complete required fields');
       return;
     }
-    const newTier: PricingTier = {
-      id: Date.now().toString(),
-      productId: form.productId || 'custom',
-      productName: form.productName || 'منتج مخصص',
-      minQuantity: Number(form.minQuantity),
-      discountPercent: Number(form.discountPercent),
-      b2bPrice: form.b2bPrice ? Number(form.b2bPrice) : undefined,
-      b2cPrice: form.b2cPrice ? Number(form.b2cPrice) : undefined,
-      isActive: true,
-    };
-    setTiers([...tiers, newTier]);
-    setShowAdd(false);
-    setForm({ productId: '', productName: '', minQuantity: '', discountPercent: '', b2bPrice: '', b2cPrice: '' });
-    toast.success(isRTL ? 'تمت إضافة شريحة التسعير' : 'Pricing tier added');
+    try {
+      const created = await pricingApi.createTier({
+        productId: form.productId || undefined,
+        productName: form.productName || 'منتج مخصص',
+        minQuantity: Number(form.minQuantity),
+        discountPercent: Number(form.discountPercent),
+        b2bPrice: form.b2bPrice ? Number(form.b2bPrice) : undefined,
+        b2cPrice: form.b2cPrice ? Number(form.b2cPrice) : undefined,
+      });
+      setTiers([...tiers, { ...created, productId: created.productId || 'custom', isActive: created.isActive ?? true }]);
+      setShowAdd(false);
+      setForm({ productId: '', productName: '', minQuantity: '', discountPercent: '', b2bPrice: '', b2cPrice: '' });
+      toast.success(isRTL ? 'تمت إضافة شريحة التسعير' : 'Pricing tier added');
+    } catch {
+      toast.error(isRTL ? 'فشل الحفظ' : 'Save failed');
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setTiers(tiers.filter((t) => t.id !== id));
-    toast.success(isRTL ? 'تم الحذف' : 'Deleted');
+  const handleDelete = async (id: string) => {
+    try {
+      await pricingApi.deleteTier(id);
+      setTiers(tiers.filter((t) => t.id !== id));
+      toast.success(isRTL ? 'تم الحذف' : 'Deleted');
+    } catch {
+      toast.error(isRTL ? 'فشل الحذف' : 'Delete failed');
+    }
   };
 
-  const handleToggleActive = (id: string) => {
-    setTiers(tiers.map((t) => (t.id === id ? { ...t, isActive: !t.isActive } : t)));
+  const handleToggleActive = async (id: string) => {
+    const tier = tiers.find((t) => t.id === id);
+    if (!tier) return;
+    try {
+      await pricingApi.updateTier(id, { isActive: !tier.isActive });
+      setTiers(tiers.map((t) => (t.id === id ? { ...t, isActive: !t.isActive } : t)));
+    } catch {
+      toast.error(isRTL ? 'فشل التحديث' : 'Update failed');
+    }
   };
 
   const groupedTiers = tiers.reduce((acc, tier) => {

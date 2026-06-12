@@ -276,6 +276,18 @@ const DEMO_ORDERS_BY_STATUS = [
 
 /** يُرجع استجابة API وهمية حسب المسار */
 export function getDemoApiResponse(path: string, method = 'GET'): unknown | undefined {
+  if (method === 'PATCH' && /^\/manufacturing\/tasks\//.test(path)) {
+    return { updated: true };
+  }
+  if (method === 'POST' && path === '/pricing/tiers') {
+    return { id: `tier-demo-${Date.now()}`, isActive: true };
+  }
+  if (method === 'PUT' && /^\/pricing\/tiers\//.test(path)) {
+    return { updated: true };
+  }
+  if (method === 'DELETE' && /^\/pricing\/tiers\//.test(path)) {
+    return { message: 'deleted' };
+  }
   if (method !== 'GET') return undefined;
 
   if (path === '/shops' || path === '/shops/featured' || path === '/shops/nearby' || path === '/shops/ranked') {

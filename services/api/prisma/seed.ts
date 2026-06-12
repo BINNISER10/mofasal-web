@@ -42,6 +42,12 @@ async function main() {
       isVerified: true,
       isOpen: true,
       subscriptionPlan: 'PREMIUM',
+      branding: {
+        primaryColor: '#00373E',
+        secondaryColor: '#481719',
+        accentColor: '#735B4D',
+        goldColor: '#D4AF37',
+      },
     },
   });
 
@@ -144,8 +150,9 @@ async function main() {
     { name: 'Boys White Thobe Fabric', nameAr: 'قماش ثوب أطفال أبيض', price: 95, costPrice: 45, categoryId: catKids.id, sku: 'KIDS-001', unit: 'meter' },
   ];
 
+  const createdProducts: { id: string; sku: string; nameAr: string | null; price: number }[] = [];
   for (const p of products) {
-    await prisma.product.create({
+    const created = await prisma.product.create({
       data: {
         shopId: shop.id,
         name: p.name,
@@ -161,6 +168,23 @@ async function main() {
         visibility: 'PUBLIC',
         isActive: true,
       },
+    });
+    createdProducts.push(created);
+  }
+
+  const woolFabric = createdProducts.find((p) => p.sku === 'FAB-003');
+  const cottonFabric = createdProducts.find((p) => p.sku === 'FAB-001');
+  if (woolFabric) {
+    await prisma.pricingTier.createMany({
+      data: [
+        { shopId: shop.id, productId: woolFabric.id, productName: woolFabric.nameAr, minQuantity: 10, discountPercent: 5, b2bPrice: 266, b2cPrice: 280 },
+        { shopId: shop.id, productId: woolFabric.id, productName: woolFabric.nameAr, minQuantity: 50, discountPercent: 10, b2bPrice: 252, b2cPrice: 280 },
+      ],
+    });
+  }
+  if (cottonFabric) {
+    await prisma.pricingTier.create({
+      data: { shopId: shop.id, productId: cottonFabric.id, productName: cottonFabric.nameAr, minQuantity: 20, discountPercent: 7, b2bPrice: 111.6, b2cPrice: 120 },
     });
   }
 
@@ -328,6 +352,7 @@ async function main() {
   await prisma.leaveRequest.deleteMany({});
   await prisma.attendance.deleteMany({});
   await prisma.employee.deleteMany({});
+  await prisma.pricingTier.deleteMany({});
   await prisma.department.deleteMany({});
 
   // ─── Departments ───

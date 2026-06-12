@@ -39,8 +39,14 @@
 | تاجر | 966544444444 | admin123 |
 | مندوب | 966522222222 | admin123 |
 
+## آخر تحديث (جولة الإكمال)
+- Migration SQL: `20260612_erp_branding`
+- Seed: طلبات تصنيع + شرائح تسعير + branding
+- CORS: إضافة `mofasal.netlify.app` في render.yaml
+- ربط manufacturing/pricing بالـ API (حفظ فعلي)
+- إزالة MOCK من HomeScreen (جوال)
+
 ## بعد السبت (اختياري)
-- تطبيق migration على PostgreSQL الإنتاج (`branding`, `PricingTier`, حقول `Role`)
-- شاشات الجوال للخياط/التاجر
 - Google Maps + OTP إنتاج
 - اختبارات تكامل E2E
+- نشر تطبيق الجوال (Expo/EAS)

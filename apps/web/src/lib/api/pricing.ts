@@ -13,8 +13,14 @@ export interface PricingTier {
 
 export const pricingApi = {
   getTiers: () => apiClient.get<PricingTier[]>('/pricing/tiers'),
-  createTier: (data: Omit<PricingTier, 'id' | 'isActive'> & { isActive?: boolean }) =>
-    apiClient.post<PricingTier>('/pricing/tiers', data),
+  createTier: (data: {
+    productId?: string;
+    productName?: string;
+    minQuantity: number;
+    discountPercent: number;
+    b2bPrice?: number;
+    b2cPrice?: number;
+  }) => apiClient.post<PricingTier>('/pricing/tiers', data),
   updateTier: (id: string, data: Partial<PricingTier>) =>
     apiClient.put<PricingTier>(`/pricing/tiers/${id}`, data),
   deleteTier: (id: string) => apiClient.delete<{ message: string }>(`/pricing/tiers/${id}`),

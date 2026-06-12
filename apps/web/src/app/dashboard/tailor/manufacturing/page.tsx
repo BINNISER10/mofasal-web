@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { Settings, Play, Pause, CheckCircle, Clock, Loader2, User } from 'lucide-react';
-import { apiClient } from '@/lib/api/client';
+import { manufacturingApi } from '@/lib/api/manufacturing';
 import toast from 'react-hot-toast';
 
 interface ManufacturingTask {
@@ -37,7 +37,7 @@ export default function ManufacturingPage() {
 
   useEffect(() => {
     let active = true;
-    apiClient.get<ManufacturingTask[]>('/manufacturing/tasks')
+    manufacturingApi.getTasks()
       .then((data) => { if (active) setTasks(data); })
       .catch(() => { if (active) setTasks([]); })
       .finally(() => { if (active) setLoading(false); });
@@ -63,25 +63,31 @@ export default function ManufacturingPage() {
   };
 
   const handleStartTask = async (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, status: 'IN_PROGRESS', startedAt: new Date().toISOString() }
-          : t
-      )
-    );
-    toast.success(isRTL ? 'بدأت المهمة' : 'Task started');
+    try {
+      await manufacturingApi.updateTask(taskId, 'IN_PROGRESS');
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, status: 'IN_PROGRESS', startedAt: new Date().toISOString() } : t
+        )
+      );
+      toast.success(isRTL ? 'بدأت المهمة' : 'Task started');
+    } catch {
+      toast.error(isRTL ? 'فشل تحديث المهمة' : 'Failed to update task');
+    }
   };
 
   const handleCompleteTask = async (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, status: 'COMPLETED', completedAt: new Date().toISOString() }
-          : t
-      )
-    );
-    toast.success(isRTL ? 'اكتملت المهمة' : 'Task completed');
+    try {
+      await manufacturingApi.updateTask(taskId, 'COMPLETED');
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, status: 'COMPLETED', completedAt: new Date().toISOString() } : t
+        )
+      );
+      toast.success(isRTL ? 'اكتملت المهمة' : 'Task completed');
+    } catch {
+      toast.error(isRTL ? 'فشل إكمال المهمة' : 'Failed to complete task');
+    }
   };
 
   return (

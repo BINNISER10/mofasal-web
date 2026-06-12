@@ -46,7 +46,7 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://mufasal.onrender.com,https://mufasal.com,https://www.mufasal.com,http://localhost:3000
+        value: https://mofasal.netlify.app,https://mufasal.onrender.com,https://mufasal.com,https://www.mufasal.com,http://localhost:3000
       - key: SEED_DATABASE
         value: "true"
 
