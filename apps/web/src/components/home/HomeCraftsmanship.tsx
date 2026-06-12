@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import siteConfig from '@/data/site-config.json';
 import { HOME_IMAGES } from './homeImages';
 
 interface HomeCraftsmanshipProps {
@@ -16,6 +17,8 @@ const fabrics = [
 ] as const;
 
 export function HomeCraftsmanship({ isRTL }: HomeCraftsmanshipProps) {
+  const c = siteConfig.craftsmanship;
+
   return (
     <>
       <section className="py-16 md:py-24 bg-[#FAFAFA] dark:bg-[#111]">
@@ -32,21 +35,19 @@ export function HomeCraftsmanship({ isRTL }: HomeCraftsmanshipProps) {
             </div>
             <div>
               <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-500 mb-3">
-                {isRTL ? 'من نحن' : 'About'}
+                {isRTL ? c.eyebrowAr : c.eyebrowEn}
               </p>
               <h2 className="text-2xl md:text-4xl font-semibold text-[#0A0A0A] dark:text-white leading-tight mb-5 tracking-tight">
-                {isRTL ? 'جودة في كل غرزة' : 'Quality in Every Stitch'}
+                {isRTL ? c.titleAr : c.titleEn}
               </h2>
               <p className="text-neutral-600 dark:text-neutral-400 text-base leading-relaxed mb-8">
-                {isRTL
-                  ? 'من اختيار القماش حتى آخر تفصيل — ثوب سعودي للرجال والأطفال بمعايير عالية.'
-                  : 'From fabric selection to the final stitch — premium Saudi thobes for men and boys.'}
+                {isRTL ? c.descAr : c.descEn}
               </p>
               <Link
                 href="/shops"
                 className="inline-flex min-h-[48px] items-center px-8 text-sm font-medium bg-[#0A0A0A] dark:bg-white text-white dark:text-[#0A0A0A] rounded-full hover:opacity-90 transition-opacity"
               >
-                {isRTL ? 'ابدأ التفصيل' : 'Start Tailoring'}
+                {isRTL ? c.ctaAr : c.ctaEn}
               </Link>
             </div>
           </div>
@@ -58,14 +59,17 @@ export function HomeCraftsmanship({ isRTL }: HomeCraftsmanshipProps) {
           <div className="flex items-end justify-between gap-4 mb-10">
             <div>
               <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-500 mb-2">
-                {isRTL ? 'مختارات' : 'Curated'}
+                {isRTL ? c.curatedEyebrowAr : c.curatedEyebrowEn}
               </p>
               <h2 className="text-2xl md:text-3xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight">
-                {isRTL ? 'أقمشة وثياب' : 'Fabrics & Thobes'}
+                {isRTL ? c.curatedTitleAr : c.curatedTitleEn}
               </h2>
             </div>
-            <Link href="/marketplace" className="text-sm font-medium text-[#00373E] dark:text-white hover:underline shrink-0">
-              {isRTL ? 'عرض الكل' : 'View all'}
+            <Link
+              href="/marketplace"
+              className="text-sm font-medium text-[#00373E] dark:text-white hover:underline shrink-0"
+            >
+              {isRTL ? c.viewAllAr : c.viewAllEn}
             </Link>
           </div>
 

@@ -21,7 +21,7 @@ export function HomeHero({ isRTL }: HomeHeroProps) {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
-        <source src={HOME_MEDIA.heroVideo} type="video/mp4" />
+        <source src={hero.videoUrl || HOME_MEDIA.heroVideo} type="video/mp4" />
       </video>
 
       <div className="absolute inset-0 bg-gradient-to-r from-primary-950/96 via-primary-900/80 to-primary-800/30" />
@@ -47,11 +47,11 @@ export function HomeHero({ isRTL }: HomeHeroProps) {
           </p>
 
           <div className="flex flex-wrap gap-4 mb-10">
-            <Button href="/shops" variant="gold" size="lg">
+            <Button href={hero.ctaPrimaryHref || '/login'} variant="gold" size="lg">
               {isRTL ? hero.ctaPrimaryAr : hero.ctaPrimaryEn}
             </Button>
             <Button
-              href="/marketplace"
+              href={hero.ctaSecondaryHref || '/shops'}
               variant="outline"
               size="lg"
               className="border-white/40 text-white hover:bg-white/10 hover:text-white"

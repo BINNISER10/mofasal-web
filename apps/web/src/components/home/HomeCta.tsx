@@ -16,7 +16,7 @@ export function HomeCta({ isRTL }: HomeCtaProps) {
       <div className="max-w-4xl mx-auto px-4 text-center">
         <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 px-4 py-1.5 rounded-full text-sm mb-4">
           <Clock size={14} />
-          <span>{isRTL ? 'التوصيل خلال ٧-١٤ يوم' : 'Delivery in 7-14 days'}</span>
+          <span>{isRTL ? cta.badgeAr : cta.badgeEn}</span>
         </div>
         <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
           {isRTL ? cta.titleAr : cta.titleEn}
@@ -26,7 +26,7 @@ export function HomeCta({ isRTL }: HomeCtaProps) {
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link
-            href="/login"
+            href={cta.btnHref || '/login'}
             className="inline-flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-8 py-4 rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             <Scissors size={18} />
@@ -34,10 +34,10 @@ export function HomeCta({ isRTL }: HomeCtaProps) {
             {isRTL ? <ChevronRight size={16} className="rotate-180" /> : <ChevronRight size={16} />}
           </Link>
           <Link
-            href="/shops"
+            href={cta.secondaryHref || '/shops'}
             className="inline-flex items-center gap-2 border-2 border-white/40 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/10 transition-all"
           >
-            {isRTL ? 'تصفح المتاجر' : 'Browse Shops'}
+            {isRTL ? cta.secondaryAr : cta.secondaryEn}
           </Link>
         </div>
       </div>

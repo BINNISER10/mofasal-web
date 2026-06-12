@@ -27,9 +27,7 @@ export function HomeSteps({ isRTL }: HomeStepsProps) {
           </span>
           <h2 className="section-title">{isRTL ? howItWorks.titleAr : howItWorks.titleEn}</h2>
           <p className="section-subtitle">
-            {isRTL
-              ? 'ثلاث خطوات بسيطة للحصول على طلبك المثالي'
-              : 'Three simple steps to your perfect fit'}
+            {isRTL ? howItWorks.subtitleAr : howItWorks.subtitleEn}
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8 relative">

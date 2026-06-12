@@ -81,7 +81,7 @@ export function HomeLookbook({ isRTL }: HomeLookbookProps) {
             className="inline-flex items-center gap-2 border border-gold-400/50 text-gold-400 hover:bg-gold-400 hover:text-gray-900 font-semibold px-8 py-3.5 rounded-2xl transition-all duration-300"
           >
             <Sparkles size={18} />
-            {isRTL ? 'تصفح جميع التصاميم' : 'Browse All Designs'}
+            {isRTL ? lookbook.browseAr : lookbook.browseEn}
           </Link>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Quote, Star } from 'lucide-react';
+import siteConfig from '@/data/site-config.json';
 import { TESTIMONIALS } from './homeData';
 
 interface HomeTestimonialsProps {
@@ -9,6 +10,7 @@ interface HomeTestimonialsProps {
 }
 
 export function HomeTestimonials({ isRTL }: HomeTestimonialsProps) {
+  const { testimonials: section } = siteConfig;
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -24,11 +26,9 @@ export function HomeTestimonials({ isRTL }: HomeTestimonialsProps) {
     <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="section-title">
-            {isRTL ? 'ماذا يقول عملاؤنا' : 'What Our Customers Say'}
-          </h2>
+          <h2 className="section-title">{isRTL ? section.titleAr : section.titleEn}</h2>
           <p className="section-subtitle">
-            {isRTL ? 'آراء حقيقية من عملاء موثوقين' : 'Real reviews from verified customers'}
+            {isRTL ? section.subtitleAr : section.subtitleEn}
           </p>
         </div>
 

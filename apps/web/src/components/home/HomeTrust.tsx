@@ -1,51 +1,32 @@
 'use client';
 
+import type { LucideIcon } from 'lucide-react';
 import { MapPin, ShieldCheck, Sparkles } from 'lucide-react';
+import siteConfig from '@/data/site-config.json';
 
 interface HomeTrustProps {
   isRTL: boolean;
 }
 
-const TRUST_ITEMS = [
-  {
-    icon: ShieldCheck,
-    color: 'teal' as const,
-    titleAr: 'جودة مضمونة',
-    titleEn: 'Guaranteed Quality',
-    descAr: 'نظام تقييم ثلاثي: المحل، الخياط، والمندوب. نضمن لك أفضل جودة.',
-    descEn: 'Triple rating system: shop, tailor, and representative. Quality assured.',
-  },
-  {
-    icon: MapPin,
-    color: 'gold' as const,
-    titleAr: 'توصيل أينما كنت',
-    titleEn: 'Delivery Anywhere',
-    descAr: 'نوصل طلبك أينما كنت في المملكة. اختر وقت ومكان التوصيل.',
-    descEn: 'We deliver anywhere in the kingdom. Choose your preferred delivery time.',
-  },
-  {
-    icon: Sparkles,
-    color: 'red' as const,
-    titleAr: 'تفصيل حسب الطلب',
-    titleEn: 'Custom Tailoring',
-    descAr: 'كل قطعة تفصل خصيصاً لك حسب مقاساتك وذوقك. فقط تفصيل راقي.',
-    descEn: 'Every piece tailored to your exact measurements and taste. Premium only.',
-  },
-];
+const ICONS: Record<string, LucideIcon> = {
+  ShieldCheck,
+  MapPin,
+  Sparkles,
+};
 
 export function HomeTrust({ isRTL }: HomeTrustProps) {
+  const { trust } = siteConfig;
+
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-cream-50 to-white dark:from-slate-900 dark:to-slate-950" />
       <div className="relative max-w-7xl mx-auto px-4">
         <div className="text-center mb-14">
-          <h2 className="section-title">
-            {isRTL ? 'لماذا يثق بنا الآلاف؟' : 'Why Thousands Trust Us'}
-          </h2>
+          <h2 className="section-title">{isRTL ? trust.titleAr : trust.titleEn}</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {TRUST_ITEMS.map((item, i) => {
-            const Icon = item.icon;
+          {trust.items.map((item, i) => {
+            const Icon = ICONS[item.icon] || ShieldCheck;
             return (
               <div
                 key={i}

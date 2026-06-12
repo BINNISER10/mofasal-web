@@ -5,6 +5,8 @@ import { Footer } from '@/components/shared/Footer';
 import { useAppStore } from '@/lib/stores/appStore';
 import { HomeHero } from '@/components/home/HomeHero';
 import { HomeStats } from '@/components/home/HomeStats';
+import { HomeCategories } from '@/components/home/HomeCategories';
+import { HomeCraftsmanship } from '@/components/home/HomeCraftsmanship';
 import { HomeLookbook } from '@/components/home/HomeLookbook';
 import { HomeSteps } from '@/components/home/HomeSteps';
 import { HomeFeatures } from '@/components/home/HomeFeatures';
@@ -22,6 +24,8 @@ export default function HomePage() {
       <Navbar />
       <HomeHero isRTL={isRTL} />
       <HomeStats isRTL={isRTL} />
+      <HomeCategories isRTL={isRTL} />
+      <HomeCraftsmanship isRTL={isRTL} />
       <HomeLookbook isRTL={isRTL} />
       <HomeSteps isRTL={isRTL} />
       <HomeFeatures isRTL={isRTL} />

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import siteConfig from '@/data/site-config.json';
 import { HOME_IMAGES } from './homeImages';
 
 interface HomeCategoriesProps {
@@ -33,6 +34,7 @@ const categories = [
 ] as const;
 
 export function HomeCategories({ isRTL }: HomeCategoriesProps) {
+  const { categories: section } = siteConfig;
   const Arrow = isRTL ? ArrowLeft : ArrowRight;
 
   return (
@@ -40,10 +42,10 @@ export function HomeCategories({ isRTL }: HomeCategoriesProps) {
       <div className="max-w-[1440px] mx-auto px-4 md:px-6">
         <div className="mb-10 md:mb-14">
           <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-500 mb-3">
-            {isRTL ? 'خدماتنا' : 'Our Services'}
+            {isRTL ? section.eyebrowAr : section.eyebrowEn}
           </p>
           <h2 className="text-2xl md:text-3xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight">
-            {isRTL ? 'خياطة وقماش' : 'Tailoring & Fabric'}
+            {isRTL ? section.titleAr : section.titleEn}
           </h2>
         </div>
 

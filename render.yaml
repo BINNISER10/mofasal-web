@@ -46,7 +46,7 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://mufasal.onrender.com,http://localhost:3000
+        value: https://mufasal.onrender.com,https://mufasal.com,https://www.mufasal.com,http://localhost:3000
       - key: SEED_DATABASE
         value: "true"
 
@@ -72,6 +72,8 @@ services:
         value: "0.0.0.0"
       - key: NEXT_PUBLIC_API_URL
         value: https://mufasal-api.onrender.com/api/v1
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://mufasal.onrender.com
       - key: DATABASE_URL
         value: postgresql://build:build@localhost:5432/build?schema=public
       - key: DIRECT_DATABASE_URL

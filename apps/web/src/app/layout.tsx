@@ -4,6 +4,9 @@ import './globals.css';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { SmartAdvisor } from '@/components/shared/SmartAdvisor';
 import { Toaster } from 'react-hot-toast';
+import siteConfig from '@/data/site-config.json';
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mufasal.onrender.com';
 
 const ibmPlexArabic = IBM_Plex_Sans_Arabic({
   subsets: ['arabic'],
@@ -21,16 +24,37 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'مفصل | MUFASAL - Premium Tailoring & Fabric Marketplace',
-  description: 'منصتك المتكاملة للخياطة الراقية وبيع الأقمشة. أسهل طريقة لطلب خياطة ملابسك مع أفضل الخياطين.',
-  keywords: ['خياطة', 'أقمشة', 'ملابس رجالية', 'ملابس أطفال', 'تفصيل', 'MUFASAL', 'مفصل'],
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: siteConfig.seo.titleAr,
+    template: '%s | مفصل',
+  },
+  description: siteConfig.seo.descriptionAr,
+  keywords: [...siteConfig.seo.keywordsAr, ...siteConfig.seo.keywordsEn],
   manifest: '/manifest.json',
+  alternates: {
+    canonical: '/',
+    languages: {
+      'ar-SA': '/',
+      'en-US': '/',
+    },
+  },
   openGraph: {
-    title: 'مفصل | MUFASAL',
-    description: 'Premium Tailoring & Fabric Marketplace',
+    title: siteConfig.seo.titleAr,
+    description: siteConfig.seo.descriptionAr,
+    url: APP_URL,
+    siteName: 'مفصل MUFASAL',
     locale: 'ar_SA',
     type: 'website',
+    images: [{ url: '/images/logo.png', width: 512, height: 512, alt: 'مفصل' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.seo.titleEn,
+    description: siteConfig.seo.descriptionEn,
+    images: ['/images/logo.png'],
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
