@@ -1,4 +1,4 @@
-# MUFASAL API — Railway (same as Dockerfile.api at repo root)
+# MUFASAL API — Railway (repo root context)
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
