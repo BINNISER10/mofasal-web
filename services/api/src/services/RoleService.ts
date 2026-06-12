@@ -17,11 +17,11 @@ const DISPLAY_NAMES: Record<string, { en: string; ar: string }> = {
 function mapRole(role: {
   id: string;
   name: string;
-  displayName: string | null;
-  displayNameAr: string | null;
+  displayName?: string | null;
+  displayNameAr?: string | null;
   permissions: unknown;
-  isSystem: boolean;
-  createdAt: Date;
+  isSystem?: boolean;
+  createdAt?: Date;
   _count?: { users: number };
 }) {
   const labels = DISPLAY_NAMES[role.name];
@@ -32,8 +32,8 @@ function mapRole(role: {
     displayNameAr: role.displayNameAr || labels?.ar || role.name,
     permissions: role.permissions as Record<string, boolean | string[]>,
     userCount: role._count?.users ?? 0,
-    isSystem: role.isSystem || SYSTEM_ROLES.has(role.name),
-    createdAt: role.createdAt.toISOString(),
+    isSystem: role.isSystem ?? SYSTEM_ROLES.has(role.name),
+    createdAt: role.createdAt?.toISOString() ?? new Date().toISOString(),
   };
 }
 
@@ -88,7 +88,7 @@ export class RoleService {
   }>) {
     const role = await prisma.role.findUnique({ where: { id } });
     if (!role) throw ApiError.notFound('Role not found');
-    if (role.isSystem && data.permissions) {
+    if ((role.isSystem ?? SYSTEM_ROLES.has(role.name)) && data.permissions) {
       throw ApiError.forbidden('Cannot modify system role permissions');
     }
     const updated = await prisma.role.update({
@@ -102,7 +102,7 @@ export class RoleService {
   static async deleteRole(id: string) {
     const role = await prisma.role.findUnique({ where: { id }, include: { _count: { select: { users: true } } } });
     if (!role) throw ApiError.notFound('Role not found');
-    if (role.isSystem || SYSTEM_ROLES.has(role.name)) throw ApiError.forbidden('Cannot delete system role');
+    if (role.isSystem ?? SYSTEM_ROLES.has(role.name)) throw ApiError.forbidden('Cannot delete system role');
     if (role._count.users > 0) throw ApiError.badRequest('Role has assigned users');
     await prisma.role.delete({ where: { id } });
     return { message: 'Role deleted' };
