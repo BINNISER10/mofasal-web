@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import siteConfig from '@/data/site-config.json';
-import { HOME_MEDIA } from './homeImages';
+import { HOME_IMAGES, HOME_MEDIA } from './homeImages';
 
 interface HomeHeroProps {
   isRTL: boolean;
@@ -20,7 +20,21 @@ export function HomeHero({ isRTL }: HomeHeroProps) {
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
+      <img
+        src={HOME_IMAGES.hero}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        aria-hidden
+      />
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        poster={HOME_IMAGES.hero}
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      >
         <source src={hero.videoUrl || HOME_MEDIA.heroVideo} type="video/mp4" />
       </video>
 
