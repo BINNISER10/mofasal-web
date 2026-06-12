@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { Search, X } from 'lucide-react';
 
 interface PageHeroProps {
@@ -58,7 +57,7 @@ export function PageHero({
 
           {image && (
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 hidden lg:block">
-              <Image src={image} alt="" fill className="object-cover" sizes="50vw" priority />
+              <img src={image} alt="" className="absolute inset-0 w-full h-full object-cover" />
             </div>
           )}
         </div>

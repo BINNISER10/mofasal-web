@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import siteConfig from '@/data/site-config.json';
 import { HOME_IMAGES } from './homeImages';
@@ -25,12 +24,11 @@ export function HomeCraftsmanship({ isRTL }: HomeCraftsmanshipProps) {
         <div className="max-w-[1440px] mx-auto px-4 md:px-6">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-200">
-              <Image
+              <img
                 src={HOME_IMAGES.craftsmanship}
                 alt={isRTL ? 'تفاصيل خياطة' : 'Tailoring details'}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
               />
             </div>
             <div>
@@ -77,12 +75,11 @@ export function HomeCraftsmanship({ isRTL }: HomeCraftsmanshipProps) {
             {fabrics.map((item, i) => (
               <Link key={i} href="/marketplace" className="group">
                 <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-neutral-100 mb-3">
-                  <Image
+                  <img
                     src={item.image}
                     alt={isRTL ? item.nameAr : item.nameEn}
-                    fill
-                    className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                    loading="lazy"
                   />
                 </div>
                 <h3 className="text-sm font-medium text-[#0A0A0A] dark:text-white mb-1 line-clamp-2">
