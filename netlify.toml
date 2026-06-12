@@ -5,6 +5,10 @@
   command = "bash scripts/netlify-build.sh"
   publish = "apps/web/.next"
 
+# تسريع البناء — تجنب معالجة إضافية
+[build.processing]
+  skip_processing = true
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
