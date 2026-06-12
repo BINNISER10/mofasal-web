@@ -22,18 +22,12 @@ const weeklyOrders = [
   { name: 'جمعة', value: 12 },
 ];
 
-const FALLBACK_ORDERS = [
-  { id: '#ORD-1284', customer: 'أحمد محمد', status: 'PENDING', amount: 1200, time: 'منذ 30 دقيقة' },
-  { id: '#ORD-1283', customer: 'سعد عبدالله', status: 'TAKING_MEASUREMENTS', amount: 850, time: 'منذ ساعتين' },
-  { id: '#ORD-1282', customer: 'خالد عمر', status: 'SEWING_ASSEMBLY', amount: 2300, time: 'منذ 5 ساعات' },
-  { id: '#ORD-1281', customer: 'فيصل علي', status: 'ON_WAY_TO_CUSTOMER', amount: 540, time: 'منذ يوم' },
-];
-
 export default function TailorDashboardPage() {
   const { isRTL } = useAppStore();
   const [mounted, setMounted] = useState(false);
-  const [stats, setStats] = useState({ today: 12, pending: 5, revenue: 4500 });
-  const [recentOrders, setRecentOrders] = useState<any[]>(FALLBACK_ORDERS);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ today: 0, pending: 0, revenue: 0 });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -57,7 +51,8 @@ export default function TailorDashboardPage() {
           time: o.createdAt ? new Date(o.createdAt).toLocaleDateString('ar') : '',
         })));
       })
-      .catch(() => { /* الإبقاء على القالب الاحتياطي */ });
+      .catch(() => { /* فارغ عند الفشل */ })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
 
@@ -98,7 +93,11 @@ export default function TailorDashboardPage() {
               <h3 className="font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'آخر الطلبات' : 'Recent Orders'}</h3>
               <Link href="/dashboard/tailor/orders" className="text-sm text-primary-700 font-semibold">{isRTL ? 'عرض الكل' : 'View All'}</Link>
             </div>
-            {recentOrders.map((order) => (
+            {loading ? (
+              <p className="text-sm text-gray-400 py-6 text-center">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
+            ) : recentOrders.length === 0 ? (
+              <p className="text-sm text-gray-400 py-6 text-center">{isRTL ? 'لا توجد طلبات حالياً' : 'No orders yet'}</p>
+            ) : recentOrders.map((order) => (
               <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-slate-700 last:border-0">
                 <div>
                   <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">{order.customer}</p>

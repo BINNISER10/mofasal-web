@@ -1,4 +1,6 @@
 import { useAuthStore } from '@/lib/stores/authStore';
+import { isDemoModeEnabled } from '@/lib/demoAuth';
+import { getDemoApiResponse } from '@/lib/demoData';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api/v1';
 
@@ -34,25 +36,49 @@ class ApiClient {
     return url.toString();
   }
 
+  private isDemoSession(): boolean {
+    const token = useAuthStore.getState().token;
+    return isDemoModeEnabled() && !!token?.startsWith('demo-token');
+  }
+
+  private tryDemoResponse<T>(path: string, method = 'GET'): T | undefined {
+    if (!isDemoModeEnabled()) return undefined;
+    const demo = getDemoApiResponse(path, method);
+    return demo !== undefined ? (demo as T) : undefined;
+  }
+
   private async request<T>(path: string, config: RequestConfig = {}): Promise<T> {
-    const { params, ...restConfig } = config;
-    const url = this.buildUrl(path, params);
+    const { params, method = 'GET', ...restConfig } = config;
 
-    const response = await fetch(url, {
-      ...restConfig,
-      headers: {
-        ...this.getHeaders(),
-        ...restConfig.headers,
-      },
-    });
-
-    const json = await response.json();
-
-    if (!response.ok) {
-      throw new Error(json.detail || json.message || `HTTP ${response.status}`);
+    if (this.isDemoSession()) {
+      const demo = this.tryDemoResponse<T>(path, method);
+      if (demo !== undefined) return demo;
     }
 
-    return json.data !== undefined ? json.data : json;
+    const url = this.buildUrl(path, params);
+
+    try {
+      const response = await fetch(url, {
+        ...restConfig,
+        method,
+        headers: {
+          ...this.getHeaders(),
+          ...restConfig.headers,
+        },
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        throw new Error(json.detail || json.message || `HTTP ${response.status}`);
+      }
+
+      return json.data !== undefined ? json.data : json;
+    } catch (error) {
+      const demo = this.tryDemoResponse<T>(path, method);
+      if (demo !== undefined) return demo;
+      throw error;
+    }
   }
 
   async get<T>(path: string, config?: RequestConfig): Promise<T> {
