@@ -36,6 +36,8 @@ export default function ProcurementPage() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
+  const [newPo, setNewPo] = useState({ supplierName: '', itemName: '', quantity: 1, unitPrice: 0 });
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -69,6 +71,35 @@ export default function ProcurementPage() {
 
   const getStatusConfig = (status: string) => STATUS_CONFIG[status] || STATUS_CONFIG.DRAFT;
   const StatusIcon = (status: string) => getStatusConfig(status).icon;
+
+  const handleCreatePo = async () => {
+    if (!newPo.itemName || newPo.unitPrice <= 0) {
+      toast.error(isRTL ? 'أدخل اسم الصنف والسعر' : 'Enter item and price');
+      return;
+    }
+    setCreating(true);
+    try {
+      const created = await procurementApi.createPurchaseOrder({
+        items: [{ name: newPo.itemName, quantity: newPo.quantity, unitPrice: newPo.unitPrice }],
+      });
+      setOrders((prev) => [{
+        id: created.id,
+        orderNumber: created.orderNumber,
+        status: created.status,
+        totalAmount: created.grandTotal || created.totalAmount,
+        supplierName: newPo.supplierName || created.supplier?.nameAr || created.supplier?.name,
+        createdAt: created.createdAt,
+        items: created.items?.map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice })),
+      }, ...prev]);
+      toast.success(isRTL ? 'تم إنشاء أمر الشراء' : 'PO created');
+      setShowAdd(false);
+      setNewPo({ supplierName: '', itemName: '', quantity: 1, unitPrice: 0 });
+    } catch {
+      toast.error(isRTL ? 'فشل الإنشاء' : 'Create failed');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -274,10 +305,16 @@ export default function ProcurementPage() {
       <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title={isRTL ? 'أمر شراء جديد' : 'New Purchase Order'} size="lg">
         <div className="space-y-4">
           <div className="p-4 bg-[#F2E8D4]/20 rounded-xl text-sm text-[#735B4D]">
-            {isRTL ? 'سيتم ربط هذا الأمر تلقائياً بطلب تفصيل عند اختيار القماش من الكتالوج' : 'This will be automatically linked to a tailoring order when fabric is selected from catalog'}
+            {isRTL ? 'اطلب أقمشة من الموردين لمحل الخياطة' : 'Order fabric from suppliers for your shop'}
           </div>
-          <Button variant="primary" fullWidth onClick={() => setShowAdd(false)}>
-            {isRTL ? 'إغلاق' : 'Close'}
+          <input className="input-field w-full" placeholder={isRTL ? 'اسم المورد' : 'Supplier name'} value={newPo.supplierName} onChange={(e) => setNewPo({ ...newPo, supplierName: e.target.value })} />
+          <input className="input-field w-full" placeholder={isRTL ? 'اسم القماش' : 'Fabric name'} value={newPo.itemName} onChange={(e) => setNewPo({ ...newPo, itemName: e.target.value })} />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="number" min={1} className="input-field" placeholder={isRTL ? 'الكمية (متر)' : 'Quantity (m)'} value={newPo.quantity} onChange={(e) => setNewPo({ ...newPo, quantity: Number(e.target.value) })} />
+            <input type="number" min={0} className="input-field" placeholder={isRTL ? 'سعر المتر' : 'Price/m'} value={newPo.unitPrice || ''} onChange={(e) => setNewPo({ ...newPo, unitPrice: Number(e.target.value) })} />
+          </div>
+          <Button variant="primary" fullWidth isLoading={creating} onClick={handleCreatePo}>
+            {isRTL ? 'إنشاء أمر الشراء' : 'Create PO'}
           </Button>
         </div>
       </Modal>

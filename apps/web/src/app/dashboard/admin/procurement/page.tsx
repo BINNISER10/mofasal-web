@@ -96,6 +96,28 @@ export default function AdminProcurementPage() {
     }
   };
 
+  const handleCreate = async () => {
+    const item = form.items[0];
+    if (!item.name || item.unitPrice <= 0) {
+      toast.error(isRTL ? 'أدخل اسم الصنف والسعر' : 'Enter item name and price');
+      return;
+    }
+    try {
+      await procurementApi.createPurchaseOrder({
+        supplierId: form.supplierId || undefined,
+        expectedDate: form.expectedDelivery || undefined,
+        items: form.items.filter((i) => i.name).map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice })),
+      });
+      toast.success(isRTL ? 'تم إنشاء أمر الشراء' : 'Purchase order created');
+      setShowAdd(false);
+      setForm({ supplierId: '', expectedDelivery: '', items: [{ name: '', quantity: 1, unitPrice: 0 }] });
+      const data = await procurementApi.getPurchaseOrders();
+      setOrders(data.items);
+    } catch {
+      toast.error(isRTL ? 'فشل إنشاء الأمر' : 'Failed to create order');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -285,6 +307,20 @@ export default function AdminProcurementPage() {
           </div>
         </Modal>
       )}
+
+      {/* New PO Modal */}
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title={isRTL ? 'أمر شراء جديد' : 'New Purchase Order'} size="md">
+        <div className="space-y-4">
+          <input className="input-field w-full" placeholder={isRTL ? 'اسم المورد (اختياري)' : 'Supplier name (optional)'} value={form.supplierId} onChange={(e) => setForm({ ...form, supplierId: e.target.value })} />
+          <input type="date" className="input-field w-full" value={form.expectedDelivery} onChange={(e) => setForm({ ...form, expectedDelivery: e.target.value })} />
+          <input className="input-field w-full" placeholder={isRTL ? 'اسم الصنف' : 'Item name'} value={form.items[0].name} onChange={(e) => setForm({ ...form, items: [{ ...form.items[0], name: e.target.value }] })} />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="number" min={1} className="input-field" placeholder={isRTL ? 'الكمية' : 'Qty'} value={form.items[0].quantity} onChange={(e) => setForm({ ...form, items: [{ ...form.items[0], quantity: Number(e.target.value) }] })} />
+            <input type="number" min={0} className="input-field" placeholder={isRTL ? 'سعر الوحدة' : 'Unit price'} value={form.items[0].unitPrice || ''} onChange={(e) => setForm({ ...form, items: [{ ...form.items[0], unitPrice: Number(e.target.value) }] })} />
+          </div>
+          <Button variant="primary" fullWidth onClick={handleCreate}>{isRTL ? 'إنشاء الأمر' : 'Create Order'}</Button>
+        </div>
+      </Modal>
     </div>
   );
 }

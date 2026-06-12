@@ -75,7 +75,9 @@ export default function TailorDashboardPage() {
           <Link href="/dashboard/tailor/orders/new">
             <Button variant="primary" icon={<Plus size={18} />}>{isRTL ? 'طلب جديد' : 'New Order'}</Button>
           </Link>
-          <Button variant="outline" icon={<UserPlus size={18} />}>{isRTL ? 'عميل' : 'Customer'}</Button>
+          <Link href="/dashboard/tailor/staff">
+            <Button variant="outline" icon={<UserPlus size={18} />}>{isRTL ? 'الموظفون' : 'Staff'}</Button>
+          </Link>
         </div>
       </div>
 

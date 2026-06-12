@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/shared/Sidebar';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useAppStore } from '@/lib/stores/appStore';
@@ -26,10 +26,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuthStore();
   const { language, setLanguage, isRTL, sidebarOpen, toggleSidebar, setSidebarOpen } = useAppStore();
   const { unreadCount } = useNotifications();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -56,7 +58,17 @@ export default function DashboardLayout({
     if (isTailor) return { bg: 'bg-[#00373E]/10', text: 'text-[#00373E]', label: isRTL ? 'خياط' : 'Tailor' };
     if (isMerchant) return { bg: 'bg-[#D4AF37]/10', text: 'text-[#D4AF37]', label: isRTL ? 'تاجر' : 'Merchant' };
     if (isCustomer) return { bg: 'bg-[#735B4D]/10', text: 'text-[#735B4D]', label: isRTL ? 'عميل' : 'Customer' };
+    if (isRep) return { bg: 'bg-[#1a4a6b]/10', text: 'text-[#1a4a6b]', label: isRTL ? 'مندوب' : 'Rep' };
     return { bg: 'bg-[#D0D6D7]/10', text: 'text-[#735B4D]', label: '' };
+  };
+
+  const getSettingsPath = () => {
+    if (isAdmin) return '/dashboard/admin/settings';
+    if (isTailor) return '/dashboard/tailor/settings';
+    if (isMerchant) return '/dashboard/merchant/products';
+    if (isCustomer) return '/dashboard/customer/profile';
+    if (isRep) return '/dashboard/rep';
+    return '/dashboard/profile';
   };
 
   // Breadcrumbs
@@ -132,6 +144,13 @@ export default function DashboardLayout({
                 <Search className={cn('absolute top-1/2 -translate-y-1/2 text-[#735B4D]/40', isRTL ? 'right-3' : 'left-3')} size={18} />
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                    }
+                  }}
                   placeholder={isRTL ? 'بحث...' : 'Search...'}
                   className={cn(
                     'w-full py-2.5 rounded-xl border border-[#D0D6D7]/50 bg-[#F2E8D4]/30 dark:bg-slate-800',
@@ -157,7 +176,11 @@ export default function DashboardLayout({
               </button>
 
               {/* Notifications */}
-              <button className="relative p-2.5 rounded-xl hover:bg-[#F2E8D4]/50 dark:hover:bg-slate-800 transition-colors">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/notifications')}
+                className="relative p-2.5 rounded-xl hover:bg-[#F2E8D4]/50 dark:hover:bg-slate-800 transition-colors"
+              >
                 <Bell size={20} className="text-[#735B4D] dark:text-slate-400" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#481719] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg shadow-[#481719]/30">
@@ -206,7 +229,7 @@ export default function DashboardLayout({
                         {isRTL ? 'الملف الشخصي' : 'Profile'}
                       </a>
                       <a
-                        href="/dashboard/admin/settings"
+                        href={getSettingsPath()}
                         className="flex items-center gap-3 px-4 py-3 text-sm text-[#00373E] dark:text-slate-300 hover:bg-[#F2E8D4]/30 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Settings size={16} className="text-[#735B4D]" />

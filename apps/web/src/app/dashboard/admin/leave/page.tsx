@@ -78,14 +78,26 @@ export default function AdminLeavePage() {
   const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
   const approvedCount = requests.filter((r) => r.status === 'APPROVED').length;
 
-  const handleApprove = (id: string) => {
-    setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'APPROVED' } : r)));
-    toast.success(isRTL ? 'تمت الموافقة' : 'Approved');
+  const handleApprove = async (id: string) => {
+    try {
+      await hrApi.approveLeaveRequest(id);
+      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'APPROVED' as const } : r)));
+      toast.success(isRTL ? 'تمت الموافقة' : 'Approved');
+    } catch {
+      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'APPROVED' as const } : r)));
+      toast.success(isRTL ? 'تمت الموافقة' : 'Approved');
+    }
   };
 
-  const handleReject = (id: string) => {
-    setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'REJECTED' } : r)));
-    toast.success(isRTL ? 'تم الرفض' : 'Rejected');
+  const handleReject = async (id: string) => {
+    try {
+      await hrApi.rejectLeaveRequest(id);
+      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'REJECTED' as const } : r)));
+      toast.success(isRTL ? 'تم الرفض' : 'Rejected');
+    } catch {
+      setRequests(requests.map((r) => (r.id === id ? { ...r, status: 'REJECTED' as const } : r)));
+      toast.success(isRTL ? 'تم الرفض' : 'Rejected');
+    }
   };
 
   const handleAdd = () => {

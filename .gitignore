@@ -21,3 +21,6 @@ __pycache__/
 venv/
 .pytest_cache/
 .github/workflows/render-build.yml
+
+# Local Netlify folder
+.netlify

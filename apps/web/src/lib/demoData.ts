@@ -274,13 +274,91 @@ const DEMO_ORDERS_BY_STATUS = [
   { name: 'PENDING', value: 18 }, { name: 'CANCELLED', value: 9 },
 ];
 
+export const DEMO_NOTIFICATIONS = [
+  { id: 'n1', type: 'order' as const, title: 'طلب جديد', message: 'تم استلام طلب ORD-2401', link: '/dashboard/tailor/orders/ord-demo-1', isRead: false, createdAt: '2026-06-12T10:00:00Z' },
+  { id: 'n2', type: 'payment' as const, title: 'دفعة مستلمة', message: 'تم استلام 850 ر.س', link: '/dashboard/customer/orders/ord-demo-1', isRead: false, createdAt: '2026-06-12T09:30:00Z' },
+  { id: 'n3', type: 'delivery' as const, title: 'طلب جاهز', message: 'طلبك ORD-2398 جاهز للتسليم', link: '/dashboard/customer/orders/ord-demo-2', isRead: true, createdAt: '2026-06-11T16:00:00Z' },
+  { id: 'n4', type: 'system' as const, title: 'مرحباً بك في مفصل', message: 'استكشف المحلات واطلب ثوبك الأول', link: '/shops', isRead: true, createdAt: '2026-06-10T08:00:00Z' },
+];
+
+let demoAddresses = [
+  { id: 'addr-1', label: 'المنزل', street: 'شارع التحلية', district: 'العليا', city: 'الرياض', buildingNumber: '12', apartmentNumber: '4', isDefault: true },
+  { id: 'addr-2', label: 'العمل', street: 'طريق الملك فهد', district: 'الملز', city: 'الرياض', buildingNumber: '45', isDefault: false },
+];
+
 /** يُرجع استجابة API وهمية حسب المسار */
 export function getDemoApiResponse(path: string, method = 'GET'): unknown | undefined {
+  // ─── Mutations (وضع العرض) ───
+  if (method === 'POST' && path === '/orders') {
+    const id = `ord-demo-${Date.now()}`;
+    return { id, orderNumber: `ORD-${String(Date.now()).slice(-4)}`, status: 'PENDING', totalAmount: 850, paymentStatus: 'UNPAID', createdAt: now };
+  }
+  if (method === 'PATCH' && /^\/orders\/[^/]+$/.test(path)) {
+    return { updated: true, status: 'CONFIRMED' };
+  }
+  if (method === 'POST' && path === '/services') {
+    const id = `svc-${Date.now()}`;
+    return { id, status: 'PENDING', serviceType: 'ON_SITE_MEASUREMENT', createdAt: now };
+  }
+  if (method === 'POST' && /^\/services\/[^/]+\/dispatch$/.test(path)) {
+    return { dispatched: true, status: 'DISPATCHED' };
+  }
+  if (method === 'PATCH' && /^\/services\/[^/]+\/(location|arrive|complete)/.test(path)) {
+    return { updated: true };
+  }
+  if (method === 'POST' && (path === '/payments/process' || path.startsWith('/payments'))) {
+    return { transaction: { id: 'pay-demo', status: 'SUCCESS', amount: 850 }, invoice: { id: 'inv-demo', invoiceNumber: 'INV-DEMO-001' } };
+  }
+  if (method === 'POST' && path === '/reviews') {
+    return { id: 'rev-demo', createdAt: now };
+  }
+  if (method === 'POST' && path === '/products') {
+    return { id: `prod-${Date.now()}`, name: 'منتج جديد', price: 100, isActive: true };
+  }
+  if (method === 'POST' && path === '/procurement') {
+    const id = `po-${Date.now()}`;
+    return {
+      id, shopId: 'shop-riyadh-1', orderNumber: `PO-${String(Date.now()).slice(-4)}`, status: 'PENDING',
+      totalAmount: 5000, taxAmount: 750, grandTotal: 5750, createdAt: now, updatedAt: now,
+      items: [{ id: 'i-new', name: 'قماش جديد', quantity: 10, unitPrice: 500, totalPrice: 5000 }],
+    };
+  }
+  if (method === 'PUT' && /^\/procurement\/[^/]+\/status$/.test(path)) {
+    return { updated: true, status: 'CONFIRMED' };
+  }
+  if (method === 'POST' && /^\/users\/[^/]+\/addresses$/.test(path)) {
+    const addr = { id: `addr-${Date.now()}`, label: 'عنوان جديد', street: 'شارع جديد', city: 'الرياض', isDefault: false };
+    demoAddresses = [...demoAddresses, addr];
+    return addr;
+  }
+  if (method === 'PUT' && /^\/users\/[^/]+\/addresses\/[^/]+$/.test(path)) {
+    return { updated: true };
+  }
+  if (method === 'DELETE' && /^\/users\/[^/]+\/addresses\/[^/]+$/.test(path)) {
+    const addrMatch = path.match(/^\/users\/[^/]+\/addresses\/([^/]+)$/);
+    if (addrMatch) demoAddresses = demoAddresses.filter((a) => a.id !== addrMatch[1]);
+    return { message: 'deleted' };
+  }
+  if (method === 'PATCH' && /^\/notifications\/[^/]+\/read$/.test(path)) {
+    return { updated: true };
+  }
+  if (method === 'PATCH' && path === '/notifications/read-all') {
+    return { message: 'ok' };
+  }
+  if (method === 'POST' && /^\/hr\/leaves\/[^/]+\/approve$/.test(path)) {
+    return { status: 'APPROVED' };
+  }
+  if (method === 'POST' && /^\/hr\/leaves\/[^/]+\/reject$/.test(path)) {
+    return { status: 'REJECTED' };
+  }
+  if (method === 'POST' && /^\/hr\/payrolls\/[^/]+\/pay$/.test(path)) {
+    return { status: 'PAID', paidAt: now };
+  }
   if (method === 'PATCH' && /^\/manufacturing\/tasks\//.test(path)) {
     return { updated: true };
   }
   if (method === 'POST' && path === '/pricing/tiers') {
-    return { id: `tier-demo-${Date.now()}`, isActive: true };
+    return { id: `tier-demo-${Date.now()}`, isActive: true, minQuantity: 10, discountPercent: 5 };
   }
   if (method === 'PUT' && /^\/pricing\/tiers\//.test(path)) {
     return { updated: true };
@@ -289,6 +367,10 @@ export function getDemoApiResponse(path: string, method = 'GET'): unknown | unde
     return { message: 'deleted' };
   }
   if (method !== 'GET') return undefined;
+
+  if (path === '/services' || path.startsWith('/services?')) {
+    return [{ id: 'rep-demo-1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, pricePerVisit: 30 }];
+  }
 
   if (path === '/shops' || path === '/shops/featured' || path === '/shops/nearby' || path === '/shops/ranked') {
     return { items: DEMO_SHOPS, total: DEMO_SHOPS.length, page: 1, limit: 20 };
@@ -369,6 +451,15 @@ export function getDemoApiResponse(path: string, method = 'GET'): unknown | unde
   const measurementsMatch = path.match(/^\/users\/([^/]+)\/measurements$/);
   if (measurementsMatch) {
     return { measurements: [{ id: 'm1', label: 'الثوب الرئيسي', createdAt: now }] };
+  }
+
+  const addressesMatch = path.match(/^\/users\/([^/]+)\/addresses$/);
+  if (addressesMatch) {
+    return { addresses: demoAddresses };
+  }
+
+  if (path === '/notifications' || path.startsWith('/notifications?')) {
+    return { notifications: DEMO_NOTIFICATIONS, total: DEMO_NOTIFICATIONS.length };
   }
 
   return undefined;

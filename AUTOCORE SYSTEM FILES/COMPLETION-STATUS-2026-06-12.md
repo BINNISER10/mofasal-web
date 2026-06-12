@@ -1,52 +1,34 @@
-# حالة الإكمال — منصة مفصل
+# حالة الإكمال — 12 يونيو 2026
 
-**التاريخ:** 12 يونيو 2026  
-**الحالة:** جاهز للعرض + ERP backend مكتمل
+## المراجعة الشاملة (جلسة 12 يونيو)
 
-## ما أُنجز في هذه الجولة
+### إصلاحات حرجة
+- [x] `shops/[id]` — useState للهوية + نصوص عربية + مشاركة
+- [x] `merchant/pricing` — import pricingApi
+- [x] `demoData` — POST طلبات/خدمات/دفع/مشتريات/HR
+- [x] `book-measurement` — تواريخ ISO
+- [x] `layout` — إشعارات/إعدادات/بحث حسب الدور
+- [x] `Sidebar` — روابط ERP كاملة
 
-### API Backend
-| المكوّن | الحالة |
-|---------|--------|
-| `GET /roles` + CRUD | جديد |
-| `GET /manufacturing/tasks` | جديد (من طلبات التصنيع) |
-| `GET/POST/PUT/DELETE /pricing/tiers` | جديد + نموذج Prisma |
-| `GET /pos/products` | جديد |
-| `/accounting` + `/reports` | مُسجّل في index.ts |
-| `requirePermission('module')` | إصلاح — يقبل اسم الوحدة فقط |
-| `Shop.branding` Json | جديد في Schema |
+### إصلاحات متوسطة (هذه الجلسة)
+- [x] `notifications` — التنقل عند النقر (router.push)
+- [x] `customer/addresses` — CRUD كامل + modal
+- [x] `admin/procurement` — modal إنشاء PO
+- [x] `tailor/procurement` — modal إنشاء PO فعلي
+- [x] `demoData` — إشعارات + عناوين + procurement status
 
-### White-Label
-- إعدادات الخياط: قسم «هوية المحل» (ألوان + شعار + معاينة)
-- `ShopBrandingScope` على صفحة `/shops/[id]`
-- CSS variables: `--shop-primary`, `--shop-secondary`, ...
+### الدليل الشامل
+- [x] `AUTOCORE SYSTEM FILES/GUIDE-منصة-مفصل-الشامل.md`
+- [x] `apps/web/public/guide.html`
 
-### الويب
-- إزالة FALLBACK من كل لوحات ERP
-- `demoData.ts` موسّع لـ HR/POS/Roles/Analytics/Manufacturing/Pricing
-- `pricingApi` client جديد
+### متبقي (أولوية منخفضة)
+- [ ] `contact/page` — API حقيقي
+- [ ] أزرار export (reports, payroll, finances)
+- [ ] `merchant/products` — edit/view links
+- [ ] rep pages — demo PATCH كامل
 
-## الروابط الحية
-- **الويب:** https://mofasal.netlify.app
-- **API:** https://mofasal-api.onrender.com
-
-## حسابات العرض
-| الدور | الجوال | كلمة المرور |
-|-------|--------|-------------|
-| مدير | 966500000000 | admin123 |
-| عميل | 966511111111 | admin123 |
-| خياط | 966533333333 | admin123 |
-| تاجر | 966544444444 | admin123 |
-| مندوب | 966522222222 | admin123 |
-
-## آخر تحديث (جولة الإكمال)
-- Migration SQL: `20260612_erp_branding`
-- Seed: طلبات تصنيع + شرائح تسعير + branding
-- CORS: إضافة `mofasal.netlify.app` في render.yaml
-- ربط manufacturing/pricing بالـ API (حفظ فعلي)
-- إزالة MOCK من HomeScreen (جوال)
-
-## بعد السبت (اختياري)
-- Google Maps + OTP إنتاج
-- اختبارات تكامل E2E
-- نشر تطبيق الجوال (Expo/EAS)
+## الروابط
+- Web: https://mofasal.netlify.app
+- API: https://mofasal-api.onrender.com
+- Guide: https://mofasal.netlify.app/guide.html
+- Cheat Sheet: https://mofasal.netlify.app/demo-cheat-sheet.html

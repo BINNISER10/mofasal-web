@@ -7,7 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { Layers, Plus, Trash2, Edit3, Save, X, Percent, Tag } from 'lucide-react';
-import { apiClient } from '@/lib/api/client';
+import { pricingApi, PricingTier } from '@/lib/api/pricing';
 import toast from 'react-hot-toast';
 
 interface PricingTier {

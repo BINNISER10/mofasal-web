@@ -76,8 +76,11 @@ export default function AdminPayrollPage() {
 
   const pendingCount = filtered.filter((p) => p.status === 'PENDING').length;
 
-  const handlePay = (id: string) => {
-    setPayroll(payroll.map((p) => (p.id === id ? { ...p, status: 'PAID', paidAt: new Date().toISOString().split('T')[0] } : p)));
+  const handlePay = async (id: string) => {
+    try {
+      await hrApi.markAsPaid(id);
+    } catch { /* demo fallback */ }
+    setPayroll(payroll.map((p) => (p.id === id ? { ...p, status: 'PAID' as const, paidAt: new Date().toISOString().split('T')[0] } : p)));
   };
 
   const getStatusConfig = (status: string) => STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.PENDING;

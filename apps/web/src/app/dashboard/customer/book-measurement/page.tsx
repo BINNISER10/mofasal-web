@@ -28,10 +28,12 @@ const TIME_SLOTS = [
   '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00',
 ];
 
+const fmtDate = (d: Date) => d.toISOString().split('T')[0];
+
 const DATE_OPTIONS = [
-  { label: 'اليوم', date: new Date().toLocaleDateString('ar-SA') },
-  { label: 'غداً', date: new Date(Date.now() + 86400000).toLocaleDateString('ar-SA') },
-  { label: 'بعد غد', date: new Date(Date.now() + 172800000).toLocaleDateString('ar-SA') },
+  { label: 'اليوم', date: fmtDate(new Date()) },
+  { label: 'غداً', date: fmtDate(new Date(Date.now() + 86400000)) },
+  { label: 'بعد غد', date: fmtDate(new Date(Date.now() + 172800000)) },
 ];
 
 export default function BookMeasurementPage() {
@@ -86,7 +88,7 @@ export default function BookMeasurementPage() {
       const specNotes = `الياقة: ${thobeSpec.collarType}, الكبك: ${thobeSpec.cuffType}, القصة: ${thobeSpec.cutStyle}, الموسم: ${thobeSpec.season}`;
       const fabricNotes = fabric.productName ? `القماش: ${fabric.productName} (${fabric.meters || 3}م)` : '';
       const service = await servicesApi.create({
-        shopId: 'default',
+        shopId: 'shop-riyadh-1',
         serviceType: 'ON_SITE_MEASUREMENT',
         customAddress: address || undefined,
         scheduledDate: new Date(`${selectedDate}T${selectedTime}:00`).toISOString(),

@@ -15,6 +15,7 @@ import {
   Scissors, Ruler, Package, MessageCircle, Heart, Share2, ChevronLeft,
   ChevronRight, Users, Award, TrendingUp, ShoppingBag
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ShopDetailPage() {
   const params = useParams();
@@ -25,6 +26,7 @@ export default function ShopDetailPage() {
 
   const shopId = String(params.id);
   const [shop, setShop] = useState<ShopDetailView | null>(null);
+  const [shopBranding, setShopBranding] = useState<unknown>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -53,7 +55,7 @@ export default function ShopDetailPage() {
     return (
       <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
         <Navbar />
-        <div className="text-center py-32 text-neutral-400">{isRTL ? 'Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªØ­Ù…ÙŠÙ„...' : 'Loading...'}</div>
+        <div className="text-center py-32 text-neutral-400">{isRTL ? 'جاري التحميل...' : 'Loading...'}</div>
         <Footer />
       </div>
     );
@@ -65,7 +67,7 @@ export default function ShopDetailPage() {
         <Navbar />
         <div className="text-center py-32">
           <p className="text-neutral-500 mb-4">{isRTL ? 'Ø§Ù„Ù…ØªØ¬Ø± ØºÙŠØ± Ù…ØªÙˆÙØ±' : 'Shop not found'}</p>
-          <Button onClick={() => router.push('/shops')}>{isRTL ? 'Ø§Ù„Ø¹ÙˆØ¯Ø© Ù„Ù„Ù…ØªØ§Ø¬Ø±' : 'Back to shops'}</Button>
+          <Button onClick={() => router.push('/shops')}>{isRTL ? 'العودة للمتاجر' : 'Back to shops'}</Button>
         </div>
         <Footer />
       </div>
@@ -73,6 +75,18 @@ export default function ShopDetailPage() {
   }
 
   const ChevronBack = isRTL ? ChevronRight : ChevronLeft;
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: shop?.name || 'مفصل', url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success(isRTL ? 'تم نسخ الرابط' : 'Link copied');
+      }
+    } catch { /* cancelled */ }
+  };
 
   return (
     <ShopBrandingScope branding={shopBranding} className="min-h-screen bg-gray-50">
@@ -89,7 +103,7 @@ export default function ShopDetailPage() {
           className="absolute top-4 right-4 flex items-center gap-1 bg-black/30 hover:bg-black/50 text-white px-3 py-1.5 rounded-xl text-sm font-medium transition-all"
         >
           <ChevronBack size={16} />
-          {isRTL ? 'Ø±Ø¬ÙˆØ¹' : 'Back'}
+          {isRTL ? 'رجوع' : 'Back'}
         </button>
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-gray-50 to-transparent" />
       </div>
@@ -109,16 +123,16 @@ export default function ShopDetailPage() {
                     {shop.verified && (
                       <Badge variant="success" size="sm">
                         <CheckCircle2 size={12} className="mr-1" />
-                        {isRTL ? 'Ù…ÙˆØ«Ù‚' : 'Verified'}
+                        {isRTL ? 'موثق' : 'Verified'}
                       </Badge>
                     )}
-                    {shop.featured && <Badge variant="gold" size="sm">{isRTL ? 'Ù…Ù…ÙŠØ²' : 'Featured'}</Badge>}
+                    {shop.featured && <Badge variant="gold" size="sm">{isRTL ? 'مميز' : 'Featured'}</Badge>}
                   </div>
                   <p className="text-gray-500 text-sm mt-1">{shop.owner}</p>
                   <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
-                    <span className="flex items-center gap-1"><MapPin size={14} />{shop.city}ØŒ {shop.district}</span>
+                    <span className="flex items-center gap-1"><MapPin size={14} />{shop.city}، {shop.district}</span>
                     <span className="flex items-center gap-1"><Clock size={14} />{shop.workingHours.from} - {shop.workingHours.to}</span>
-                    <span className="flex items-center gap-1"><Award size={14} />{shop.experience} {isRTL ? 'Ø³Ù†ÙˆØ§Øª Ø®Ø¨Ø±Ø©' : 'yrs exp'}</span>
+                    <span className="flex items-center gap-1"><Award size={14} />{shop.experience} {isRTL ? 'سنوات خبرة' : 'yrs exp'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -128,7 +142,7 @@ export default function ShopDetailPage() {
                   >
                     <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
                   </button>
-                  <button className="p-2.5 rounded-xl border bg-gray-50 border-gray-200 text-gray-400 hover:text-primary-600 transition-all">
+                  <button type="button" onClick={handleShare} className="p-2.5 rounded-xl border bg-gray-50 border-gray-200 text-gray-400 hover:text-primary-600 transition-all">
                     <Share2 size={18} />
                   </button>
                   <a href={`tel:${shop.phone}`} className="p-2.5 rounded-xl border bg-gray-50 border-gray-200 text-gray-400 hover:text-green-600 transition-all">
@@ -150,15 +164,15 @@ export default function ShopDetailPage() {
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <ShoppingBag size={14} />
-                  <span>{shop.orders.toLocaleString()} {isRTL ? 'Ø·Ù„Ø¨' : 'orders'}</span>
+                  <span>{shop.orders.toLocaleString()} {isRTL ? 'طلب' : 'orders'}</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <TrendingUp size={14} className="text-green-500" />
-                  <span>{shop.stats.completionRate}% {isRTL ? 'Ø¥Ù†Ø¬Ø§Ø²' : 'completion'}</span>
+                  <span>{shop.stats.completionRate}% {isRTL ? 'إنجاز' : 'completion'}</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <Users size={14} className="text-primary-500" />
-                  <span>{shop.stats.repeatCustomers}% {isRTL ? 'Ø¹Ù…Ù„Ø§Ø¡ Ù…ØªÙƒØ±Ø±ÙˆÙ†' : 'repeat'}</span>
+                  <span>{shop.stats.repeatCustomers}% {isRTL ? 'عملاء متكررون' : 'repeat'}</span>
                 </div>
               </div>
             </div>
@@ -170,7 +184,7 @@ export default function ShopDetailPage() {
           <div className="md:col-span-2 space-y-6">
             {/* About */}
             <Card className="p-5">
-              <h2 className="font-bold text-gray-800 mb-3">{isRTL ? 'Ø¹Ù† Ø§Ù„Ù…ØªØ¬Ø±' : 'About'}</h2>
+              <h2 className="font-bold text-gray-800 mb-3">{isRTL ? 'عن المتجر' : 'About'}</h2>
               <p className="text-sm text-gray-600 leading-relaxed">{shop.description}</p>
               <div className="flex flex-wrap gap-2 mt-4">
                 {shop.specialties.map((s: string, i: number) => (
@@ -188,9 +202,9 @@ export default function ShopDetailPage() {
                     onClick={() => setActiveTab(tab)}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === tab ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
-                    {tab === 'services' ? (isRTL ? 'Ø§Ù„Ø®Ø¯Ù…Ø§Øª' : 'Services')
-                      : tab === 'reviews' ? (isRTL ? 'Ø§Ù„ØªÙ‚ÙŠÙŠÙ…Ø§Øª' : 'Reviews')
-                      : (isRTL ? 'Ø§Ù„Ø£Ø¹Ù…Ø§Ù„' : 'Portfolio')}
+                    {tab === 'services' ? (isRTL ? 'الخدمات' : 'Services')
+                      : tab === 'reviews' ? (isRTL ? 'التقييمات' : 'Reviews')
+                      : (isRTL ? 'الأعمال' : 'Portfolio')}
                   </button>
                 ))}
               </div>
@@ -206,18 +220,18 @@ export default function ShopDetailPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-gray-900">{service.name}</p>
-                            {service.popular && <Badge variant="gold" size="sm">{isRTL ? 'Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ø§Ù‹' : 'Popular'}</Badge>}
+                            {service.popular && <Badge variant="gold" size="sm">{isRTL ? 'Ø§Ù„Ø£ÙƒØ«Ø± طلبØ§Ù‹' : 'Popular'}</Badge>}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                             <span className="flex items-center gap-1"><Clock size={11} />{service.duration}</span>
-                            <span className="flex items-center gap-1"><Ruler size={11} />{isRTL ? 'Ù‚ÙŠØ§Ø³ ÙÙŠ Ø§Ù„Ù…ÙˆÙ‚Ø¹' : 'On-site measurement'}</span>
+                            <span className="flex items-center gap-1"><Ruler size={11} />{isRTL ? 'قياس في الموقع' : 'On-site measurement'}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-left flex flex-col items-end gap-2">
-                        <p className="font-black text-primary-700 text-lg">{service.price} {isRTL ? 'Ø±.Ø³' : 'SAR'}</p>
+                        <p className="font-black text-primary-700 text-lg">{service.price} {isRTL ? 'ر.س' : 'SAR'}</p>
                         <Button size="sm" variant="primary" onClick={() => router.push(`/dashboard/customer/orders/new?shop=${shop.id}&service=${service.id}`)}>
-                          {isRTL ? 'Ø§Ø·Ù„Ø¨ Ø§Ù„Ø¢Ù†' : 'Order Now'}
+                          {isRTL ? 'Ø§طلب Ø§Ù„Ø¢Ù†' : 'Order Now'}
                         </Button>
                       </div>
                     </Card>
@@ -237,7 +251,7 @@ export default function ShopDetailPage() {
                             <Star key={i} size={14} className={i <= Math.round(shop.rating) ? 'text-gold-500 fill-gold-500' : 'text-gray-200 fill-gray-200'} />
                           ))}
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">{shop.reviewCount} {isRTL ? 'ØªÙ‚ÙŠÙŠÙ…' : 'reviews'}</p>
+                        <p className="text-xs text-gray-400 mt-1">{shop.reviewCount} {isRTL ? 'تقييم' : 'reviews'}</p>
                       </div>
                       <div className="flex-1 space-y-2">
                         {[5,4,3,2,1].map(star => {
@@ -300,22 +314,22 @@ export default function ShopDetailPage() {
           <div className="space-y-4">
             {/* Book CTA */}
             <Card className="p-5 bg-gradient-to-br from-primary-600 to-primary-800 text-white">
-              <h3 className="font-bold text-lg mb-2">{isRTL ? 'Ø§Ø­Ø¬Ø² Ù…ÙˆØ¹Ø¯Ùƒ Ø§Ù„Ø¢Ù†' : 'Book Your Appointment'}</h3>
-              <p className="text-primary-200 text-sm mb-4">{isRTL ? 'Ø§Ø¨Ø¯Ø£ Ø·Ù„Ø¨Ùƒ Ù…Ø¹ Ù‡Ø°Ø§ Ø§Ù„Ù…ØªØ¬Ø± ÙÙŠ Ø®Ø·ÙˆØ§Øª Ø¨Ø³ÙŠØ·Ø©' : 'Start your order with this shop in simple steps'}</p>
+              <h3 className="font-bold text-lg mb-2">{isRTL ? 'احجز موعدك الآن' : 'Book Your Appointment'}</h3>
+              <p className="text-primary-200 text-sm mb-4">{isRTL ? 'Ø§Ø¨Ø¯Ø£ طلبÙƒ Ù…Ø¹ Ù‡Ø°Ø§ Ø§Ù„Ù…ØªØ¬Ø± ÙÙŠ Ø®Ø·ÙˆØ§Øª Ø¨Ø³ÙŠØ·Ø©' : 'Start your order with this shop in simple steps'}</p>
               <Button
                 variant="gold"
                 fullWidth
                 icon={<ArrowIcon size={16} />}
                 onClick={() => router.push(`/dashboard/customer/orders/new?shop=${shop.id}`)}
               >
-                {isRTL ? 'Ø¥Ù†Ø´Ø§Ø¡ Ø·Ù„Ø¨' : 'Create Order'}
+                {isRTL ? 'Ø¥Ù†Ø´Ø§Ø¡ طلب' : 'Create Order'}
               </Button>
               <button
                 onClick={() => router.push('/login')}
                 className="flex items-center justify-center gap-1.5 w-full mt-2 py-2 text-sm text-primary-200 hover:text-white transition-colors"
               >
                 <MessageCircle size={14} />
-                {isRTL ? 'ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ø§Ù„Ù…ØªØ¬Ø±' : 'Chat with Shop'}
+                {isRTL ? 'تواصل مع المتجر' : 'Chat with Shop'}
               </button>
             </Card>
 
@@ -323,7 +337,7 @@ export default function ShopDetailPage() {
             <Card className="p-5">
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <Clock size={16} className="text-primary-600" />
-                {isRTL ? 'Ø³Ø§Ø¹Ø§Øª Ø§Ù„Ø¹Ù…Ù„' : 'Working Hours'}
+                {isRTL ? 'ساعات العمل' : 'Working Hours'}
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -332,7 +346,7 @@ export default function ShopDetailPage() {
                 </div>
                 <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  {isRTL ? 'Ù…ÙØªÙˆØ­ Ø§Ù„Ø¢Ù†' : 'Open Now'}
+                  {isRTL ? 'مفتوح الآن' : 'Open Now'}
                 </div>
               </div>
             </Card>
@@ -341,23 +355,23 @@ export default function ShopDetailPage() {
             <Card className="p-5">
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <MapPin size={16} className="text-primary-600" />
-                {isRTL ? 'Ø§Ù„Ù…ÙˆÙ‚Ø¹' : 'Location'}
+                {isRTL ? 'الموقع' : 'Location'}
               </h3>
-              <p className="text-sm text-gray-600">{shop.city}ØŒ {shop.district}</p>
+              <p className="text-sm text-gray-600">{shop.city}، {shop.district}</p>
               <div className="mt-3 h-28 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm border border-gray-200">
                 <MapPin size={20} className="mr-2 text-primary-500" />
-                {isRTL ? 'Ø¹Ø±Ø¶ Ø¹Ù„Ù‰ Ø§Ù„Ø®Ø±ÙŠØ·Ø©' : 'View on Map'}
+                {isRTL ? 'عرض على الخريطة' : 'View on Map'}
               </div>
             </Card>
 
             {/* Stats */}
             <Card className="p-5">
-              <h3 className="font-bold text-gray-800 mb-3">{isRTL ? 'Ø¥Ø­ØµØ§Ø¦ÙŠØ§Øª Ø§Ù„Ø£Ø¯Ø§Ø¡' : 'Performance'}</h3>
+              <h3 className="font-bold text-gray-800 mb-3">{isRTL ? 'إحصائيات الأداء' : 'Performance'}</h3>
               <div className="space-y-3">
                 {[
-                  { label: isRTL ? 'Ù†Ø³Ø¨Ø© Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²' : 'Completion Rate', value: shop.stats.completionRate, color: 'bg-green-500' },
-                  { label: isRTL ? 'Ø§Ù„ØªØ³Ù„ÙŠÙ… ÙÙŠ Ø§Ù„Ù…ÙˆØ¹Ø¯' : 'On-time Delivery', value: shop.stats.onTimeDelivery, color: 'bg-blue-500' },
-                  { label: isRTL ? 'Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡ Ø§Ù„Ù…ØªÙƒØ±Ø±ÙˆÙ†' : 'Repeat Customers', value: shop.stats.repeatCustomers, color: 'bg-gold-500' },
+                  { label: isRTL ? 'Ù†Ø³Ø¨Ø© Ø§Ù„إنجاز' : 'Completion Rate', value: shop.stats.completionRate, color: 'bg-green-500' },
+                  { label: isRTL ? 'التسليم في الموعد' : 'On-time Delivery', value: shop.stats.onTimeDelivery, color: 'bg-blue-500' },
+                  { label: isRTL ? 'العملاء المتكررون' : 'Repeat Customers', value: shop.stats.repeatCustomers, color: 'bg-gold-500' },
                 ].map((stat) => (
                   <div key={stat.label}>
                     <div className="flex justify-between text-xs mb-1">

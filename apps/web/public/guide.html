@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>مفصل — الدليل الشامل</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: #FAFAF8;
+      color: #1C1C1E;
+      padding: 16px;
+      line-height: 1.6;
+    }
+    .page { max-width: 900px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, #00373E 0%, #481719 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+    header h1 { font-size: 26px; margin-bottom: 4px; }
+    header p { opacity: 0.85; font-size: 14px; }
+    header .url { direction: ltr; font-size: 13px; margin-top: 8px; color: #D4AF37; }
+    nav {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 20px;
+    }
+    nav a {
+      background: #fff;
+      border: 1px solid #D0D6D7;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: #00373E;
+      text-decoration: none;
+    }
+    nav a:hover { background: #F2E8D4; }
+    section {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #E8E8E8;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    h2 {
+      font-size: 18px;
+      color: #00373E;
+      margin-bottom: 12px;
+      padding-right: 10px;
+      border-right: 4px solid #D4AF37;
+    }
+    h3 { font-size: 14px; color: #481719; margin: 14px 0 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+    th, td { border: 1px solid #E8E8E8; padding: 8px 10px; text-align: right; }
+    th { background: #00373E; color: #fff; }
+    tr:nth-child(even) { background: #FAFAF8; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+    .step {
+      background: #F2E8D4;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+    .step strong { color: #00373E; display: block; margin-bottom: 4px; }
+    .badge {
+      display: inline-block;
+      background: #00373E;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 4px;
+    }
+    .links { font-size: 11px; direction: ltr; text-align: left; color: #735B4D; word-break: break-all; }
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #735B4D;
+      padding: 16px;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      nav { display: none; }
+      section { break-inside: avoid; border: none; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>مفصل — الدليل الشامل للمنصة</h1>
+      <p>دليل استخدام كامل: عميل · تاجر · محل خياطة · مندوب · مدير</p>
+      <div class="url">https://mofasal.netlify.app · كلمة المرور: admin123</div>
+    </header>
+
+    <nav>
+      <a href="#overview">نظرة عامة</a>
+      <a href="#customer">العميل</a>
+      <a href="#merchant">التاجر</a>
+      <a href="#tailor">محل الخياطة</a>
+      <a href="#rep">المندوب</a>
+      <a href="#admin">المدير</a>
+      <a href="#demo">وضع العرض</a>
+    </nav>
+
+    <section id="overview">
+      <h2>1. نظرة عامة</h2>
+      <p>منصة <strong>مفصل</strong> تربط العملاء بمحلات الخياطة وتجار الأقمشة، مع ERP متكامل للخياطة ونقطة بيع للتجار.</p>
+      <h3>حسابات العرض</h3>
+      <table>
+        <tr><th>الدور</th><th>الجوال</th><th>كلمة المرور</th><th>اللوحة</th></tr>
+        <tr><td>عميل</td><td>966511111111</td><td>admin123</td><td>/dashboard/customer</td></tr>
+        <tr><td>خياط</td><td>966533333333</td><td>admin123</td><td>/dashboard/tailor</td></tr>
+        <tr><td>تاجر</td><td>966544444444</td><td>admin123</td><td>/dashboard/merchant</td></tr>
+        <tr><td>مندوب</td><td>966522222222</td><td>admin123</td><td>/dashboard/rep</td></tr>
+        <tr><td>مدير</td><td>966500000000</td><td>admin123</td><td>/dashboard/admin</td></tr>
+      </table>
+      <p style="margin-top:10px;font-size:13px">في صفحة الدخول اضغط زر <span class="badge">تجريبي</span> للدور المطلوب.</p>
+    </section>
+
+    <section id="customer">
+      <h2>2. دليل العميل</h2>
+      <h3>الصفحات الرئيسية</h3>
+      <table>
+        <tr><th>الصفحة</th><th>الرابط</th><th>الوظيفة</th></tr>
+        <tr><td>لوحة العميل</td><td>/dashboard/customer</td><td>طلبات أخيرة + روابط سريعة</td></tr>
+        <tr><td>طلب جديد</td><td>/dashboard/customer/orders/new</td><td>5 خطوات: محل → خدمة → مقاس → قماش → دفع</td></tr>
+        <tr><td>حجز قياس</td><td>/dashboard/customer/book-measurement</td><td>6 خطوات: عنوان → مندوب → مواصفات → قماش → موعد → تأكيد</td></tr>
+        <tr><td>طلباتي</td><td>/dashboard/customer/orders</td><td>قائمة + تتبع الحالة</td></tr>
+        <tr><td>مقاساتي</td><td>/dashboard/customer/measurements</td><td>حفظ المقاسات</td></tr>
+        <tr><td>عناويني</td><td>/dashboard/customer/addresses</td><td>إضافة / تعديل / حذف</td></tr>
+      </table>
+      <h3>مسار سريع للطلب</h3>
+      <div class="steps">
+        <div class="step"><strong>1. المحلات</strong>/shops — اختر خياطاً</div>
+        <div class="step"><strong>2. اطلب الآن</strong>من صفحة المحل</div>
+        <div class="step"><strong>3. المقاسات</strong>يدوي أو قياس منزلي</div>
+        <div class="step"><strong>4. الدفع</strong>تأكيد الطلب</div>
+      </div>
+    </section>
+
+    <section id="merchant">
+      <h2>3. دليل التاجر (سوق الأقمشة)</h2>
+      <table>
+        <tr><th>الصفحة</th><th>الرابط</th><th>الوظيفة</th></tr>
+        <tr><td>لوحة التاجر</td><td>/dashboard/merchant</td><td>إحصائيات المبيعات</td></tr>
+        <tr><td>المنتجات</td><td>/dashboard/merchant/products</td><td>كتalog + إضافة منتج</td></tr>
+        <tr><td>التسعير B2B</td><td>/dashboard/merchant/pricing</td><td>شرائح خصم حسب الكمية</td></tr>
+        <tr><td>المخزون</td><td>/dashboard/merchant/inventory</td><td>مستويات + تنبيهات</td></tr>
+        <tr><td>طلبات B2B</td><td>/dashboard/merchant/b2b</td><td>طلبات الجملة</td></tr>
+        <tr><td>المحاسبة</td><td>/dashboard/merchant/accounting</td><td>شجرة حسابات</td></tr>
+        <tr><td>المالية</td><td>/dashboard/merchant/finances</td><td>تقارير مالية</td></tr>
+      </table>
+    </section>
+
+    <section id="tailor">
+      <h2>4. دليل محل الخياطة</h2>
+      <table>
+        <tr><th>الصفحة</th><th>الرابط</th><th>الوظيفة</th></tr>
+        <tr><td>لوحة الخياط</td><td>/dashboard/tailor</td><td>طلبات اليوم + إيرادات</td></tr>
+        <tr><td>الطلبات</td><td>/dashboard/tailor/orders</td><td>قبول / رفض / تغيير الحالة</td></tr>
+        <tr><td>التصنيع</td><td>/dashboard/tailor/manufacturing</td><td>Kanban: قص → خياطة → كي → تغليف</td></tr>
+        <tr><td>الموظفون</td><td>/dashboard/tailor/staff</td><td>إضافة / حذف موظف</td></tr>
+        <tr><td>المشتريات</td><td>/dashboard/tailor/procurement</td><td>أوامر شراء أقمشة</td></tr>
+        <tr><td>الإعدادات</td><td>/dashboard/tailor/settings</td><td>هوية المحل White-Label</td></tr>
+      </table>
+      <h3>مراحل الطلب</h3>
+      <p style="font-size:12px;direction:ltr;text-align:center;background:#F2E8D4;padding:10px;border-radius:8px">
+        PENDING → CONFIRMED → CUTTING → SEWING → IRONING → PACKING → DELIVERED
+      </p>
+      <h3>الهوية (White-Label)</h3>
+      <p style="font-size:13px">من الإعدادات: اختر ألوان المحل + شعار → تظهر للعملاء في <code>/shops/[id]</code></p>
+    </section>
+
+    <section id="rep">
+      <h2>5. دليل المندوب</h2>
+      <table>
+        <tr><th>الصفحة</th><th>الوظيفة</th></tr>
+        <tr><td>/dashboard/rep</td><td>مهام القياس + GPS + تأكيد الوصول</td></tr>
+        <tr><td>/dashboard/rep/assignments</td><td>إدخال مقاسات الثوب الكامل</td></tr>
+      </table>
+    </section>
+
+    <section id="admin">
+      <h2>6. دليل المدير</h2>
+      <div class="steps">
+        <div class="step"><strong>الطلبات</strong>/dashboard/admin/orders</div>
+        <div class="step"><strong>المستخدمون</strong>/dashboard/admin/users</div>
+        <div class="step"><strong>المحلات</strong>/dashboard/admin/shops</div>
+        <div class="step"><strong>التحليلات</strong>/dashboard/admin/analytics</div>
+        <div class="step"><strong>HR</strong>/dashboard/admin/hr</div>
+        <div class="step"><strong>الرواتب</strong>/dashboard/admin/payroll</div>
+        <div class="step"><strong>المشتريات</strong>/dashboard/admin/procurement</div>
+        <div class="step"><strong>POS</strong>/dashboard/admin/pos</div>
+        <div class="step"><strong>الأدوار</strong>/dashboard/admin/roles</div>
+        <div class="step"><strong>التقارير</strong>/dashboard/admin/reports</div>
+      </div>
+    </section>
+
+    <section id="demo">
+      <h2>7. وضع العرض واستكشاف الأخطاء</h2>
+      <table>
+        <tr><th>المشكلة</th><th>الحل</th></tr>
+        <tr><td>صفحة فارغة</td><td>سجّل دخول بزر «تجريبي»</td></tr>
+        <tr><td>API بطيء</td><td>Render مجاني — انتظر ~30 ثانية</td></tr>
+        <tr><td>طلب لا يُنشأ</td><td>Demo Mode مفعّل — استخدم زر تجريبي</td></tr>
+      </table>
+      <h3>روابط سريعة</h3>
+      <div class="links">
+        https://mofasal.netlify.app/login<br/>
+        https://mofasal.netlify.app/shops<br/>
+        https://mofasal.netlify.app/marketplace<br/>
+        https://mofasal.netlify.app/demo-cheat-sheet.html<br/>
+        https://mofasal.netlify.app/guide.html
+      </div>
+    </section>
+
+    <div class="footer">
+      مفصل MOFASAL · الإصدار 1.0 · 12 يونيو 2026 · itbinniser@gmail.com
+    </div>
+  </div>
+</body>
+</html>
