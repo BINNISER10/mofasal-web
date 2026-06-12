@@ -212,7 +212,7 @@ export default function MarketplacePage() {
         subtitle={isRTL
           ? 'أجود أقمشة الثوب السعودي للرجال والأطفال — من تجار موثوقين.'
           : 'Finest Saudi thobe fabrics for men and boys — from trusted merchants.'}
-        image={HOME_IMAGES.fabric}
+        image={HOME_IMAGES.marketplace}
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder={isRTL ? 'ابحث عن قماش أو مادة...' : 'Search fabric or material...'}

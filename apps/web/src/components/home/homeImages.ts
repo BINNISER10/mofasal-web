@@ -11,9 +11,9 @@ export const HOME_IMAGES = {
   tailoring: '/images/sections/category-tailoring.png',
   /** قسم الخدمات — بطاقة 2: سوق الأقمشة (شماغ/أقمشة) */
   fabric: '/images/sections/category-fabric.png',
-  /** قسم الحرفية — أدوات خياطة */
+  marketplace: '/images/sections/marketplace-hero.png',
   craftsmanship: '/images/sections/craftsmanship.png',
-  whiteFabric: '/images/sections/craftsmanship.png',
+  whiteFabric: '/images/sections/fabric-silk-white.png',
   /** صفحة محلات الخياطة — Hero (محل خياطة تقليدي) */
   shops: '/images/sections/shops-hero.png',
   /** صور إضافية للورشة */
@@ -23,7 +23,14 @@ export const HOME_IMAGES = {
     '/images/sections/workshop-thread-spools.png',
     '/images/sections/workshop-supplies.png',
   ],
-  /** قسم المنتجات المختارة */
+  /** صور قسم القماش */
+  fabrics: [
+    '/images/sections/fabric-silk-white.png',
+    '/images/sections/fabric-cream-flow.png',
+    '/images/sections/fabric-white-drape.png',
+    '/images/sections/fabric-texture.png',
+  ],
+  /** قسم المنتجات المختارة (أقمشة) */
   products: [
     '/images/sections/product-1.png',
     '/images/sections/product-2.png',
