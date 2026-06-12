@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ShopService } from '../../services/ShopService';
+import { RankingService } from '../../services/RankingService';
 import { AuthRequest } from '../../middleware/auth';
 import { sendSuccess, sendCreated, sendPaginated } from '../../utils/response';
 
@@ -22,9 +23,30 @@ export class ShopController {
         lat: lat ? parseFloat(lat as string) : undefined, lng: lng ? parseFloat(lng as string) : undefined,
         maxDistance: maxDistance ? parseFloat(maxDistance as string) : undefined,
         search: search as string, isOpen: isOpen === 'true' ? true : isOpen === 'false' ? false : undefined,
-        sort: allowedSort.includes(sort as string) ? (sort as any) : undefined,
+        sort: allowedSort.includes(sort as string) ? (sort as any) : 'smart',
+        userId: req.user?.id,
       });
       sendPaginated(res, result.shops, result.total, result.page, result.limit);
+    } catch (error) { next(error); }
+  }
+
+  static async getRankedShops(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { city, limit } = req.query;
+      const userId = req.user?.id || 'anonymous';
+      const ranked = await RankingService.getRankedShops(userId, {
+        city: city as string,
+        limit: limit ? parseInt(limit as string, 10) : 20,
+      });
+      sendSuccess(res, ranked);
+    } catch (error) { next(error); }
+  }
+
+  static async getShopRanking(req: Request, res: Response, next: NextFunction) {
+    try {
+      const report = await RankingService.getShopRankingReport(req.params.id);
+      if (!report) return res.status(404).json({ success: false, message: 'Shop not found in ranking' });
+      sendSuccess(res, report);
     } catch (error) { next(error); }
   }
 
