@@ -919,7 +919,11 @@ export function getDemoApiResponse(path: string, method = 'GET', body?: unknown)
         totalOrders: 1248,
         totalRevenue: 892000,
         recentOrders: DEMO_ORDERS.slice(0, 3),
-        recentUsers: [],
+        recentUsers: [
+          { id: 'demo-customer', name: 'أحمد العميل', status: 'ACTIVE', createdAt: 'منذ ساعتين' },
+          { id: 'demo-tailor', name: 'خالد الخياط', status: 'ACTIVE', createdAt: 'منذ 5 ساعات' },
+          { id: 'demo-merchant', name: 'سعد التاجر', status: 'ACTIVE', createdAt: 'أمس' },
+        ],
         revenueByMonth: DEMO_REVENUE_MONTHS,
         ordersByStatus: DEMO_ORDERS_BY_STATUS,
       },
