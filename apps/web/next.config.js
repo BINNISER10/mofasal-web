@@ -1,9 +1,14 @@
-/** @type {import('next').NextConfig} */
 const path = require('path');
+const os = require('os');
 
+const isNetlify = process.env.NETLIFY === 'true';
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   // standalone للـ Docker/Render — Netlify يستخدم runtime الخاص به
-  ...(process.env.NETLIFY ? {} : { output: 'standalone' }),
+  ...(isNetlify ? {} : { output: 'standalone' }),
+  // على Google Drive محلياً: .next خارج المجلد؛ على Netlify: المسار الافتراضي
+  distDir: isNetlify ? '.next' : path.join(os.tmpdir(), 'mufasal-web-next'),
   outputFileTracingRoot: path.join(__dirname, '../../'),
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
@@ -24,17 +29,19 @@ const nextConfig = {
   experimental: {
     optimizeCss: false,
     externalDir: true,
-    webpackBuildWorker: false,
   },
-  webpack: (config) => {
-    config.parallelism = 1;
+  webpack: (config, { dev }) => {
+    if (dev) config.cache = false;
     const sharedRoot = path.resolve(__dirname, '../../packages/shared');
     const uiRoot = path.resolve(__dirname, '../../packages/ui/src');
+    const rootModules = path.resolve(__dirname, '../../node_modules');
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@mufasal/shared$': path.join(sharedRoot, 'index.ts'),
       '@mufasal/shared': sharedRoot,
+      '@mufasal/ui$': path.join(uiRoot, 'index.ts'),
       '@mufasal/ui': uiRoot,
-      zod: path.resolve(__dirname, 'node_modules/zod'),
+      zod: path.join(rootModules, 'zod'),
     };
     config.resolve.extensions = ['.ts', '.tsx', ...config.resolve.extensions];
     return config;

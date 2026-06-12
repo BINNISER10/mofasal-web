@@ -24,9 +24,6 @@ const STEPS = [
   { id: 6, ar: 'تأكيد الحجز', en: 'Confirm' },
 ];
 
-const [reps, setReps] = useState<any[]>([]);
-const [loadingReps, setLoadingReps] = useState(false);
-
 const TIME_SLOTS = [
   '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00',
 ];
@@ -41,6 +38,8 @@ export default function BookMeasurementPage() {
   const router = useRouter();
   const { isRTL } = useAppStore();
   const [step, setStep] = useState(1);
+  const [reps, setReps] = useState<any[]>([]);
+  const [loadingReps, setLoadingReps] = useState(false);
   const [address, setAddress] = useState('');
   const [selectedRep, setSelectedRep] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);

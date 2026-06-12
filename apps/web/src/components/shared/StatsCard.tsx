@@ -9,7 +9,7 @@ interface StatsCardProps {
   value: string | number;
   trend?: number;
   trendLabel?: string;
-  color?: 'primary' | 'gold' | 'accent' | 'secondary' | 'success';
+  color?: 'primary' | 'gold' | 'accent' | 'secondary' | 'success' | 'info' | 'danger';
   className?: string;
 }
 
@@ -49,6 +49,20 @@ const colorConfig = {
     trendUp: 'text-[#00373E]',
     trendDown: 'text-[#481719]',
   },
+  info: {
+    border: 'border-l-[#2563EB]',
+    iconBg: 'bg-[#2563EB]/10',
+    iconColor: 'text-[#2563EB]',
+    trendUp: 'text-[#00373E]',
+    trendDown: 'text-[#481719]',
+  },
+  danger: {
+    border: 'border-l-[#481719]',
+    iconBg: 'bg-[#481719]/10',
+    iconColor: 'text-[#481719]',
+    trendUp: 'text-[#00373E]',
+    trendDown: 'text-[#481719]',
+  },
 };
 
 export function StatsCard({
@@ -60,7 +74,7 @@ export function StatsCard({
   color = 'primary',
   className,
 }: StatsCardProps) {
-  const config = colorConfig[color];
+  const config = colorConfig[color] ?? colorConfig.primary;
 
   return (
     <div

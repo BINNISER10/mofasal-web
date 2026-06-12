@@ -10,7 +10,7 @@ import { StatsCard } from '@/components/shared/StatsCard';
 import toast from 'react-hot-toast';
 import {
   MapPin, Clock, User, Phone, Navigation, CheckCircle2, Loader2,
-  ArrowRight, AlertCircle, Car, Ruler, Calendar,
+  ArrowRight, AlertCircle, Car, Ruler, Calendar, ClipboardList,
 } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, { ar: string; color: 'info' | 'success' | 'gold' | 'danger' | 'primary' }> = {

@@ -2,11 +2,34 @@
   "name": "mufasal",
   "version": "1.0.0",
   "private": true,
-  "description": "MUFASAL",
+  "description": "MUFASAL - Custom Tailored Precision Platform for Men's Tailoring & Children's Clothing",
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "bash scripts/render-build.sh",
-    "start": "cd apps/web && npm start"
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "npm run dev --workspace=@mufasal/web",
+    "dev:api": "cd services/api && npm run dev",
+    "dev:mobile": "cd apps/mobile && npm run start",
+    "build": "npm run build --workspace=@mufasal/web",
+    "build:web": "npm run build --workspace=@mufasal/web",
+    "build:shared": "npm run build --workspace=@mufasal/shared",
+    "build:api": "cd services/api && npm run build",
+    "lint": "npm run lint --workspace=@mufasal/web",
+    "test": "cd services/api && npm run test",
+    "db:migrate": "cd services/api && npx prisma migrate dev",
+    "db:seed": "cd services/api && npx prisma db seed",
+    "db:studio": "cd services/api && npx prisma studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "setup": "npm install"
   },
-  "engines": { "node": "20.x" },
-  "devDependencies": { "typescript": "^5.3.3" }
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  }
 }
