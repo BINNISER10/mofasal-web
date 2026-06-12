@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import siteConfig from '@/data/site-config.json';
-import { HOME_IMAGES, HOME_MEDIA } from './homeImages';
 
 interface HomeHeroProps {
   isRTL: boolean;
@@ -19,25 +18,7 @@ export function HomeHero({ isRTL }: HomeHeroProps) {
   const { hero } = siteConfig;
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
-      <img
-        src={HOME_IMAGES.hero}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-        aria-hidden
-      />
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        poster={HOME_IMAGES.hero}
-        className="absolute inset-0 w-full h-full object-cover"
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-      >
-        <source src={hero.videoUrl || HOME_MEDIA.heroVideo} type="video/mp4" />
-      </video>
-
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-[#001a1d] via-[#00373E] to-[#481719]">
       <div className="absolute inset-0 bg-gradient-to-r from-primary-950/96 via-primary-900/80 to-primary-800/30" />
       <div className="absolute inset-0 bg-gradient-to-t from-primary-950 via-transparent to-primary-900/50" />
       <div className="absolute inset-0 opacity-10 pointer-events-none">

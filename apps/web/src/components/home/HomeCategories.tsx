@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import siteConfig from '@/data/site-config.json';
@@ -56,13 +55,15 @@ export function HomeCategories({ isRTL }: HomeCategoriesProps) {
               href={cat.href}
               className="group block overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-900"
             >
-              <div className="relative aspect-[4/3] md:aspect-[16/10] overflow-hidden">
-                <Image
+              <div className="relative aspect-[4/3] md:aspect-[16/10] overflow-hidden bg-neutral-200 dark:bg-neutral-800">
+                <img
                   src={cat.image}
                   alt={isRTL ? cat.labelAr : cat.labelEn}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = '/images/lomar/fabric-category.png';
+                  }}
                 />
               </div>
               <div className="p-6 md:p-8 border-t border-[#E8E8E8] dark:border-white/10 bg-white dark:bg-[#111]">

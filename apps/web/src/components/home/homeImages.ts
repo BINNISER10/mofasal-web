@@ -4,23 +4,29 @@ export const HOME_MEDIA = {
   lookbookImage: (index: number) => `/images/fashion/model-${index + 1}.jpg`,
 } as const;
 
-/** صور محلية للمكونات الاختيارية (HomeCategories / HomeCraftsmanship) */
+/** صور محلية — كل مفتاح = قسم في الصفحة الرئيسية */
 export const HOME_IMAGES = {
-  hero: '/images/hero-thobe.jpg',
+  /** Hero — محذوف حالياً (خلفية متدرجة فقط) */
+  hero: '/images/sections/hero.jpg',
   heroSlides: [
-    '/images/hero-thobe.jpg',
+    '/images/sections/hero.jpg',
     '/images/thobe-black.jpg',
     '/images/thobe-senior.jpg',
   ],
-  tailoring: '/images/tailor-shop.jpg',
-  fabric: '/images/thobe-looking-up.jpg',
-  craftsmanship: '/images/workshop.jpg',
-  whiteFabric: '/images/hero-thobe.jpg',
-  shops: '/images/thobe-casual.jpg',
+  /** قسم الخدمات — بطاقة 1: تفصيل الثوب */
+  tailoring: '/images/sections/category-tailoring.jpg',
+  /** قسم الخدمات — بطاقة 2: سوق الأقمشة */
+  fabric: '/images/sections/category-fabric.jpg',
+  /** قسم الحرفية — صورة جانبية */
+  craftsmanship: '/images/sections/craftsmanship.jpg',
+  whiteFabric: '/images/sections/craftsmanship.jpg',
+  /** صفحة المحلات — Hero */
+  shops: '/images/sections/shops-hero.jpg',
+  /** قسم المنتجات المختارة */
   products: [
-    '/images/hero-thobe.jpg',
-    '/images/thobe-black.jpg',
-    '/images/thobe-grey.jpg',
-    '/images/thobe-blue.jpg',
+    '/images/sections/product-1.jpg',
+    '/images/sections/product-2.jpg',
+    '/images/sections/product-3.jpg',
+    '/images/sections/product-4.jpg',
   ],
 } as const;
