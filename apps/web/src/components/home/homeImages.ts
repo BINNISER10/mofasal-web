@@ -11,15 +11,17 @@ export const HOME_IMAGES = {
   tailoring: '/images/sections/category-tailoring.png',
   /** قسم الخدمات — بطاقة 2: سوق الأقمشة (شماغ/أقمشة) */
   fabric: '/images/sections/category-fabric.png',
-  /** قسم الحرفية — مقص وباترون */
+  /** قسم الحرفية — أدوات خياطة */
   craftsmanship: '/images/sections/craftsmanship.png',
   whiteFabric: '/images/sections/craftsmanship.png',
-  /** صفحة محلات الخياطة — Hero (ماكينة خياطة حديثة) */
+  /** صفحة محلات الخياطة — Hero (محل خياطة تقليدي) */
   shops: '/images/sections/shops-hero.png',
   /** صور إضافية للورشة */
   workshop: [
     '/images/sections/workshop-needle.png',
     '/images/sections/workshop-sewing.png',
+    '/images/sections/workshop-thread-spools.png',
+    '/images/sections/workshop-supplies.png',
   ],
   /** قسم المنتجات المختارة */
   products: [
