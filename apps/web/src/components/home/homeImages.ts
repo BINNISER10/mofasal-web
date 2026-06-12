@@ -29,6 +29,7 @@ export const HOME_IMAGES = {
     '/images/sections/fabric-cream-flow.png',
     '/images/sections/fabric-white-drape.png',
     '/images/sections/fabric-texture.png',
+    '/images/sections/fabric-suit-fold.png',
   ],
   /** قسم المنتجات المختارة (أقمشة) */
   products: [
