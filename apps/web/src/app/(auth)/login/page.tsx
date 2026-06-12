@@ -102,6 +102,11 @@ export default function LoginPage() {
           <p className="text-sm text-white/70 mt-1">
             {isRTL ? 'مرحباً بعودتك إلى مفصل' : 'Welcome back to MUFASAL'}
           </p>
+          {isDemoModeEnabled() && (
+            <p className="mt-2 inline-block text-[11px] font-bold px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/30">
+              {isRTL ? 'وضع العرض مفعّل — يعمل بدون خادم' : 'Demo mode — works offline'}
+            </p>
+          )}
         </div>
 
         <Card className="p-6">
@@ -164,6 +169,7 @@ export default function LoginPage() {
                 <button
                   key={demo.role}
                   type="button"
+                  disabled={isLoading}
                   onClick={() => handleDemoLogin(demo)}
                   className={`py-2 px-3 border rounded-xl text-xs font-bold transition-colors ${demo.color}`}
                 >
@@ -171,6 +177,9 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
+            <p className="text-[10px] text-gray-400 text-center mt-2">
+              {isRTL ? 'كلمة المرور: admin123' : 'Password: admin123'}
+            </p>
           </div>
         </Card>
       </div>

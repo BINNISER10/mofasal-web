@@ -59,6 +59,9 @@ export default function CustomerDashboardPage() {
             <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => router.push('/dashboard/customer/orders/new')}>
               {isRTL ? 'طلب جديد' : 'New Order'}
             </Button>
+            <Button variant="gold" size="sm" icon={<Ruler size={14} />} onClick={() => router.push('/dashboard/customer/book-measurement')}>
+              {isRTL ? 'قياس منزلي' : 'Home Measurement'}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => router.push('/shops')}>
               {isRTL ? 'المتاجر' : 'Shops'}
             </Button>
