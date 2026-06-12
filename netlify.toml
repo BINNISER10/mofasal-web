@@ -9,6 +9,8 @@
   package = "@netlify/plugin-nextjs"
 
 [build.environment]
+  # تجاوز submodule معطوب (_archive/api_python) أثناء clone
+  GIT_SUBMODULE_STRATEGY = "none"
   NODE_VERSION = "20"
   NETLIFY = "true"
   NPM_CONFIG_MAXSOCKETS = "2"
