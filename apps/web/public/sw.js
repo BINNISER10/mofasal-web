@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mufasal-v1';
+const CACHE_NAME = 'mufasal-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -46,16 +46,20 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.match(/\.(js|css|woff2?|ttf|eot)$/)
   ) {
+    // network-first for JS/CSS so deploys don't serve stale bundles (hydration errors)
     event.respondWith(
-      caches.open(CACHE_NAME).then((cache) =>
-        cache.match(request).then((cached) => {
-          if (cached) return cached;
-          return fetch(request).then((response) => {
-            if (response.ok) cache.put(request, response.clone());
-            return response;
-          });
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+          }
+          return response;
         })
-      )
+        .catch(() =>
+          caches.open(CACHE_NAME).then((cache) =>
+            cache.match(request).then((cached) => cached || fetch(request))
+          )
+        )
     );
     return;
   }

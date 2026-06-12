@@ -82,7 +82,7 @@ export default function RootLayout({
         {/* Anti-FOUC: apply saved theme before paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('mufasal-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});})}`,
+            __html: `(function(){try{var t=localStorage.getItem('mufasal-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();try{var tok=localStorage.getItem('token');if(tok&&tok.indexOf('demo-token-')===0){document.documentElement.setAttribute('data-demo-role',tok.replace('demo-token-',''))}}catch(e){};if('serviceWorker' in navigator){var h=location.hostname;var isLocal=h==='localhost'||h==='127.0.0.1';if(isLocal){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})});if(window.caches){caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})})}}else{window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}}`,
           }}
         />
       </head>

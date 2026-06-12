@@ -9,7 +9,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { authApi } from '@/lib/api/auth';
 import { Eye, EyeOff, Phone, Lock, AlertCircle, Scissors } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { DEMO_CREDENTIALS, getDemoSession, isDemoModeEnabled } from '@/lib/demoAuth';
+import { getDemoSession, isDemoModeEnabled } from '@/lib/demoAuth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,39 +28,19 @@ export default function LoginPage() {
     { role: 'customer' as const, label: isRTL ? 'عميل' : 'Customer', color: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100', route: '/dashboard/customer' },
   ];
 
-  const handleDemoLogin = async (demo: typeof DEMO_USERS[0]) => {
+  const handleDemoLogin = (demo: typeof DEMO_USERS[0]) => {
     setIsLoading(true);
-    const creds = DEMO_CREDENTIALS[demo.role];
-    try {
-      const response = await authApi.login({
-        phone: creds?.phone ?? '966500000000',
-        password: creds?.password ?? 'admin123',
-      });
-      setUser(response.user);
-      setToken(response.token);
-      localStorage.setItem('token', response.token);
-      toast.success(isRTL ? `دخول تجريبي: ${demo.label}` : `Demo login: ${demo.label}`);
-      router.push(demo.route);
-    } catch {
-      if (isDemoModeEnabled()) {
-        const session = getDemoSession(demo.role);
-        setUser(session.user);
-        setToken(session.token);
-        localStorage.setItem('token', session.token);
-        toast.success(
-          isRTL
-            ? `وضع العرض (بدون خادم): ${demo.label}`
-            : `Demo mode (offline): ${demo.label}`,
-        );
-        router.push(demo.route);
-      } else {
-        toast.error(
-          isRTL ? 'تعذر الاتصال بالخادم — جرّب لاحقاً' : 'Cannot connect to API — try again later',
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    const session = getDemoSession(demo.role);
+    setUser(session.user);
+    setToken(session.token);
+    useAuthStore.setState({ isLoading: false, isAuthenticated: true });
+    localStorage.setItem('token', session.token);
+    localStorage.setItem('refreshToken', `demo-refresh-${demo.role}`);
+    toast.success(
+      isRTL ? `دخول تجريبي: ${demo.label}` : `Demo login: ${demo.label}`,
+    );
+    router.replace(demo.route);
+    setIsLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +51,9 @@ export default function LoginPage() {
       const response = await authApi.login({ phone: `966${phone}`, password });
       setUser(response.user);
       setToken(response.token);
+      useAuthStore.setState({ isLoading: false, isAuthenticated: true });
       localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
       toast.success(isRTL ? 'تم تسجيل الدخول بنجاح' : 'Login successful');
       const roleRoutes: Record<string, string> = {
         admin: '/dashboard/admin',
@@ -80,7 +62,7 @@ export default function LoginPage() {
         customer: '/dashboard/customer',
         rep: '/dashboard/rep',
       };
-      router.push(roleRoutes[response.user.role] || '/dashboard');
+      router.replace(roleRoutes[response.user.role] || '/dashboard');
     } catch (err: any) {
       setError(err.message || (isRTL ? 'فشل تسجيل الدخول' : 'Login failed'));
     } finally {

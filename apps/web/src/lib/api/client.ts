@@ -1,8 +1,9 @@
 import { useAuthStore } from '@/lib/stores/authStore';
-import { isDemoModeEnabled } from '@/lib/demoAuth';
+import { isDemoModeEnabled, isDemoToken } from '@/lib/demoAuth';
 import { getDemoApiResponse } from '@/lib/demoData';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api/v1';
+const FETCH_TIMEOUT_MS = 6000;
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
@@ -15,8 +16,13 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
+  private getToken(): string | null {
+    return useAuthStore.getState().token
+      ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+  }
+
   private getHeaders(): HeadersInit {
-    const token = useAuthStore.getState().token;
+    const token = this.getToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -36,31 +42,63 @@ class ApiClient {
     return url.toString();
   }
 
-  private isDemoSession(): boolean {
-    const token = useAuthStore.getState().token;
-    return isDemoModeEnabled() && !!token?.startsWith('demo-token');
+  private hasDemoToken(): boolean {
+    return isDemoToken(this.getToken());
   }
 
-  private tryDemoResponse<T>(path: string, method = 'GET'): T | undefined {
-    if (!isDemoModeEnabled()) return undefined;
-    const demo = getDemoApiResponse(path, method);
+  private isDemoSession(): boolean {
+    return this.hasDemoToken() || isDemoModeEnabled();
+  }
+
+  private buildDemoPath(path: string, params?: Record<string, string>): string {
+    if (!params || !Object.keys(params).length) return path;
+    const qs = new URLSearchParams(params).toString();
+    return `${path}?${qs}`;
+  }
+
+  private tryDemoResponse<T>(path: string, method = 'GET', body?: unknown): T | undefined {
+    if (!this.isDemoSession()) return undefined;
+    const demo = getDemoApiResponse(path, method, body);
     return demo !== undefined ? (demo as T) : undefined;
   }
 
-  private async request<T>(path: string, config: RequestConfig = {}): Promise<T> {
-    const { params, method = 'GET', ...restConfig } = config;
+  private shouldUseDemo(path: string): boolean {
+    if (this.hasDemoToken()) return true;
+    if (isDemoModeEnabled()) return true;
+    return path.split('?')[0].startsWith('/auth/');
+  }
 
-    if (this.isDemoSession()) {
-      const demo = this.tryDemoResponse<T>(path, method);
+  private async fetchWithTimeout(url: string, config: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      return await fetch(url, { ...config, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private async request<T>(path: string, config: RequestConfig = {}): Promise<T> {
+    const { params, method = 'GET', body: reqBody, ...restConfig } = config;
+    const demoPath = this.buildDemoPath(path, params);
+    const parsedBody = reqBody ? JSON.parse(typeof reqBody === 'string' ? reqBody : JSON.stringify(reqBody)) : undefined;
+
+    if (this.shouldUseDemo(demoPath)) {
+      const demo = this.tryDemoResponse<T>(demoPath, method, parsedBody);
       if (demo !== undefined) return demo;
+      // في وضع العرض: أي mutation غير معرّفة تنجح بدلاً من كسر الأزرار
+      if (this.isDemoSession() && method !== 'GET') {
+        return { success: true, updated: true } as T;
+      }
     }
 
     const url = this.buildUrl(path, params);
 
     try {
-      const response = await fetch(url, {
+      const response = await this.fetchWithTimeout(url, {
         ...restConfig,
         method,
+        body: reqBody,
         headers: {
           ...this.getHeaders(),
           ...restConfig.headers,
@@ -75,7 +113,7 @@ class ApiClient {
 
       return json.data !== undefined ? json.data : json;
     } catch (error) {
-      const demo = this.tryDemoResponse<T>(path, method);
+      const demo = this.tryDemoResponse<T>(demoPath, method, parsedBody);
       if (demo !== undefined) return demo;
       throw error;
     }

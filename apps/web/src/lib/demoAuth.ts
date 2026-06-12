@@ -4,7 +4,6 @@ import type { User } from '@/lib/stores/authStore';
 const baseUser = (overrides: Partial<User> & Pick<User, 'id' | 'name' | 'email' | 'phone' | 'role'>): User => ({
   isActive: true,
   createdAt: new Date().toISOString(),
-  shopId: 'demo-shop',
   ...overrides,
 });
 
@@ -27,6 +26,7 @@ const DEMO_USERS: Record<string, { user: User; token: string }> = {
       email: 'tailor@mufasal.com',
       phone: '966533333333',
       role: 'tailor',
+      shopId: 'shop-riyadh-1',
     }),
   },
   merchant: {
@@ -37,6 +37,7 @@ const DEMO_USERS: Record<string, { user: User; token: string }> = {
       email: 'merchant@mufasal.com',
       phone: '966544444444',
       role: 'merchant',
+      merchantId: 'demo-merchant',
     }),
   },
   rep: {
@@ -65,8 +66,19 @@ export function isDemoModeEnabled(): boolean {
   return process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 }
 
+export function isDemoToken(token: string | null | undefined): boolean {
+  return !!token?.startsWith('demo-token');
+}
+
 export function getDemoSession(role: keyof typeof DEMO_USERS) {
   return DEMO_USERS[role] ?? DEMO_USERS.customer;
+}
+
+/** استرجاع مستخدم العرض من التوكن المحفوظ (بعد تحديث الصفحة) */
+export function getDemoUserFromToken(token: string | null | undefined) {
+  if (!token?.startsWith('demo-token-')) return null;
+  const role = token.replace('demo-token-', '') as keyof typeof DEMO_USERS;
+  return DEMO_USERS[role]?.user ?? null;
 }
 
 export const DEMO_CREDENTIALS: Record<string, { phone: string; password: string; route: string }> = {

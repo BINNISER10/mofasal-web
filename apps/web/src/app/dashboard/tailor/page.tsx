@@ -1,16 +1,26 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { ordersApi } from '@/lib/api/orders';
-import { ShoppingBag, Clock, Users, DollarSign, Plus, UserPlus, Package, TrendingUp } from 'lucide-react';
-import { MufasalBarChart, CHART_COLORS } from '@/components/shared/Charts';
+import { DEMO_ORDERS } from '@/lib/demoData';
+import { isDemoToken } from '@/lib/demoAuth';
+import { ShoppingBag, Clock, Users, DollarSign, Plus, UserPlus, Package } from 'lucide-react';
+import { CHART_COLORS } from '@/lib/chartColors';
 import { formatCurrency } from '@/lib/utils/formatting';
-import DashboardLoading from '../loading';
 import Link from 'next/link';
+
+const MufasalBarChart = dynamic(
+  () => import('@/components/shared/Charts').then((m) => m.MufasalBarChart),
+  {
+    ssr: false,
+    loading: () => <div className="h-[190px] rounded-xl bg-gray-100 dark:bg-slate-800 animate-pulse" />,
+  }
+);
 
 const weeklyOrders = [
   { name: 'سبت', value: 18 },
@@ -22,43 +32,74 @@ const weeklyOrders = [
   { name: 'جمعة', value: 12 },
 ];
 
+function mapRecentOrders(orders: any[]) {
+  return orders.slice(0, 4).map((o) => ({
+    id: `#${o.orderNumber || o.id?.slice(0, 6)}`,
+    customer: o.customerName || o.customer?.name || '—',
+    status: o.status || 'PENDING',
+    amount: o.totalAmount || 0,
+    time: o.createdAt ? new Date(o.createdAt).toLocaleDateString('ar') : '',
+  }));
+}
+
+function calcStats(orders: any[]) {
+  const today = new Date().toDateString();
+  const todayCount = orders.filter((o) => new Date(o.createdAt).toDateString() === today).length;
+  const pending = orders.filter((o) => o.status === 'PENDING').length;
+  const revenue = orders
+    .filter((o) => new Date(o.createdAt).toDateString() === today)
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  return { today: todayCount, pending, revenue };
+}
+
+function readDemoOrders() {
+  if (typeof window === 'undefined') return null;
+  const token = localStorage.getItem('token');
+  return isDemoToken(token) ? DEMO_ORDERS : null;
+}
+
 export default function TailorDashboardPage() {
   const { isRTL } = useAppStore();
-  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ today: 0, pending: 0, revenue: 0 });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [recentOrders, setRecentOrders] = useState<ReturnType<typeof mapRecentOrders>>([]);
 
   useEffect(() => {
-    setMounted(true);
     let active = true;
-    ordersApi.list({ limit: '50' })
-      .then((res) => {
-        if (!active || !res.orders?.length) return;
-        const orders: any[] = res.orders;
-        const today = new Date().toDateString();
-        const todayCount = orders.filter((o) => new Date(o.createdAt).toDateString() === today).length;
-        const pending = orders.filter((o) => o.status === 'PENDING').length;
-        const revenue = orders
-          .filter((o) => new Date(o.createdAt).toDateString() === today)
-          .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-        setStats({ today: todayCount, pending, revenue });
-        setRecentOrders(orders.slice(0, 4).map((o) => ({
-          id: `#${o.orderNumber || o.id?.slice(0, 6)}`,
-          customer: o.customerName || o.customer?.name || '—',
-          status: o.status || 'PENDING',
-          amount: o.totalAmount || 0,
-          time: o.createdAt ? new Date(o.createdAt).toLocaleDateString('ar') : '',
-        })));
-      })
-      .catch(() => { /* فارغ عند الفشل */ })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
 
-  if (!mounted) {
-    return <DashboardLoading />;
-  }
+    const demo = readDemoOrders();
+    if (demo?.length) {
+      setStats(calcStats(demo));
+      setRecentOrders(mapRecentOrders(demo));
+      setLoading(false);
+      return;
+    }
+
+    const safety = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 3000);
+
+    ordersApi
+      .list({ limit: '50' })
+      .then((res) => {
+        if (!active) return;
+        const orders = res.orders ?? [];
+        if (orders.length) {
+          setStats(calcStats(orders));
+          setRecentOrders(mapRecentOrders(orders));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(safety);
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      clearTimeout(safety);
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -107,7 +148,7 @@ export default function TailorDashboardPage() {
                 </div>
                 <div className="text-left">
                   <p className="font-semibold text-sm">{formatCurrency(order.amount)}</p>
-                  <Badge variant={order.status === 'PENDING' ? 'warning' : order.status === 'TAKING_MEASUREMENTS' ? 'info' : order.status === 'SEWING_ASSEMBLY' ? 'gold' : 'info'} size="sm">
+                  <Badge variant={order.status === 'PENDING' ? 'gold' : order.status === 'SEWING_ASSEMBLY' ? 'gold' : 'primary'} size="sm">
                     {isRTL ? ({ PENDING: 'قيد الانتظار', TAKING_MEASUREMENTS: 'أخذ مقاسات', SEWING_ASSEMBLY: 'خياطة', ON_WAY_TO_CUSTOMER: 'توصيل' } as Record<string, string>)[order.status] || order.status : order.status}
                   </Badge>
                 </div>
@@ -129,7 +170,7 @@ export default function TailorDashboardPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
             <Button href="/dashboard/tailor/orders" variant="primary" size="lg" fullWidth icon={<Plus size={18} />}>
-              {isRTL ? 'طلب جديد' : 'New Order'}
+              {isRTL ? 'لوحة الطلبات' : 'Orders Board'}
             </Button>
             <Button href="/dashboard/tailor/staff" variant="gold" size="lg" fullWidth icon={<UserPlus size={18} />}>
               {isRTL ? 'إضافة موظف' : 'Add Staff'}
