@@ -36,9 +36,16 @@ export default function TailorSettingsPage() {
   const [deliveryToggles, setDeliveryToggles] = useState({
     shop_vehicle: true,
     uber_direct: false,
-    careen: true,
+    careem: true,
     smsa: false,
   });
+
+  const deliveryLabels: Record<string, { ar: string; en: string }> = {
+    shop_vehicle: { ar: 'سيارة المحل', en: 'Shop Vehicle' },
+    uber_direct: { ar: 'أوبر مباشر', en: 'Uber Direct' },
+    careem: { ar: 'كريم', en: 'Careem' },
+    smsa: { ar: 'سمسا', en: 'SMSA' },
+  };
 
   const [workingHours, setWorkingHours] = useState({
     sat: { open: '09:00', close: '21:00', isOpen: true },
@@ -178,11 +185,14 @@ export default function TailorSettingsPage() {
         <h3 className="font-bold text-[#00373E] mb-4">{isRTL ? 'خدمات التوصيل' : 'Delivery Services'}</h3>
         <div className="space-y-4">
           {Object.entries(deliveryToggles).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between">
+            <div key={key} className="flex items-center justify-between py-2 border-b border-[#D0D6D7]/20 last:border-0">
               <div>
-                <p className="text-sm font-semibold text-[#00373E]">{key.replace('_', ' ').toUpperCase()}</p>
+                <p className="text-sm font-semibold text-[#00373E]">
+                  {isRTL ? deliveryLabels[key]?.ar : deliveryLabels[key]?.en}
+                </p>
+                <p className="text-xs text-[#735B4D]/60">{key.replace('_', ' ')}</p>
               </div>
-              <Toggle checked={value} onChange={(v) => setDeliveryToggles({...deliveryToggles, [key]: v})} />
+              <Toggle checked={value} onChange={(v) => setDeliveryToggles({ ...deliveryToggles, [key]: v })} />
             </div>
           ))}
         </div>
