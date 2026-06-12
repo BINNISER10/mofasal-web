@@ -1,33 +1,30 @@
-# مفصل — نشر الويب على Netlify (الواجهة فقط)
-# API يُستضاف على Render: render-api-only.yaml
+# مفصل — Netlify (Next.js monorepo)
 
 [build]
-  command = "bash scripts/netlify-build.sh"
+  command = "cd apps/web && npm ci --no-audit --no-fund --ignore-scripts --omit=optional && npx prisma generate --schema=./prisma/schema.prisma && npm run build"
   publish = "apps/web/.next"
-
-# تسريع البناء — تجنب معالجة إضافية
-[build.processing]
-  skip_processing = true
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
 [build.environment]
-  # تجاوز submodule معطوب (_archive/api_python) أثناء clone
   GIT_SUBMODULE_STRATEGY = "none"
   NODE_VERSION = "20"
   NETLIFY = "true"
   NPM_CONFIG_MAXSOCKETS = "2"
   NODE_OPTIONS = "--max-old-space-size=6144"
   NEXT_TELEMETRY_DISABLED = "1"
+  GENERATE_SOURCEMAP = "false"
   DATABASE_URL = "postgresql://build:build@localhost:5432/build?schema=public"
   DIRECT_DATABASE_URL = "postgresql://build:build@localhost:5432/build?schema=public"
-  # حدّث بعد نشر API على Render:
-  NEXT_PUBLIC_API_URL = "https://mufasal-api.onrender.com/api/v1"
+  NEXT_PUBLIC_API_URL = "https://mofasal-api.onrender.com/api/v1"
   NEXT_PUBLIC_DEMO_MODE = "true"
 
 [context.production.environment]
-  NEXT_PUBLIC_APP_URL = "https://mufasal.netlify.app"
+  NEXT_PUBLIC_APP_URL = "https://mofasal.netlify.app"
+
+[build.processing]
+  skip_processing = true
 
 [[headers]]
   for = "/*"
