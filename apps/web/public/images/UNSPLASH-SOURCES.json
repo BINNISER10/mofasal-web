@@ -1,0 +1,214 @@
+{
+  "version": "1.1",
+  "license": "Unsplash License — https://unsplash.com/license",
+  "site": "https://unsplash.com",
+  "restoreScript": "node scripts/restore-unsplash-images.js --all",
+  "note": "كل ملف محلي له slug Unsplash — إذا ضاعت الصورة شغّل السكربت أو افتح unsplashPage يدوياً",
+  "images": {
+    "sections/hero.png": {
+      "unsplashSlug": "7KGeiYHx13g",
+      "unsplashPage": "https://unsplash.com/photos/7KGeiYHx13g",
+      "originalFile": "e_i9-7KGeiYHx13g-unsplash",
+      "photographer": "e_i9",
+      "group": "hero"
+    },
+    "sections/category-tailoring.png": {
+      "unsplashSlug": "sCSIl_AMxPc",
+      "unsplashPage": "https://unsplash.com/photos/sCSIl_AMxPc",
+      "originalFile": "alexander-mass-sCSIl_AMxPc-unsplash",
+      "photographer": "Alexander Mass",
+      "group": "tailoring"
+    },
+    "sections/shops-hero.png": {
+      "unsplashSlug": "C1k4xDW-blE",
+      "unsplashPage": "https://unsplash.com/photos/C1k4xDW-blE",
+      "originalFile": "niloofar-kanani-C1k4xDW-blE-unsplash",
+      "photographer": "Niloofar Kanani",
+      "group": "tailoring"
+    },
+    "sections/craftsmanship.png": {
+      "unsplashSlug": "WdcHk0qjWSo",
+      "unsplashPage": "https://unsplash.com/photos/WdcHk0qjWSo",
+      "originalFile": "sara-bach-WdcHk0qjWSo-unsplash",
+      "photographer": "Sara Bach",
+      "group": "tailoring"
+    },
+    "sections/workshop-needle.png": {
+      "unsplashSlug": "cVqmAHQ1xj4",
+      "unsplashPage": "https://unsplash.com/photos/cVqmAHQ1xj4",
+      "originalFile": "every-angle-cVqmAHQ1xj4-unsplash",
+      "photographer": "Every Angle",
+      "group": "tailoring"
+    },
+    "sections/workshop-sewing.png": {
+      "unsplashSlug": "tabzu_kbVs0",
+      "unsplashPage": "https://unsplash.com/photos/tabzu_kbVs0",
+      "originalFile": "j-williams-tabzu_kbVs0-unsplash",
+      "photographer": "J Williams",
+      "group": "tailoring"
+    },
+    "sections/workshop-thread-spools.png": {
+      "unsplashSlug": "YyQULYLuRnE",
+      "unsplashPage": "https://unsplash.com/photos/YyQULYLuRnE",
+      "originalFile": "nathan-dumlao-YyQULYLuRnE-unsplash",
+      "photographer": "Nathan Dumlao",
+      "group": "tailoring"
+    },
+    "sections/workshop-supplies.png": {
+      "unsplashSlug": "WdcHk0qjWSo",
+      "unsplashPage": "https://unsplash.com/photos/WdcHk0qjWSo",
+      "originalFile": "workshop-supplies-unique",
+      "photographer": "Sara Bach",
+      "group": "tailoring",
+      "note": "محلياً: workshop.jpg"
+    },
+    "sections/category-fabric.png": {
+      "unsplashSlug": "UPUG5omD0MY",
+      "unsplashPage": "https://unsplash.com/photos/UPUG5omD0MY",
+      "originalFile": "toa-heftiba-UPUG5omD0MY-unsplash",
+      "photographer": "Toa Heftiba",
+      "group": "fabric"
+    },
+    "sections/marketplace-hero.png": {
+      "unsplashSlug": "a3CLdq1VBxk",
+      "unsplashPage": "https://unsplash.com/photos/a3CLdq1VBxk",
+      "originalFile": "equator-stores-a3CLdq1VBxk-unsplash",
+      "photographer": "Equator Stores",
+      "group": "fabric",
+      "note": "محلياً: lomar/hero-banner-2.png"
+    },
+    "sections/fabric-silk-white.png": {
+      "unsplashSlug": "WOpn4JUJk9c",
+      "unsplashPage": "https://unsplash.com/photos/WOpn4JUJk9c",
+      "originalFile": "susan-wilkinson-WOpn4JUJk9c-unsplash",
+      "photographer": "Susan Wilkinson",
+      "group": "fabric"
+    },
+    "sections/fabric-cream-flow.png": {
+      "unsplashSlug": "Zxg42d-WIZM",
+      "unsplashPage": "https://unsplash.com/photos/Zxg42d-WIZM",
+      "originalFile": "bharath-kumar-Zxg42d-WIZM-unsplash",
+      "photographer": "Bharath Kumar",
+      "group": "fabric"
+    },
+    "sections/fabric-white-drape.png": {
+      "unsplashSlug": "XivbqAPEoJg",
+      "unsplashPage": "https://unsplash.com/photos/XivbqAPEoJg",
+      "originalFile": "rue-s-XivbqAPEoJg-unsplash",
+      "photographer": "Rue S",
+      "group": "fabric"
+    },
+    "sections/fabric-texture.png": {
+      "unsplashSlug": "MjehAOr30n8",
+      "unsplashPage": "https://unsplash.com/photos/MjehAOr30n8",
+      "originalFile": "avinash-kumar-MjehAOr30n8-unsplash",
+      "photographer": "Avinash Kumar",
+      "group": "fabric"
+    },
+    "sections/fabric-suit-fold.png": {
+      "unsplashSlug": "kwpJY3RbObo",
+      "unsplashPage": "https://unsplash.com/photos/kwpJY3RbObo",
+      "originalFile": "victor-volkov-kwpJY3RbObo-unsplash",
+      "photographer": "Victor Volkov",
+      "group": "fabric"
+    },
+    "sections/product-1.png": {
+      "unsplashSlug": "SozeqUwiguE",
+      "unsplashPage": "https://unsplash.com/photos/SozeqUwiguE",
+      "originalFile": "e_i9-SozeqUwiguE-unsplash",
+      "photographer": "e_i9",
+      "group": "fabric",
+      "note": "محلياً: lomar/thobe-ready.webp"
+    },
+    "sections/product-2.png": {
+      "unsplashSlug": "A5KjX4STy-g",
+      "unsplashPage": "https://unsplash.com/photos/A5KjX4STy-g",
+      "originalFile": "e_i9-A5KjX4STy-g-unsplash",
+      "photographer": "e_i9",
+      "group": "fabric",
+      "note": "محلياً: thobe-casual.jpg"
+    },
+    "sections/product-3.png": {
+      "unsplashSlug": "GgJqEQVe3g8",
+      "unsplashPage": "https://unsplash.com/photos/GgJqEQVe3g8",
+      "originalFile": "e_i9-GgJqEQVe3g8-unsplash",
+      "photographer": "e_i9",
+      "group": "fabric",
+      "note": "محلياً: lomar/product-3.jpg"
+    },
+    "sections/product-4.png": {
+      "unsplashSlug": "dT9ihqhn9ds",
+      "unsplashPage": "https://unsplash.com/photos/dT9ihqhn9ds",
+      "originalFile": "michael-starkie-dT9ihqhn9ds-unsplash",
+      "photographer": "Michael Starkie",
+      "group": "fabric",
+      "note": "محلياً: lomar/product-4.jpg"
+    },
+    "fashion/model-1.png": {
+      "unsplashSlug": "BE45Vpp2I5Q",
+      "unsplashPage": "https://unsplash.com/photos/BE45Vpp2I5Q",
+      "originalFile": "defrino-maasy-BE45Vpp2I5Q-unsplash",
+      "photographer": "Defrino Maasy",
+      "group": "lookbook",
+      "usedFor": "Lookbook — الثوب الكلاسيكي (model-1.jpg)"
+    },
+    "fashion/model-2.png": {
+      "unsplashSlug": "5zg-ZDesJAk",
+      "unsplashPage": "https://unsplash.com/photos/5zg-ZDesJAk",
+      "originalFile": "alex-jhonson-5zg-ZDesJAk-unsplash",
+      "photographer": "Alex Jhonson",
+      "group": "lookbook"
+    },
+    "fashion/model-3.png": {
+      "unsplashSlug": "iGpvkPmBi_o",
+      "unsplashPage": "https://unsplash.com/photos/iGpvkPmBi_o",
+      "originalFile": "kristina-tochilko-iGpvkPmBi_o-unsplash",
+      "photographer": "Kristina Tochilko",
+      "group": "lookbook"
+    },
+    "fashion/model-4.png": {
+      "unsplashSlug": "8Vhyzs_Wfy4",
+      "unsplashPage": "https://unsplash.com/photos/8Vhyzs_Wfy4",
+      "originalFile": "husien-bisky-8Vhyzs_Wfy4-unsplash",
+      "photographer": "Husien Bisky",
+      "group": "lookbook"
+    },
+    "fashion/model-5.png": {
+      "unsplashSlug": "3hliyLb1azM",
+      "unsplashPage": "https://unsplash.com/photos/3hliyLb1azM",
+      "originalFile": "equator-stores-3hliyLb1azM-unsplash",
+      "photographer": "Equator Stores",
+      "group": "lookbook"
+    },
+    "fashion/model-6.png": { "note": "model-6.jpg محلي", "group": "lookbook" },
+    "fashion/model-7.png": { "note": "model-7.jpg محلي", "group": "lookbook" },
+    "fashion/model-8.png": { "note": "model-8.jpg محلي", "group": "lookbook" },
+    "fashion/model-9.png": { "note": "model-9.jpg محلي", "group": "lookbook" },
+    "fashion/model-10.png": { "note": "model-10.jpg محلي", "group": "lookbook" },
+    "fashion/model-11.png": { "note": "model-11.jpg محلي", "group": "lookbook" },
+    "fashion/model-12.png": { "note": "model-12.jpg محلي", "group": "lookbook" },
+    "fashion/model-13.png": { "note": "model-13.jpg محلي", "group": "lookbook" },
+    "fashion/model-14.png": { "note": "model-14.jpg محلي", "group": "lookbook" },
+    "fashion/model-15.png": { "note": "model-15.jpg محلي", "group": "lookbook" },
+    "fashion/model-16.png": { "note": "model-16.jpg محلي", "group": "lookbook" },
+    "fashion/model-17.png": { "note": "model-17.jpg محلي", "group": "lookbook" },
+    "fashion/model-18.png": { "note": "model-18.jpg محلي", "group": "lookbook" },
+    "fashion/model-19.png": { "note": "model-19.jpg محلي", "group": "lookbook" },
+    "fashion/model-20.png": { "note": "model-20.jpg محلي", "group": "lookbook" }
+  },
+  "extraUnsplashSources": [
+    { "slug": "kPAz6wJyAJA", "page": "https://unsplash.com/photos/kPAz6wJyAJA", "originalFile": "majdah-majed-kPAz6wJyAJA-unsplash", "photographer": "Majdah Majed" },
+    { "slug": "a3CLdq1VBxk", "page": "https://unsplash.com/photos/a3CLdq1VBxk", "originalFile": "equator-stores-a3CLdq1VBxk-unsplash", "photographer": "Equator Stores" },
+    { "slug": "8Vhyzs_Wfy4", "page": "https://unsplash.com/photos/8Vhyzs_Wfy4", "originalFile": "husien-bisky-8Vhyzs_Wfy4-unsplash", "photographer": "Husien Bisky" },
+    { "slug": "3hliyLb1azM", "page": "https://unsplash.com/photos/3hliyLb1azM", "originalFile": "equator-stores-3hliyLb1azM-unsplash", "photographer": "Equator Stores" },
+    { "slug": "cchkDLV4JyY", "page": "https://unsplash.com/photos/cchkDLV4JyY", "originalFile": "defrino-maasy-cchkDLV4JyY-unsplash", "photographer": "Defrino Maasy" },
+    { "slug": "SozeqUwiguE", "page": "https://unsplash.com/photos/SozeqUwiguE", "originalFile": "e_i9-SozeqUwiguE-unsplash", "photographer": "e_i9" },
+    { "slug": "A5KjX4STy-g", "page": "https://unsplash.com/photos/A5KjX4STy-g", "originalFile": "e_i9-A5KjX4STy-g-unsplash", "photographer": "e_i9" },
+    { "slug": "GgJqEQVe3g8", "page": "https://unsplash.com/photos/GgJqEQVe3g8", "originalFile": "e_i9-GgJqEQVe3g8-unsplash", "photographer": "e_i9" },
+    { "slug": "dT9ihqhn9ds", "page": "https://unsplash.com/photos/dT9ihqhn9ds", "originalFile": "michael-starkie-dT9ihqhn9ds-unsplash", "photographer": "Michael Starkie" }
+  ],
+  "localOnly": {
+    "note": "ليست من Unsplash — من مجلد صور/thobe-N.jpg",
+    "files": "fashion/model-6.jpg … fashion/model-20.jpg"
+  }
+}

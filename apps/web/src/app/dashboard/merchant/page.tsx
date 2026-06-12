@@ -30,38 +30,37 @@ function buildMonthlySales(orders: any[]) {
   return buckets.map(({ name, value }) => ({ name, value }));
 }
 
-const FALLBACK_ORDERS = [
-  { id: '#ORD-1290', customer: 'أحمد محمد', product: 'قماش صوف إيطالي', qty: 3, amount: 540, status: 'PENDING' },
-  { id: '#ORD-1289', customer: 'خالد عمر', product: 'حرير طبيعي', qty: 2, amount: 780, status: 'DELIVERED' },
-  { id: '#ORD-1288', customer: 'سعد عبدالله', product: 'قطن مصري', qty: 5, amount: 325, status: 'DELIVERED' },
-];
-
 export default function MerchantDashboardPage() {
   const { isRTL } = useAppStore();
-  const [stats, setStats] = useState({ products: 234, active: 18, dailySales: 12500, lowStock: 7 });
-  const [recentOrders, setRecentOrders] = useState<any[]>(FALLBACK_ORDERS);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ products: 0, active: 0, dailySales: 0, lowStock: 0 });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [monthlySales, setMonthlySales] = useState(() => buildMonthlySales([]));
 
   useEffect(() => {
     let active = true;
-    productsApi.list({ limit: '100' })
-      .then((res) => {
-        if (!active || !res.products) return;
-        const products: any[] = res.products;
+    Promise.allSettled([
+      productsApi.list({ limit: '100' }),
+      ordersApi.list({ limit: '50' }),
+    ]).then(([productsResult, ordersResult]) => {
+      if (!active) return;
+      if (productsResult.status === 'fulfilled' && productsResult.value.products) {
+        const products: any[] = productsResult.value.products;
         const lowStock = products.filter((p) => (p.stock ?? p.stockQuantity ?? 99) < 10).length;
-        setStats((s) => ({ ...s, products: res.total || products.length, lowStock }));
-      })
-      .catch(() => { /* احتياطي */ });
-    ordersApi.list({ limit: '50' })
-      .then((res) => {
-        if (!active || !res.orders?.length) return;
-        const orders: any[] = res.orders;
+        setStats((s) => ({
+          ...s,
+          products: productsResult.value.total || products.length,
+          lowStock,
+        }));
+      }
+      if (ordersResult.status === 'fulfilled' && ordersResult.value.orders?.length) {
+        const orders: any[] = ordersResult.value.orders;
         const today = new Date().toDateString();
         const activeCount = orders.filter((o) => !['DELIVERED', 'CANCELLED'].includes(o.status)).length;
         const dailySales = orders
           .filter((o) => new Date(o.createdAt).toDateString() === today)
           .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-        setStats((s) => ({ ...s, active: activeCount, dailySales: dailySales || s.dailySales }));
+        setStats((s) => ({ ...s, active: activeCount, dailySales }));
         setMonthlySales(buildMonthlySales(orders));
         setRecentOrders(orders.slice(0, 3).map((o) => ({
           id: `#${o.orderNumber || o.id?.slice(0, 6)}`,
@@ -71,16 +70,23 @@ export default function MerchantDashboardPage() {
           amount: o.totalAmount || 0,
           status: o.status || 'PENDING',
         })));
-      })
-      .catch(() => { /* احتياطي */ });
+      }
+    }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'لوحة التاجر' : 'Merchant Dashboard'}</h2>
-        <Button variant="primary" icon={<Plus size={18} />}>{isRTL ? 'إضافة منتج' : 'Add Product'}</Button>
+      <div className="rounded-2xl border border-[#E8E8E8] dark:border-white/10 bg-white dark:bg-[#111] p-5 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-1">
+            {isRTL ? 'ERP تاجر أقمشة' : 'Fabric merchant ERP'}
+          </p>
+          <h2 className="text-xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight">
+            {isRTL ? 'لوحة التاجر' : 'Merchant Dashboard'}
+          </h2>
+        </div>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={() => window.location.href = '/dashboard/merchant/products/add'}>{isRTL ? 'إضافة منتج' : 'Add Product'}</Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -107,7 +113,11 @@ export default function MerchantDashboardPage() {
 
         <Card className="p-5">
           <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'آخر الطلبات' : 'Recent Orders'}</h3>
-          {recentOrders.map((order) => (
+          {loading ? (
+            <p className="text-sm text-gray-400 py-4 text-center">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
+          ) : recentOrders.length === 0 ? (
+            <p className="text-sm text-gray-400 py-4 text-center">{isRTL ? 'لا توجد طلبات حالياً' : 'No orders yet'}</p>
+          ) : recentOrders.map((order) => (
             <div key={order.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-slate-700 last:border-0">
               <div>
                 <p className="text-sm font-semibold">{order.customer}</p>

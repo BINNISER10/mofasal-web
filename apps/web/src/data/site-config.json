@@ -2,24 +2,52 @@
   "hero": {
     "titleAr": "مفصّل على مقاسك",
     "titleEn": "Tailored to Your Measure",
-    "subtitleAr": "منصة الخياطة الذكية في المملكة — تواصل مع أفضل الخياطين واختر أقمشتك وتابع طلبك رقمياً",
-    "subtitleEn": "Saudi Arabia's smart tailoring platform — connect with top tailors, choose your fabrics, and track your order digitally",
+    "subtitleAr": "منصة الخياطة الذكية للرجال والأطفال — تواصل مع أفضل الخياطين واختر أقمشتك وتابع طلبك رقمياً",
+    "subtitleEn": "Smart tailoring for men and boys — connect with top tailors, choose fabrics, and track your order digitally",
     "ctaPrimaryAr": "ابدأ الآن",
     "ctaPrimaryEn": "Get Started",
+    "ctaPrimaryHref": "/login",
     "ctaSecondaryAr": "تصفح الخياطين",
     "ctaSecondaryEn": "Browse Tailors",
+    "ctaSecondaryHref": "/shops",
     "videoUrl": "/videos/fashion.mp4",
-    "badge": "✦ منصة الخياطة الذكية رقم 1 في السعودية ✦"
+    "badge": "✦ منصة الخياطة الذكية رقم 1 في السعودية ✦",
+    "orderPreviewAr": "ثوب سعودي — الرياض",
+    "orderPreviewEn": "Saudi Thobe — Riyadh"
   },
   "stats": [
-    { "valueAr": "+٢٠٠٠", "valueEn": "2000+", "labelAr": "خياط محترف", "labelEn": "Pro Tailors" },
-    { "valueAr": "+٥٠٠٠٠", "valueEn": "50K+", "labelAr": "طلب منجز", "labelEn": "Orders Done" },
-    { "valueAr": "٣٠+", "valueEn": "30+", "labelAr": "مدينة مغطاة", "labelEn": "Cities Covered" },
-    { "valueAr": "٤.٩★", "valueEn": "4.9★", "labelAr": "تقييم المستخدمين", "labelEn": "User Rating" }
+    { "valueAr": "+٢٠٠٠", "valueEn": "2000+", "labelAr": "خياط محترف", "labelEn": "Pro Tailors", "icon": "Users" },
+    { "valueAr": "+٥٠٠٠٠", "valueEn": "50K+", "labelAr": "طلب منجز", "labelEn": "Orders Done", "icon": "ShoppingBag" },
+    { "valueAr": "٣٠+", "valueEn": "30+", "labelAr": "مدينة مغطاة", "labelEn": "Cities Covered", "icon": "MapPin" },
+    { "valueAr": "٤.٩★", "valueEn": "4.9★", "labelAr": "تقييم المستخدمين", "labelEn": "User Rating", "icon": "Star" }
   ],
+  "categories": {
+    "eyebrowAr": "خدماتنا",
+    "eyebrowEn": "Our Services",
+    "titleAr": "خياطة وقماش",
+    "titleEn": "Tailoring & Fabric"
+  },
+  "craftsmanship": {
+    "eyebrowAr": "من نحن",
+    "eyebrowEn": "About",
+    "titleAr": "جودة في كل غرزة",
+    "titleEn": "Quality in Every Stitch",
+    "descAr": "من اختيار القماش حتى آخر تفصيل — ثوب سعودي للرجال والأطفال بمعايير عالية.",
+    "descEn": "From fabric selection to the final stitch — premium Saudi thobes for men and boys.",
+    "ctaAr": "ابدأ التفصيل",
+    "ctaEn": "Start Tailoring",
+    "curatedEyebrowAr": "مختارات",
+    "curatedEyebrowEn": "Curated",
+    "curatedTitleAr": "أقمشة وثياب",
+    "curatedTitleEn": "Fabrics & Thobes",
+    "viewAllAr": "عرض الكل",
+    "viewAllEn": "View all"
+  },
   "howItWorks": {
     "titleAr": "كيف يعمل مفصّل؟",
     "titleEn": "How Does Mofasal Work?",
+    "subtitleAr": "ثلاث خطوات بسيطة للحصول على طلبك المثالي",
+    "subtitleEn": "Three simple steps to your perfect fit",
     "steps": [
       { "numAr": "٠١", "numEn": "01", "titleAr": "اختر خياطك", "titleEn": "Choose Your Tailor", "descAr": "تصفح مئات الخياطين المعتمدين بتقييمات حقيقية وعروض أسعار شفافة", "descEn": "Browse hundreds of certified tailors with real ratings and transparent pricing" },
       { "numAr": "٠٢", "numEn": "02", "titleAr": "حدد القماش", "titleEn": "Select Your Fabric", "descAr": "اختر من سوق الأقمشة المتنوع أو أرسل قماشك الخاص مع ضمان الجودة", "descEn": "Choose from our diverse fabric marketplace or send your own fabric with quality guarantee" },
@@ -43,19 +71,59 @@
     "titleEn": "Saudi Elegance",
     "subtitleAr": "تفصيل راقٍ يعكس الهوية الأصيلة",
     "subtitleEn": "Premium tailoring that reflects authentic identity",
-    "badge": "✦ LOOKBOOK 2025 ✦"
+    "badge": "✦ LOOKBOOK 2025 ✦",
+    "browseAr": "تصفح جميع التصاميم",
+    "browseEn": "Browse All Designs"
+  },
+  "trust": {
+    "titleAr": "لماذا يثق بنا الآلاف؟",
+    "titleEn": "Why Thousands Trust Us",
+    "items": [
+      { "icon": "ShieldCheck", "color": "teal", "titleAr": "جودة مضمونة", "titleEn": "Guaranteed Quality", "descAr": "نظام تقييم ثلاثي: المحل، الخياط، والمندوب. نضمن لك أفضل جودة.", "descEn": "Triple rating system: shop, tailor, and representative. Quality assured." },
+      { "icon": "MapPin", "color": "gold", "titleAr": "توصيل أينما كنت", "titleEn": "Delivery Anywhere", "descAr": "نوصل طلبك أينما كنت في المملكة. اختر وقت ومكان التوصيل.", "descEn": "We deliver anywhere in the kingdom. Choose your preferred delivery time." },
+      { "icon": "Sparkles", "color": "red", "titleAr": "تفصيل حسب الطلب", "titleEn": "Custom Tailoring", "descAr": "كل قطعة تفصل خصيصاً لك حسب مقاساتك وذوقك. فقط تفصيل راقي.", "descEn": "Every piece tailored to your exact measurements and taste. Premium only." }
+    ]
+  },
+  "cities": {
+    "titleAr": "نغطي أكثر من 30 مدينة في المملكة",
+    "titleEn": "Covering 30+ cities across Saudi Arabia",
+    "list": ["الرياض", "جدة", "الدمام", "مكة", "المدينة", "الخبر", "أبها", "تبوك", "القصيم", "حائل"]
+  },
+  "testimonials": {
+    "titleAr": "ماذا يقول عملاؤنا",
+    "titleEn": "What Our Customers Say",
+    "subtitleAr": "آراء حقيقية من عملاء موثوقين",
+    "subtitleEn": "Real reviews from verified customers"
   },
   "cta": {
     "titleAr": "ابدأ رحلة الأناقة اليوم",
     "titleEn": "Start Your Elegance Journey Today",
     "subtitleAr": "انضم لآلاف العملاء الراضين واحصل على تجربة خياطة لا مثيل لها",
     "subtitleEn": "Join thousands of satisfied customers and get an unparalleled tailoring experience",
+    "badgeAr": "التوصيل خلال ٧-١٤ يوم",
+    "badgeEn": "Delivery in 7-14 days",
     "btnAr": "جرّب مجاناً",
-    "btnEn": "Try for Free"
+    "btnEn": "Try for Free",
+    "btnHref": "/login",
+    "secondaryAr": "تصفح المتاجر",
+    "secondaryEn": "Browse Shops",
+    "secondaryHref": "/shops"
+  },
+  "appDownload": {
+    "titleAr": "حمل تطبيق مفصل الآن",
+    "titleEn": "Download MUFASAL App Now",
+    "subtitleAr": "جرب أسهل طريقة لطلب الخياطة الراقية. متوفر على أجهزة آيفون وأندرويد.",
+    "subtitleEn": "Experience the easiest way to order premium tailoring. Available on iOS and Android.",
+    "appStoreUrl": "#",
+    "playStoreUrl": "#"
   },
   "footer": {
-    "taglineAr": "منصة الخياطة الذكية في المملكة",
-    "taglineEn": "Saudi Arabia's Smart Tailoring Platform"
+    "taglineAr": "منصة الخياطة الذكية للرجال والأطفال",
+    "taglineEn": "Smart Tailoring Platform for Men & Boys",
+    "phone": "+966 55 123 4567",
+    "email": "info@mufasal.com",
+    "locationAr": "الرياض، المملكة العربية السعودية",
+    "locationEn": "Riyadh, Saudi Arabia"
   },
   "theme": {
     "primaryColor": "#00373E",
@@ -66,7 +134,9 @@
   "seo": {
     "titleAr": "مفصل | منصة الخياطة الذكية",
     "titleEn": "Mofasal | Smart Tailoring Platform",
-    "descriptionAr": "منصة مفصل للخياطة الذكية في المملكة العربية السعودية",
-    "descriptionEn": "Mofasal smart tailoring platform in Saudi Arabia"
+    "descriptionAr": "منصة مفصل للخياطة الذكية في المملكة العربية السعودية — تفصيل ثوب، أقمشة، وتتبع رقمي للرجال والأطفال",
+    "descriptionEn": "Mofasal smart tailoring platform in Saudi Arabia — custom thobes, fabrics, and digital order tracking for men and boys",
+    "keywordsAr": ["خياطة", "أقمشة", "ثوب", "تفصيل", "مفصل", "السعودية"],
+    "keywordsEn": ["tailoring", "fabrics", "thobe", "Saudi Arabia", "Mofasal"]
   }
 }

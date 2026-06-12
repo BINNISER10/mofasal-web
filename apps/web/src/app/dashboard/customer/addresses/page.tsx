@@ -4,19 +4,23 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useAppStore } from '@/lib/stores/appStore';
-import { useAuthStore } from '@/lib/stores/authStore';
+import { useAuth } from '@/lib/hooks/useAuth';
 import toast from 'react-hot-toast';
 import { Home, Briefcase, MapPin, Plus, Edit3, Trash2, Star } from 'lucide-react';
 import { usersApi, Address } from '@/lib/api/users';
 
 export default function CustomerAddressesPage() {
   const { isRTL } = useAppStore();
-  const user = useAuthStore((s) => s.user);
+  const { user, isLoading: authLoading } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (authLoading) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
     const fetch = async () => {
       try {
         const res = await usersApi.getAddresses(user.id);
@@ -28,7 +32,7 @@ export default function CustomerAddressesPage() {
       }
     };
     fetch();
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   return (
     <div className="space-y-6">

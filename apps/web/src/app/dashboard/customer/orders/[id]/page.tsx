@@ -1,23 +1,19 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { OrderTrackingTimeline } from '@/components/shared/OrderTrackingTimeline';
 import { useAppStore } from '@/lib/stores/appStore';
 import { ordersApi } from '@/lib/api/orders';
+import { getCustomerStageLabel } from '@mufasal/shared';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { ShoppingBag, Clock, CheckCircle2, Truck, Scissors, Package, ChevronLeft, ChevronRight, Star, MessageSquare, ArrowLeft } from 'lucide-react';
-
-const STATUS_STEPS = [
-  { key: 'PENDING', labelAr: 'قيد الانتظار', labelEn: 'Pending', icon: <Clock size={16} /> },
-  { key: 'CONFIRMED', labelAr: 'مؤكد', labelEn: 'Confirmed', icon: <CheckCircle2 size={16} /> },
-  { key: 'IN_PROGRESS', labelAr: 'قيد التنفيذ', labelEn: 'In Progress', icon: <Scissors size={16} /> },
-  { key: 'READY_FOR_DELIVERY', labelAr: 'جاهز', labelEn: 'Ready', icon: <Package size={16} /> },
-  { key: 'OUT_FOR_DELIVERY', labelAr: 'في الطريق', labelEn: 'On the Way', icon: <Truck size={16} /> },
-  { key: 'DELIVERED', labelAr: 'تم التوصيل', labelEn: 'Delivered', icon: <CheckCircle2 size={16} /> },
-];
+import {
+  ShoppingBag, Package, ChevronLeft, ChevronRight, Star, RefreshCw,
+} from 'lucide-react';
 
 export default function CustomerOrderDetailPage() {
   const { id } = useParams();
@@ -25,74 +21,144 @@ export default function CustomerOrderDetailPage() {
   const { isRTL } = useAppStore();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+  const loadOrder = useCallback(async (silent = false) => {
     if (!id) return;
-    ordersApi.getById(id as string)
-      .then((res) => setOrder(res.order))
-      .catch(() => toast.error(isRTL ? 'فشل تحميل الطلب' : 'Failed to load order'))
-      .finally(() => setLoading(false));
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
+    try {
+      const res = await ordersApi.getById(id as string);
+      setOrder(res.order);
+    } catch {
+      toast.error(isRTL ? 'فشل تحميل الطلب' : 'Failed to load order');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [id, isRTL]);
 
-  if (loading) return <LoadingSpinner fullScreen text={isRTL ? 'جاري تحميل الطلب...' : 'Loading order...'} />;
-  if (!order) return <div className="flex items-center justify-center py-20"><div className="text-center"><ShoppingBag size={48} className="text-[#735B4D]/30 mx-auto mb-4" /><p className="text-[#735B4D]/60">{isRTL ? 'الطلب غير موجود' : 'Order not found'}</p></div></div>;
+  useEffect(() => {
+    loadOrder();
+    const interval = setInterval(() => loadOrder(true), 30000);
+    return () => clearInterval(interval);
+  }, [loadOrder]);
 
-  const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
+  if (loading) {
+    return <LoadingSpinner fullScreen text={isRTL ? 'جاري تحميل الطلب...' : 'Loading order...'} />;
+  }
+
+  if (!order) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <ShoppingBag size={40} className="text-neutral-200 mx-auto mb-4" />
+          <p className="text-neutral-500">{isRTL ? 'الطلب غير موجود' : 'Order not found'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const status = order.status || 'PENDING';
+  const stageLabel = getCustomerStageLabel(status, isRTL);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-3xl">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-[#F2E8D4]/30">
-            {isRTL ? <ChevronRight size={20} className="text-[#735B4D]" /> : <ChevronLeft size={20} className="text-[#735B4D]" />}
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="p-2 rounded-xl hover:bg-[#FAFAFA] dark:hover:bg-white/5"
+          >
+            {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </button>
           <div>
-            <h1 className="text-xl font-bold text-[#00373E]">{isRTL ? 'طلب' : 'Order'} #{order.orderNumber || order.id?.slice(0, 8)}</h1>
-            <p className="text-xs text-[#735B4D]/60 mt-1">{new Date(order.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US')}</p>
+            <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-400">
+              {isRTL ? 'تابع طلبك' : 'Track order'}
+            </p>
+            <h1 className="text-xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight">
+              #{order.orderNumber || order.id?.slice(0, 8)}
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              {order.createdAt ? new Date(order.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US') : ''}
+            </p>
           </div>
         </div>
-        {order.status === 'DELIVERED' && <Button variant="gold" size="sm" icon={<Star size={16} />} onClick={() => router.push(/dashboard/customer/orders//rate)}>{isRTL ? 'تقييم' : 'Rate'}</Button>}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => loadOrder(true)}
+            className="p-2 rounded-xl border border-[#E8E8E8] hover:bg-[#FAFAFA]"
+            title={isRTL ? 'تحديث' : 'Refresh'}
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+          {status === 'DELIVERED' && (
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Star size={16} />}
+              onClick={() => router.push(`/dashboard/customer/orders/${id}/rate`)}
+            >
+              {isRTL ? 'تقييم' : 'Rate'}
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Card className="p-5">
-        <h3 className="font-bold text-[#00373E] mb-4">{isRTL ? 'تتبع الطلب' : 'Order Tracking'}</h3>
-        <div className="flex items-center justify-between">
-          {STATUS_STEPS.map((step, i) => {
-            const isCompleted = i <= currentStepIndex;
-            const isCurrent = i === currentStepIndex;
-            return (
-              <div key={step.key} className="flex flex-col items-center flex-1">
-                <div className={w-10 h-10 rounded-full flex items-center justify-center }>{step.icon}</div>
-                <p className={	ext-[10px] mt-1.5 text-center }>{isRTL ? step.labelAr : step.labelEn}</p>
-              </div>
-            );
-          })}
+      <Card className="p-5 border border-[#E8E8E8] dark:border-white/10">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-[#0A0A0A] dark:text-white">
+            {isRTL ? 'حالة الطلب' : 'Order status'}
+          </h3>
+          <Badge variant={status === 'DELIVERED' ? 'success' : status === 'CANCELLED' ? 'error' : 'info'} size="sm">
+            {stageLabel}
+          </Badge>
         </div>
+        <OrderTrackingTimeline status={status} isRTL={isRTL} />
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card className="p-5">
-            <h3 className="font-bold text-[#00373E] mb-4 flex items-center gap-2"><Package size={18} className="text-[#D4AF37]" />{isRTL ? 'عناصر الطلب' : 'Order Items'}</h3>
-            {(order.items || []).map((item: any, i: number) => (
-              <div key={i} className="flex items-center justify-between py-3 border-b border-[#D0D6D7]/10 last:border-0">
-                <div><p className="text-sm font-semibold text-[#00373E]">{item.name}</p><p className="text-xs text-[#735B4D]/60">{isRTL ? 'الكمية:' : 'Qty:'} {item.quantity}</p></div>
-                <p className="text-sm font-bold text-[#00373E]">{item.unitPrice?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</p>
-              </div>
-            ))}
+          <Card className="p-5 border border-[#E8E8E8]">
+            <h3 className="font-semibold mb-4 flex items-center gap-2 text-[#0A0A0A]">
+              <Package size={18} /> {isRTL ? 'عناصر الطلب' : 'Items'}
+            </h3>
+            {(order.items || []).length === 0 ? (
+              <p className="text-sm text-neutral-400">{isRTL ? 'لا توجد عناصر' : 'No items'}</p>
+            ) : (
+              order.items.map((item: any, i: number) => (
+                <div key={i} className="flex justify-between py-3 border-b border-[#E8E8E8] last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-neutral-500">×{item.quantity}</p>
+                  </div>
+                  <p className="text-sm font-semibold">
+                    ﷼{(item.unitPrice ?? item.price ?? 0).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            )}
           </Card>
         </div>
-        <div className="space-y-6">
-          <Card className="p-5">
-            <h3 className="font-bold text-[#00373E] mb-4">{isRTL ? 'ملخص الطلب' : 'Order Summary'}</h3>
-            <div className="flex justify-between pt-3 border-t border-[#D0D6D7]/20">
-              <span className="text-sm font-bold text-[#00373E]">{isRTL ? 'الإجمالي' : 'Total'}</span>
-              <span className="text-lg font-bold text-[#00373E]">{order.grandTotal?.toLocaleString()} {isRTL ? 'ريال' : 'SAR'}</span>
+
+        <div className="space-y-4">
+          <Card className="p-5 border border-[#E8E8E8]">
+            <h3 className="font-semibold mb-3 text-sm text-neutral-500">{isRTL ? 'الملخص' : 'Summary'}</h3>
+            <div className="flex justify-between text-lg font-semibold">
+              <span>{isRTL ? 'الإجمالي' : 'Total'}</span>
+              <span>﷼{(order.grandTotal ?? order.totalAmount ?? 0).toLocaleString()}</span>
             </div>
+            <p className="text-xs text-neutral-400 mt-2">
+              {order.shop?.nameAr || order.shop?.name || order.shopName || ''}
+            </p>
           </Card>
-          <Card className="p-5">
-            <h3 className="font-bold text-[#00373E] mb-2">{isRTL ? 'حالة الدفع' : 'Payment'}</h3>
-            <Badge variant={order.paymentStatus === 'PAID' ? 'primary' : 'danger'} size="md">{order.paymentStatus === 'PAID' ? (isRTL ? 'مدفوع' : 'Paid') : (isRTL ? 'غير مدفوع' : 'Unpaid')}</Badge>
+          <Card className="p-5 border border-[#E8E8E8]">
+            <h3 className="font-semibold mb-2 text-sm">{isRTL ? 'الدفع' : 'Payment'}</h3>
+            <Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'warning'} size="sm">
+              {order.paymentStatus === 'PAID' ? (isRTL ? 'مدفوع' : 'Paid') : (isRTL ? 'غير مدفوع' : 'Unpaid')}
+            </Badge>
           </Card>
         </div>
       </div>

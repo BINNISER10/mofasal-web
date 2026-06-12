@@ -8,88 +8,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { productsApi } from '@/lib/api/products';
+import { mapProductDetail, type ProductDetailView } from '@/lib/mappers/productDetail';
 import {
   Star, Heart, Share2, ShoppingCart, ChevronLeft, ChevronRight,
   Package, Truck, Shield, RotateCcw, Check, Plus, Minus,
   Ruler, Layers, ArrowLeft, ArrowRight, Store, MapPin
 } from 'lucide-react';
-
-const mockProducts: Record<string, any> = {
-  '1': {
-    id: '1',
-    name: 'قماش صوف إيطالي فاخر', nameEn: 'Premium Italian Wool Fabric',
-    merchant: 'بيت الأقمشة الراقية', merchantEn: 'Premium Fabric House',
-    merchantId: 'm1', merchantCity: 'الرياض',
-    price: 185, priceUnit: 'للمتر', priceUnitEn: 'per meter',
-    minOrder: 2, maxOrder: 50,
-    rating: 4.9, reviewCount: 218,
-    category: 'صوف', inStock: true, stockMeters: 240,
-    colors: ['#1a1a2e', '#16213e', '#0f3460', '#533483', '#2c3e50'],
-    colorNames: ['أسود', 'كحلي', 'أزرق غامق', 'بنفسجي', 'رمادي داكن'],
-    description: 'قماش صوف إيطالي فاخر بنسبة 100% صوف مريني. مثالي للبدل الرسمية والملابس الراقية. يتميز بملمسه الناعم وثباته الممتاز للألوان وسهولة التفصيل.',
-    descriptionEn: '100% Merino Italian wool fabric. Perfect for formal suits and luxury garments.',
-    features: [
-      { label: 'الخامة', value: '100% صوف مريني' },
-      { label: 'العرض', value: '150 سم' },
-      { label: 'الوزن', value: '280 جرام/متر' },
-      { label: 'بلد المنشأ', value: 'إيطاليا' },
-      { label: 'العناية', value: 'غسيل يدوي / تنظيف جاف' },
-    ],
-    uses: ['بدل رسمية', 'معاطف', 'بنطلونات', 'تنانير راقية'],
-    images: [
-      { color: '#1a1a2e', label: 'أسود' },
-      { color: '#16213e', label: 'كحلي' },
-      { color: '#533483', label: 'بنفسجي' },
-    ],
-    reviews: [
-      { name: 'خالد العمر', rating: 5, comment: 'جودة ممتازة، الخياط أثنى عليه كثيراً. البدلة طلعت رائعة.', date: '2024-03-08' },
-      { name: 'فهد الشمري', rating: 5, comment: 'خامة ممتازة جداً وأفضل من المتوقع. سأطلب مرة أخرى.', date: '2024-02-20' },
-      { name: 'سعد القحطاني', rating: 4, comment: 'جودة عالية لكن السعر مرتفع نسبياً. يستحق للمناسبات.', date: '2024-02-10' },
-    ],
-    relatedProducts: [
-      { id: '2', name: 'قماش كتان مصري', price: 95, rating: 4.7, color: '#f5e6c8' },
-      { id: '3', name: 'قماش حرير طبيعي', price: 320, rating: 4.8, color: '#f8bbd0' },
-    ],
-    shipping: { free: true, days: '2-4', express: true },
-    returnPolicy: '14 يوم',
-  },
-  '2': {
-    id: '2',
-    name: 'قماش كتان مصري أصيل', nameEn: 'Egyptian Linen Fabric',
-    merchant: 'سوق الأقمشة المصرية', merchantEn: 'Egyptian Fabric Market',
-    merchantId: 'm2', merchantCity: 'جدة',
-    price: 95, priceUnit: 'للمتر', priceUnitEn: 'per meter',
-    minOrder: 1, maxOrder: 30,
-    rating: 4.7, reviewCount: 143,
-    category: 'كتان', inStock: true, stockMeters: 180,
-    colors: ['#f5e6c8', '#e8d5b0', '#d4b896', '#c9a87c', '#b8956a'],
-    colorNames: ['كريمي فاتح', 'كريمي', 'بيج', 'بيج داكن', 'كاكي'],
-    description: 'قماش كتان مصري أصيل 100%، خفيف وقابل للتنفس مثالي لملابس الصيف والثياب العربية التقليدية.',
-    descriptionEn: '100% Egyptian linen, lightweight and breathable, perfect for summer wear.',
-    features: [
-      { label: 'الخامة', value: '100% كتان مصري' },
-      { label: 'العرض', value: '140 سم' },
-      { label: 'الوزن', value: '180 جرام/متر' },
-      { label: 'بلد المنشأ', value: 'مصر' },
-      { label: 'العناية', value: 'غسيل آلي 30°' },
-    ],
-    uses: ['أثواب صيفية', 'قمصان', 'بناطيل خفيفة', 'ملابس أطفال'],
-    images: [
-      { color: '#f5e6c8', label: 'كريمي' },
-      { color: '#d4b896', label: 'بيج' },
-      { color: '#c9a87c', label: 'بيج داكن' },
-    ],
-    reviews: [
-      { name: 'عبدالله السالم', rating: 5, comment: 'ممتاز للصيف، خفيف ومريح جداً.', date: '2024-03-12' },
-      { name: 'ماجد العتيبي', rating: 4, comment: 'جودة جيدة والتوصيل كان سريعاً.', date: '2024-03-01' },
-    ],
-    relatedProducts: [
-      { id: '1', name: 'قماش صوف إيطالي', price: 185, rating: 4.9, color: '#1a1a2e' },
-    ],
-    shipping: { free: false, days: '3-5', express: false },
-    returnPolicy: '7 أيام',
-  },
-};
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -101,75 +25,90 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'reviews'>('desc');
 
   const productId = String(params.id);
-  const fallback = mockProducts[productId] ?? mockProducts['1'];
-  const [product, setProduct] = useState<any>(fallback);
+  const [product, setProduct] = useState<ProductDetailView | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError(false);
     productsApi.getById(productId)
       .then((res) => {
         if (!active) return;
-        const api: any = res.product;
-        if (!api || !api.id) return;
-        setProduct({
-          ...fallback,
-          id: api.id,
-          name: api.nameAr || api.name || fallback.name,
-          nameEn: api.nameEn || api.name || fallback.nameEn,
-          merchant: api.shop?.nameAr || api.shop?.name || fallback.merchant,
-          merchantId: api.shopId || fallback.merchantId,
-          merchantCity: api.shop?.city || fallback.merchantCity,
-          price: api.price ?? fallback.price,
-          category: api.category?.nameAr || api.category?.name || fallback.category,
-          inStock: (api.stockQuantity ?? 0) > 0,
-          stockMeters: api.stockQuantity ?? fallback.stockMeters,
-          description: api.description || fallback.description,
-        });
+        if (!res.product?.id) {
+          setError(true);
+          return;
+        }
+        setProduct(mapProductDetail(res.product));
       })
-      .catch(() => { /* الإبقاء على القالب الاحتياطي عند فشل الاتصال */ });
+      .catch(() => { if (active) setError(true); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [productId]);
 
   const ChevronBack = isRTL ? ChevronRight : ChevronLeft;
   const ArrowIcon = isRTL ? ArrowRight : ArrowLeft;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
+        <Navbar />
+        <div className="text-center py-32 text-neutral-400">{isRTL ? 'جاري التحميل...' : 'Loading...'}</div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
+        <Navbar />
+        <div className="text-center py-32">
+          <p className="text-neutral-500 mb-4">{isRTL ? 'المنتج غير متوفر' : 'Product not found'}</p>
+          <Button onClick={() => router.push('/marketplace')}>{isRTL ? 'العودة للسوق' : 'Back to marketplace'}</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-4 pt-24 pb-16">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-          <a href="/" className="hover:text-primary-600 transition-colors">{isRTL ? 'الرئيسية' : 'Home'}</a>
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 pt-24 pb-16">
+        <div className="flex items-center gap-2 text-sm text-neutral-400 mb-8">
+          <a href="/" className="hover:text-[#0A0A0A] dark:hover:text-white transition-colors">{isRTL ? 'الرئيسية' : 'Home'}</a>
           <ChevronBack size={14} />
-          <a href="/marketplace" className="hover:text-primary-600 transition-colors">{isRTL ? 'السوق' : 'Marketplace'}</a>
+          <a href="/marketplace" className="hover:text-[#0A0A0A] dark:hover:text-white transition-colors">{isRTL ? 'الأقمشة' : 'Fabrics'}</a>
           <ChevronBack size={14} />
-          <span className="text-gray-700 font-medium truncate max-w-xs">{product.name}</span>
+          <span className="text-[#0A0A0A] dark:text-white font-medium truncate max-w-xs">{product.name}</span>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 mb-10">
-          {/* Product Images */}
+        <div className="grid md:grid-cols-2 gap-10 md:gap-14 mb-12">
           <div className="space-y-3">
-            <Card className="overflow-hidden">
+            <div className="rounded-2xl overflow-hidden border border-[#E8E8E8] dark:border-white/10">
               <div
-                className="h-80 flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${product.colors[selectedColor]}22, ${product.colors[selectedColor]}66)` }}
+                className="aspect-[3/4] flex items-center justify-center bg-neutral-50 dark:bg-white/5"
+                style={{ background: `linear-gradient(160deg, ${product.colors[selectedColor]}18, ${product.colors[selectedColor]}55)` }}
               >
                 <div className="text-center">
                   <div
-                    className="w-32 h-32 rounded-3xl mx-auto shadow-xl"
+                    className="w-28 h-28 md:w-36 md:h-36 rounded-2xl mx-auto shadow-lg"
                     style={{ background: product.colors[selectedColor] }}
                   />
-                  <p className="mt-4 font-semibold text-gray-700">{product.colorNames[selectedColor]}</p>
+                  <p className="mt-4 text-sm font-medium text-neutral-600 dark:text-neutral-300">{product.colorNames[selectedColor]}</p>
                 </div>
               </div>
-            </Card>
+            </div>
             <div className="flex gap-2">
               {product.images.map((img: any, i: number) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => setSelectedColor(i)}
-                  className={`flex-1 h-16 rounded-xl border-2 transition-all ${selectedColor === i ? 'border-primary-500 shadow-md' : 'border-transparent'}`}
+                  className={`flex-1 h-14 rounded-xl border-2 transition-all ${selectedColor === i ? 'border-[#00373E] dark:border-white' : 'border-transparent opacity-70 hover:opacity-100'}`}
                   style={{ background: `linear-gradient(135deg, ${img.color}33, ${img.color}77)` }}
                   title={img.label}
                 />
@@ -183,7 +122,7 @@ export default function ProductDetailPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <Badge variant="info" size="sm" className="mb-2">{product.category}</Badge>
-                  <h1 className="text-2xl font-black text-gray-900 leading-tight">{product.name}</h1>
+                  <h1 className="text-2xl md:text-3xl font-semibold text-[#0A0A0A] dark:text-white leading-tight tracking-tight">{product.name}</h1>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -220,9 +159,8 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-primary-700">{product.price}</span>
-              <span className="text-lg font-bold text-gray-500">{isRTL ? 'ر.س' : 'SAR'}</span>
-              <span className="text-sm text-gray-400">{isRTL ? product.priceUnit : product.priceUnitEn}</span>
+              <span className="text-3xl font-semibold text-[#0A0A0A] dark:text-white">﷼{product.price}</span>
+              <span className="text-sm text-neutral-400">{isRTL ? product.priceUnit : product.priceUnitEn}</span>
             </div>
 
             {/* Color Selector */}

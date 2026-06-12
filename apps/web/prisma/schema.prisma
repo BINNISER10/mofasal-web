@@ -37,6 +37,7 @@ model Shop {
   aiProvider       String        @default("gemini")
   aiApiKey         String?
   trialEndsAt      DateTime?
+  branding         Json?
   createdAt        DateTime      @default(now())
 
   users         User[]

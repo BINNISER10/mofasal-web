@@ -1,14 +1,17 @@
 import type { Metadata, Viewport } from 'next';
-import { Cairo, Inter } from 'next/font/google';
+import { IBM_Plex_Sans_Arabic, Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { SmartAdvisor } from '@/components/shared/SmartAdvisor';
 import { Toaster } from 'react-hot-toast';
+import siteConfig from '@/data/site-config.json';
 
-const cairo = Cairo({
-  subsets: ['arabic', 'latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-cairo',
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mufasal.onrender.com';
+
+const ibmPlexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-arabic',
   display: 'swap',
   preload: true,
 });
@@ -21,16 +24,37 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'مفصل | MUFASAL - Premium Tailoring & Fabric Marketplace',
-  description: 'منصتك المتكاملة للخياطة الراقية وبيع الأقمشة. أسهل طريقة لطلب خياطة ملابسك مع أفضل الخياطين.',
-  keywords: ['خياطة', 'أقمشة', 'ملابس رجالية', 'ملابس أطفال', 'تفصيل', 'MUFASAL', 'مفصل'],
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: siteConfig.seo.titleAr,
+    template: '%s | مفصل',
+  },
+  description: siteConfig.seo.descriptionAr,
+  keywords: [...siteConfig.seo.keywordsAr, ...siteConfig.seo.keywordsEn],
   manifest: '/manifest.json',
+  alternates: {
+    canonical: '/',
+    languages: {
+      'ar-SA': '/',
+      'en-US': '/',
+    },
+  },
   openGraph: {
-    title: 'مفصل | MUFASAL',
-    description: 'Premium Tailoring & Fabric Marketplace',
+    title: siteConfig.seo.titleAr,
+    description: siteConfig.seo.descriptionAr,
+    url: APP_URL,
+    siteName: 'مفصل MUFASAL',
     locale: 'ar_SA',
     type: 'website',
+    images: [{ url: '/images/logo.png', width: 512, height: 512, alt: 'مفصل' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.seo.titleEn,
+    description: siteConfig.seo.descriptionEn,
+    images: ['/images/logo.png'],
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
@@ -46,7 +70,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning className={`${cairo.variable} ${inter.variable}`}>
+    <html lang="ar" dir="rtl" suppressHydrationWarning className={`${ibmPlexArabic.variable} ${inter.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -58,11 +82,11 @@ export default function RootLayout({
         {/* Anti-FOUC: apply saved theme before paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('mufasal-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});})}`,
+            __html: `(function(){try{var t=localStorage.getItem('mufasal-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();try{var tok=localStorage.getItem('token');if(tok&&tok.indexOf('demo-token-')===0){document.documentElement.setAttribute('data-demo-role',tok.replace('demo-token-',''))}}catch(e){};if('serviceWorker' in navigator){var h=location.hostname;var isLocal=h==='localhost'||h==='127.0.0.1';if(isLocal){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(reg){reg.unregister()})});if(window.caches){caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})})}}else{window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}}`,
           }}
         />
       </head>
-      <body className="font-arabic antialiased bg-[var(--surface)] text-[var(--text-primary)] transition-colors duration-300 leading-relaxed">
+      <body className="font-arabic antialiased bg-white text-[var(--text-primary)] transition-colors duration-300 leading-relaxed">
         <ThemeProvider>
           {children}
           <SmartAdvisor />

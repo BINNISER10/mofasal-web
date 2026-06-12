@@ -2,54 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'ITF Rawasi Display Arabic';
-  src: url('/fonts/itfRawasiDisplayARLT-Light.otf') format('opentype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ITF Rawasi Display Arabic';
-  src: url('/fonts/itfRawasiDisplayARLT-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ITF Rawasi Display Arabic';
-  src: url('/fonts/itfRawasiDisplayARLT-Medium.otf') format('opentype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ITF Rawasi Display Arabic';
-  src: url('/fonts/itfRawasiDisplayARLT-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ITF Rawasi Display Arabic';
-  src: url('/fonts/itfRawasiDisplayARLT-ExtBd.otf') format('opentype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ITF Rawasi Display Arabic';
-  src: url('/fonts/itfRawasiDisplayARLT-Black.otf') format('opentype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   /* ── Glass Theme Variables ─────────────────── */
   --glass-bg:           rgba(255, 255, 255, 0.08);
@@ -81,14 +33,14 @@
   --accent-light: #8F786B;
   --accent-dark: #4D3B32;
   --accent-muted: #E0D8D3;
-  --surface: #F5F5F5;
+  --surface: #FAFAFA;
   --surface-warm: #F2E8D4;
   --surface-olive: #D1CDAE;
   --surface-grey: #D0D6D7;
   --white: #FFFFFF;
-  --text-primary: #1A1A1A;
-  --text-secondary: #4D3B32;
-  --text-muted: #8F786B;
+  --text-primary: #0A0A0A;
+  --text-secondary: #3D3D3D;
+  --text-muted: #6B6B6B;
   --danger: #D32F2F;
   --success: #2E7D32;
   --warning: #E65100;
@@ -124,11 +76,11 @@ html.dark {
 }
 
 [dir="rtl"] {
-  --font-family: 'ITF Rawasi Display Arabic', var(--font-cairo, Cairo), Tahoma, sans-serif;
+  --font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), system-ui, sans-serif;
 }
 
 [dir="ltr"] {
-  --font-family: var(--font-inter, Inter), var(--font-cairo, Cairo), 'Segoe UI', sans-serif;
+  --font-family: var(--font-inter, Inter), var(--font-arabic, 'IBM Plex Sans Arabic'), system-ui, sans-serif;
 }
 
 * {
@@ -181,8 +133,10 @@ body {
 
 @layer base {
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'ITF Rawasi Display Arabic', Tahoma, sans-serif;
-    font-weight: 700;
+    font-family: var(--font-family);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
   }
 
   a {

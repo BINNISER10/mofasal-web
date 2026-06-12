@@ -34,9 +34,9 @@ export default function AdminAnalyticsPage() {
       const dash = dashRes.dashboard;
       const revMonths = dash.revenueByMonth?.length ? dash.revenueByMonth : [];
       const ordStatus = dash.ordersByStatus?.length ? dash.ordersByStatus : [];
-      setRevenueData(revMonths.length ? revMonths : FALLBACK_REVENUE);
-      setStatusData(ordStatus.length ? ordStatus.map((s: any) => ({ ...s, color: STATUS_COLORS[s.name] || CHART_COLORS.primary })) : FALLBACK_STATUS);
-      const shops = Array.isArray(shopRes.data?.items) ? shopRes.data.items.slice(0, 5) : [];
+      setRevenueData(revMonths);
+      setStatusData(ordStatus.map((s: any) => ({ ...s, color: STATUS_COLORS[s.name] || CHART_COLORS.primary })));
+      const shops = Array.isArray(shopRes?.items) ? shopRes.items.slice(0, 5) : [];
       setTopShops(shops.length ? shops.map((s: any) => ({ name: s.nameAr || s.name || s.shopName || '—', revenue: s.revenue || s.totalRevenue || 0, orders: s.orders || s.orderCount || 0 })) : []);
       const totalRev = revRes.data?.summary?.totalRevenue ?? revRes.data?.total ?? dash.totalRevenue ?? 0;
       const totalOrd = ordRes.data?.summary?.totalOrders ?? ordRes.data?.total ?? dash.totalOrders ?? 0;
@@ -49,8 +49,6 @@ export default function AdminAnalyticsPage() {
       setLoading(false);
     }).catch(() => {
       if (!active) return;
-      setRevenueData(FALLBACK_REVENUE); setStatusData(FALLBACK_STATUS);
-      setKpi({ revenue: 892000, orders: 1248, users: 5842, shops: 156, revenueGrowth: 12.5, orderGrowth: 8.3 });
       setLoading(false);
     });
     return () => { active = false; };
@@ -153,20 +151,6 @@ export default function AdminAnalyticsPage() {
     </div>
   );
 }
-
-const FALLBACK_REVENUE = [
-  { name: 'ينا', value: 820000 }, { name: 'فبر', value: 940000 }, { name: 'مار', value: 880000 },
-  { name: 'أبر', value: 1100000 }, { name: 'ماي', value: 980000 }, { name: 'يون', value: 1250000 },
-  { name: 'يول', value: 1180000 }, { name: 'أغس', value: 1340000 }, { name: 'سبت', value: 1220000 },
-  { name: 'أكت', value: 1480000 }, { name: 'نوف', value: 1390000 }, { name: 'ديس', value: 1650000 },
-];
-
-const FALLBACK_STATUS = [
-  { name: 'مكتمل', value: 45, color: '#22c55e' },
-  { name: 'خياطة', value: 28, color: '#d4af37' },
-  { name: 'معلق', value: 18, color: '#f59e0b' },
-  { name: 'ملغي', value: 9, color: '#ef4444' },
-];
 
 const STATUS_COLORS: Record<string, string> = {
   DELIVERED: '#22c55e', COMPLETED: '#22c55e',

@@ -1,6 +1,8 @@
 'use client';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
 import { useAppStore } from '@/lib/stores/appStore';
 import { useRouter } from 'next/navigation';
@@ -9,11 +11,8 @@ import {
   Bell,
   Globe,
   User,
-  ChevronDown,
   MapPin,
   Menu,
-  Store,
-  Package,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -25,7 +24,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
 
   React.useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -33,62 +32,53 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-40 transition-all duration-500',
-        scrolled
-          ? 'glass-nav-light dark:glass-nav'
-          : 'bg-transparent'
+        'fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300',
+        'bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md',
+        scrolled ? 'border-b border-[#E8E8E8] dark:border-white/10 shadow-sm' : 'border-b border-transparent'
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-
-        {/* Logo */}
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 h-full flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={toggleSidebar}
-            className="lg:hidden p-2 rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors"
+            aria-label="Menu"
           >
-            <Menu size={22} className={scrolled ? 'text-primary-700 dark:text-primary-300' : 'text-white'} />
+            <Menu size={20} className="text-[#0A0A0A] dark:text-white" />
           </button>
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all glow-teal">
-              <span className="text-white font-bold text-sm">م</span>
-            </div>
-            <span className={cn(
-              'font-bold text-lg hidden sm:block transition-colors',
-              scrolled ? 'text-primary-700 dark:text-white' : 'text-white'
-            )}>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <Image
+              src="/images/logo.svg"
+              alt="مفصل"
+              width={32}
+              height={32}
+              className="dark:invert"
+            />
+            <span className="font-semibold text-base tracking-tight text-[#0A0A0A] dark:text-white hidden sm:block">
               {isRTL ? 'مفصل' : 'MUFASAL'}
             </span>
           </Link>
         </div>
 
-        {/* Nav Links */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-8">
           {[
-            { href: '/shops', icon: <Store size={15} />, labelAr: 'المتاجر', labelEn: 'Shops' },
-            { href: '/marketplace', icon: <Package size={15} />, labelAr: 'الأقمشة', labelEn: 'Fabrics' },
-            { href: '/search', icon: <Search size={15} />, labelAr: 'البحث', labelEn: 'Search' },
+            { href: '/shops', labelAr: 'المتاجر', labelEn: 'Shops' },
+            { href: '/marketplace', labelAr: 'الأقمشة', labelEn: 'Fabrics' },
+            { href: '/search', labelAr: 'البحث', labelEn: 'Search' },
           ].map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all',
-                scrolled
-                  ? 'text-gray-600 dark:text-slate-300 hover:text-primary-700 dark:hover:text-white hover:bg-primary-50/80 dark:hover:bg-white/10'
-                  : 'text-white/80 hover:text-white hover:bg-white/15'
-              )}
+              className="text-sm font-medium text-[#3D3D3D] dark:text-neutral-300 hover:text-[#00373E] dark:hover:text-white transition-colors"
             >
-              {item.icon}
-              <span>{isRTL ? item.labelAr : item.labelEn}</span>
+              {isRTL ? item.labelAr : item.labelEn}
             </Link>
           ))}
         </nav>
 
-        {/* Search */}
-        <div className="hidden md:flex flex-1 max-w-sm mx-4">
+        <div className="hidden md:flex flex-1 max-w-xs mx-4">
           <div className="relative w-full">
-            <Search className={cn('absolute right-3 top-1/2 -translate-y-1/2', scrolled ? 'text-gray-400' : 'text-white/50')} size={16} />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
             <input
               type="text"
               value={searchQuery}
@@ -99,83 +89,48 @@ export function Navbar() {
                 }
               }}
               placeholder={isRTL ? 'ابحث...' : 'Search...'}
-              className={cn(
-                'w-full pr-9 pl-4 py-2 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary-400/50',
-                scrolled
-                  ? 'border border-gray-200 dark:border-white/10 bg-gray-50/80 dark:bg-white/5 dark:text-white placeholder-gray-400 dark:placeholder-white/30'
-                  : 'border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/40 focus:bg-white/15'
-              )}
+              className="w-full pr-9 pl-4 py-2 rounded-full text-sm border border-[#E8E8E8] dark:border-white/10 bg-[#FAFAFA] dark:bg-white/5 text-[#0A0A0A] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-[#00373E]/40"
             />
           </div>
         </div>
 
-        {/* Location */}
-        <div className={cn('hidden sm:flex items-center gap-1 text-sm transition-colors', scrolled ? 'text-gray-500 dark:text-slate-400' : 'text-white/70')}>
-          <MapPin size={14} className={scrolled ? 'text-primary-500' : 'text-gold-300'} />
-          <span className="text-xs">{isRTL ? 'الرياض' : 'Riyadh'}</span>
-          <ChevronDown size={12} />
+        <div className="hidden sm:flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <MapPin size={13} />
+          <span>{isRTL ? 'الرياض' : 'Riyadh'}</span>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <Link
             href="/dashboard/notifications"
-            className={cn(
-              'relative p-2 rounded-xl transition-colors',
-              scrolled ? 'hover:bg-gray-100 dark:hover:bg-white/10' : 'hover:bg-white/15'
-            )}
+            className="relative p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors"
           >
-            <Bell size={19} className={scrolled ? 'text-gray-600 dark:text-slate-300' : 'text-white/80'} />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white/50" />
+            <Bell size={18} className="text-[#3D3D3D] dark:text-neutral-300" />
           </Link>
 
           <button
             onClick={toggleTheme}
-            className={cn(
-              'p-2 rounded-xl transition-all',
-              scrolled ? 'hover:bg-gray-100 dark:hover:bg-white/10' : 'hover:bg-white/15'
-            )}
-            title={theme === 'dark' ? (isRTL ? 'الوضع الفاتح' : 'Light mode') : (isRTL ? 'الوضع الداكن' : 'Dark mode')}
+            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors"
+            aria-label="Toggle theme"
           >
             {theme === 'dark'
-              ? <Sun size={17} className="text-gold-400" />
-              : <Moon size={17} className={scrolled ? 'text-primary-600' : 'text-white/80'} />
-            }
+              ? <Sun size={17} className="text-neutral-400" />
+              : <Moon size={17} className="text-[#3D3D3D]" />}
           </button>
 
           <button
             onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-            className={cn(
-              'flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all',
-              scrolled ? 'hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-slate-300' : 'hover:bg-white/15 text-white/80'
-            )}
+            className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-[#3D3D3D] dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10"
           >
             <Globe size={14} />
             {language === 'ar' ? 'EN' : 'AR'}
           </button>
 
           <Link
-            href="/register"
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all hidden sm:flex',
-              scrolled
-                ? 'border border-primary-600 text-primary-600 dark:text-primary-300 dark:border-primary-400 hover:bg-primary-50 dark:hover:bg-white/10'
-                : 'border border-white/30 text-white/90 hover:bg-white/10'
-            )}
-          >
-            <span>{isRTL ? 'تسجيل' : 'Register'}</span>
-          </Link>
-          <Link
             href="/login"
-            className={cn(
-              'flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all',
-              scrolled
-                ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-md hover:shadow-lg'
-                : 'glass border border-white/25 text-white hover:bg-white/20 glow-teal'
-            )}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-[#00373E] text-white hover:bg-[#002F35] transition-colors"
           >
             <User size={15} />
-            <span>{isRTL ? 'دخول' : 'Login'}</span>
+            <span className="hidden sm:inline">{isRTL ? 'دخول' : 'Login'}</span>
           </Link>
         </div>
       </div>

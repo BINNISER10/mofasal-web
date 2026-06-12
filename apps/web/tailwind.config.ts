@@ -2,10 +2,8 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/lib/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './public/**/*.html',
   ],
   darkMode: 'class',
   theme: {
@@ -90,10 +88,10 @@ const config: Config = {
         },
       },
       fontFamily: {
-        arabic: ['ITF Rawasi Display Arabic', 'var(--font-cairo)', 'Cairo', 'Tahoma', 'sans-serif'],
-        english: ['var(--font-inter)', 'Inter', 'Segoe UI', 'sans-serif'],
-        display: ['ITF Rawasi Display Arabic', 'var(--font-cairo)', 'Cairo', 'Tahoma', 'sans-serif'],
-        sans: ['var(--font-cairo)', 'Cairo', 'Tahoma', 'sans-serif'],
+        arabic: ['var(--font-arabic)', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
+        english: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['var(--font-arabic)', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-arabic)', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'xs':   ['0.75rem',  { lineHeight: '1.5',  letterSpacing: '0.01em' }],

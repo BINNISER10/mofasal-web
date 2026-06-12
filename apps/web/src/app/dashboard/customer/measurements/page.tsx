@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { MeasurementForm } from '@/components/shared/MeasurementForm';
 import { useAppStore } from '@/lib/stores/appStore';
-import { useAuthStore } from '@/lib/stores/authStore';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { usersApi, Measurement } from '@/lib/api/users';
 import { Ruler, Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -20,7 +20,7 @@ const LABEL_MAP: Record<string, string> = {
 
 export default function CustomerMeasurementsPage() {
   const { isRTL } = useAppStore();
-  const { user } = useAuthStore();
+  const { user, isLoading: authLoading } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [savedMeasurements, setSavedMeasurements] = useState<Measurement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,11 @@ export default function CustomerMeasurementsPage() {
   const [formData, setFormData] = useState<Record<string, number>>({});
 
   const fetchMeasurements = useCallback(async () => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await usersApi.getMeasurements(user.id);
       setSavedMeasurements(res.measurements || []);
@@ -38,7 +42,7 @@ export default function CustomerMeasurementsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   useEffect(() => { fetchMeasurements(); }, [fetchMeasurements]);
 

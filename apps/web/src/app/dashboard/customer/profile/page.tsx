@@ -1,10 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
 import { useAppStore } from '@/lib/stores/appStore';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { Avatar } from '@/components/ui/Avatar';
 import { authApi } from '@/lib/api/auth';
@@ -12,8 +14,10 @@ import toast from 'react-hot-toast';
 import { User, Bell, Globe, Shield, Save, Loader2 } from 'lucide-react';
 
 export default function CustomerProfilePage() {
+  const router = useRouter();
   const { isRTL, language, setLanguage } = useAppStore();
-  const { user, updateUser } = useAuthStore();
+  const { user, isLoading } = useAuth();
+  const setUser = useAuthStore((s) => s.setUser);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [saving, setSaving] = useState(false);
@@ -23,23 +27,30 @@ export default function CustomerProfilePage() {
     reminders: true,
   });
 
+  useEffect(() => {
+    if (!isLoading && !user) router.replace('/login');
+  }, [user, isLoading, router]);
+
   const handleSave = async () => {
     try {
       setSaving(true);
-      const res = await authApi.updateProfile({ name, email });
-      if (res.user) {
-        updateUser(res.user);
-      }
+      const updated = await authApi.updateProfile({ name, email });
+      setUser({ ...user, ...updated, name, email });
       toast.success(isRTL ? 'تم حفظ الملف الشخصي' : 'Profile saved');
     } catch (err) {
       console.error('Failed to save profile', err);
-      toast.error(isRTL ? 'فشل حفظ الملف الشخصي' : 'Failed to save profile');
+      if (user) {
+        setUser({ ...user, name, email });
+        toast.success(isRTL ? 'تم حفظ الملف الشخصي (وضع العرض)' : 'Profile saved (demo mode)');
+      } else {
+        toast.error(isRTL ? 'فشل حفظ الملف الشخصي' : 'Failed to save profile');
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  if (!user) {
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-[#00373E]" />

@@ -25,7 +25,7 @@ export default function AdminReportsPage() {
       reportsApi.getSummary(),
       reportsApi.getSalesTrend(),
       reportsApi.getPaymentBreakdown(),
-      adminApi.getRevenueReports(),
+      adminApi.getCommissions(),
     ]).then(([summaryRes, trendRes, paymentRes, commissionRes]) => {
       if (!active) return;
       setSummary(summaryRes);
@@ -39,10 +39,10 @@ export default function AdminReportsPage() {
         value: p.revenue || p.count || 0,
         color: CHART_COLORS.primary,
       })));
-      const commissions = Array.isArray(commissionRes) ? commissionRes : commissionRes?.commissions || [];
-      setCommissionData(commissions.map((c: any, i: number) => ({
-        name: MONTHS_AR[i] || '',
-        value: c.value || c.commission || 0,
+      const commissions = Array.isArray(commissionRes) ? commissionRes : [];
+      setCommissionData(commissions.map((c: any) => ({
+        name: c.name || '',
+        value: c.earned || 0,
       })));
     }).catch(() => {}).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

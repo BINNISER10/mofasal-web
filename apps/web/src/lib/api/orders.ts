@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { mapPaymentMethod } from '@mufasal/shared';
 
 export interface Order {
   id: string;
@@ -109,11 +110,14 @@ interface OrderResponse {
 interface CreateOrderRequest {
   shopId: string;
   fabricId?: string;
-  measurements: MeasurementData;
-  items: Omit<OrderItem, 'id'>[];
-  deliveryAddress: Address;
-  deliveryMethod: string;
+  fabricSource?: 'shop' | 'marketplace';
+  measurements?: MeasurementData | Record<string, number>;
+  items: Array<{ name: string; quantity: number; price?: number; unitPrice?: number; type?: string }>;
+  deliveryAddress?: Address;
+  deliveryMethod?: string;
   notes?: string;
+  paymentMethod?: string;
+  totalAmount?: number;
 }
 
 interface UpdateStatusRequest {
@@ -123,7 +127,40 @@ interface UpdateStatusRequest {
 
 export const ordersApi = {
   create: async (data: CreateOrderRequest): Promise<OrderResponse> => {
-    const order = await apiClient.post<Order>('/orders', data);
+    const itemsTotal = data.items.reduce(
+      (sum, i) => sum + i.quantity * (i.unitPrice ?? i.price ?? 0),
+      0
+    );
+    const payload = {
+      shopId: data.shopId,
+      fabricId: data.fabricId,
+      fabricSource: data.fabricSource,
+      totalAmount: data.totalAmount ?? itemsTotal,
+      customerNotes: data.notes,
+      paymentMethod: data.paymentMethod ? mapPaymentMethod(data.paymentMethod) : undefined,
+      measurements: data.measurements
+        ? Object.fromEntries(
+            Object.entries(data.measurements)
+              .filter(([, v]) => v !== undefined && v !== null && v !== '')
+              .map(([k, v]) => [k, typeof v === 'number' ? v : parseFloat(String(v))])
+              .filter(([, v]) => !Number.isNaN(v))
+          )
+        : undefined,
+      deliveryAddress: data.deliveryAddress
+        ? {
+            label: data.deliveryAddress.label || 'عنوان العميل',
+            street: data.deliveryAddress.street,
+            district: data.deliveryAddress.district || '',
+            city: data.deliveryAddress.city,
+          }
+        : undefined,
+      items: data.items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice ?? i.price ?? 0,
+      })),
+    };
+    const order = await apiClient.post<Order>('/orders', payload);
     return { order };
   },
 

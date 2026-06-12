@@ -34,7 +34,10 @@ export default function InventoryPage() {
     try {
       setLoading(true);
       const res = await productsApi.list({ limit: '100' });
-      setProducts(res.products || []);
+      setProducts((res.products || []).map((p: any) => ({
+        ...p,
+        stockQuantity: p.stockQuantity ?? p.stock ?? 0,
+      })));
     } catch (err) {
       console.error('Failed to fetch products', err);
       toast.error(isRTL ? 'فشل تحميل المنتجات' : 'Failed to load products');

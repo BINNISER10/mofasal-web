@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/shared/Navbar';
@@ -8,74 +8,13 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { shopsApi } from '@/lib/api/shops';
+import { mapShopDetail, type ShopDetailView } from '@/lib/mappers/shopDetail';
+import { ShopBrandingScope } from '@/components/shared/ShopBranding';
 import {
   Star, MapPin, Clock, Phone, CheckCircle2, ArrowRight, ArrowLeft,
   Scissors, Ruler, Package, MessageCircle, Heart, Share2, ChevronLeft,
   ChevronRight, Users, Award, TrendingUp, ShoppingBag
 } from 'lucide-react';
-
-const mockShops: Record<string, any> = {
-  '1': {
-    id: '1', name: 'خياطة الرجال الراقية', nameEn: 'Premium Menswear',
-    owner: 'خالد العمر', ownerEn: 'Khalid Al-Omar',
-    avatar: null, coverImage: null,
-    city: 'الرياض', district: 'حي الورود', cityEn: 'Riyadh',
-    phone: '+966 55 123 4567',
-    rating: 4.8, reviewCount: 324, orders: 1256,
-    experience: 12, verified: true, featured: true,
-    description: 'متخصصون في الخياطة الرجالية الراقية منذ أكثر من 12 عاماً. نقدم خدمات التفصيل للبدل الرسمية والمشالح والثياب التقليدية بأعلى جودة وأدق المقاسات.',
-    descriptionEn: 'Specialized in premium menswear tailoring for over 12 years. We offer suits, thobes, and traditional garments with the highest quality.',
-    workingHours: { from: '9:00', to: '22:00', days: 'السبت - الخميس' },
-    specialties: ['بدل رسمية', 'مشالح', 'أثواب', 'بشوت', 'يونيفورم'],
-    services: [
-      { id: '1', name: 'بدلة رسمية', nameEn: 'Formal Suit', price: 1200, duration: '7 أيام', icon: '👔', popular: true },
-      { id: '2', name: 'مشلح فاخر', nameEn: 'Bisht', price: 800, duration: '5 أيام', icon: '🥻', popular: false },
-      { id: '3', name: 'ثوب قياس', nameEn: 'Custom Thobe', price: 350, duration: '3 أيام', icon: '👘', popular: true },
-      { id: '4', name: 'بدلة رياضية', nameEn: 'Sports Suit', price: 650, duration: '5 أيام', icon: '🎽', popular: false },
-      { id: '5', name: 'يونيفورم شركات', nameEn: 'Corporate Uniform', price: 420, duration: '5 أيام', icon: '👕', popular: false },
-    ],
-    reviews: [
-      { id: '1', name: 'أحمد محمد', rating: 5, comment: 'خياطة ممتازة وجودة عالية جداً. الثوب جاء بالمقاس الصحيح تماماً.', date: '2024-03-10' },
-      { id: '2', name: 'فيصل الحربي', rating: 5, comment: 'تعاملت معهم عدة مرات والنتيجة دائماً مميزة. سرعة في التنفيذ.', date: '2024-03-05' },
-      { id: '3', name: 'محمد العنزي', rating: 4, comment: 'خدمة جيدة والعمل نظيف. التوصيل كان سريع.', date: '2024-02-28' },
-    ],
-    portfolio: [
-      { label: 'بدلة رسمية زرقاء', color: '#1e3a5f' },
-      { label: 'مشلح ذهبي', color: '#c9a84c' },
-      { label: 'ثوب أبيض', color: '#f5f0e8' },
-      { label: 'بدلة رمادية', color: '#5a5a6e' },
-    ],
-    stats: { completionRate: 98, onTimeDelivery: 95, repeatCustomers: 72 },
-  },
-  '2': {
-    id: '2', name: 'ثياب الأطفال', nameEn: "Kids Thobes",
-    owner: 'فهد أحمد', ownerEn: 'Fahad Ahmed',
-    city: 'جدة', district: 'حي الروضة', cityEn: 'Jeddah',
-    phone: '+966 54 987 6543',
-    rating: 4.5, reviewCount: 210, orders: 892,
-    experience: 8, verified: true, featured: false,
-    description: 'متخصصون في تفصيل ثياب الأطفال السعودية وبدل الأولاد للمناسبات. تصاميم عصرية وراقية بأدق المقاسات.',
-    descriptionEn: 'Specialized in boys\' thobes and occasion suits.',
-    workingHours: { from: '10:00', to: '21:00', days: 'السبت - الخميس' },
-    specialties: ['ثياب أطفال', 'بدل أولاد', 'بشوت أطفال', 'ملابس تقليدية'],
-    services: [
-      { id: '1', name: 'ثوب أطفال', nameEn: 'Kids Thobe', price: 280, duration: '3 أيام', icon: '�', popular: true },
-      { id: '2', name: 'بدلة طفل', nameEn: 'Boy\'s Suit', price: 320, duration: '3 أيام', icon: '👔', popular: false },
-      { id: '3', name: 'بشت أطفال', nameEn: 'Kids Bisht', price: 650, duration: '5 أيام', icon: '🧥', popular: true },
-    ],
-    reviews: [
-      { id: '1', name: 'سعد القحطاني', rating: 5, comment: 'ماشاء الله عمل رائع للأطفال. الخياطة دقيقة والخامة ممتازة.', date: '2024-03-12' },
-      { id: '2', name: 'فيصل العتيبي', rating: 4, comment: 'ثوب ابني جاء جميل جداً بالمقاس المطلوب.', date: '2024-03-01' },
-    ],
-    portfolio: [
-      { label: 'ثوب أبيض', color: '#f0ece0' },
-      { label: 'بدلة كحلي', color: '#2c3e50' },
-      { label: 'ثوب بيج', color: '#d2b48c' },
-      { label: 'بدلة زرقاء', color: '#90caf9' },
-    ],
-    stats: { completionRate: 96, onTimeDelivery: 91, repeatCustomers: 65 },
-  },
-};
 
 export default function ShopDetailPage() {
   const params = useParams();
@@ -85,53 +24,59 @@ export default function ShopDetailPage() {
   const [liked, setLiked] = useState(false);
 
   const shopId = String(params.id);
-  const fallback = mockShops[shopId] ?? mockShops['1'];
-  const [shop, setShop] = useState<any>(fallback);
+  const [shop, setShop] = useState<ShopDetailView | null>(null);
+  const [shopBranding, setShopBranding] = useState<Record<string, string> | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError(false);
     shopsApi.getById(shopId)
       .then((res) => {
         if (!active) return;
-        const api: any = res.shop;
-        if (!api || !api.id) return;
-        const services = Array.isArray(api.shopServices) && api.shopServices.length
-          ? api.shopServices.map((s: any, i: number) => ({
-              id: s.id || String(i + 1),
-              name: s.nameAr || s.name || s.serviceType || 'خدمة',
-              nameEn: s.nameEn || s.name || 'Service',
-              price: s.price ?? 0,
-              duration: s.duration ? `${s.duration} ${isRTL ? 'أيام' : 'days'}` : '—',
-              icon: s.serviceType === 'TAILORING' ? '👘' : '🧵',
-              popular: Boolean(s.isPopular || i === 0),
-            }))
-          : fallback.services;
-        setShop({
-          ...fallback,
-          id: api.id,
-          name: api.nameAr || api.name || fallback.name,
-          owner: api.ownerName || fallback.owner,
-          city: api.city || fallback.city,
-          district: api.region || api.district || fallback.district,
-          phone: api.phone || fallback.phone,
-          rating: api.rating ?? fallback.rating,
-          reviewCount: api.reviewCount ?? fallback.reviewCount,
-          orders: api.orderCount ?? fallback.orders,
-          verified: api.isVerified ?? fallback.verified,
-          featured: api.subscriptionPlan === 'PREMIUM' || fallback.featured,
-          description: api.description || fallback.description,
-          services,
-        });
+        if (!res.shop?.id) {
+          setError(true);
+          return;
+        }
+        setShop(mapShopDetail(res.shop, isRTL));
+        setShopBranding((res.shop as { branding?: Record<string, string> }).branding);
       })
-      .catch(() => { /* الإبقاء على القالب الاحتياطي عند فشل الاتصال */ });
+      .catch(() => { if (active) setError(true); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [shopId]);
+  }, [shopId, isRTL]);
 
   const ArrowIcon = isRTL ? ArrowRight : ArrowLeft;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
+        <Navbar />
+        <div className="text-center py-32 text-neutral-400">{isRTL ? 'جاري التحميل...' : 'Loading...'}</div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !shop) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
+        <Navbar />
+        <div className="text-center py-32">
+          <p className="text-neutral-500 mb-4">{isRTL ? 'المتجر غير متوفر' : 'Shop not found'}</p>
+          <Button onClick={() => router.push('/shops')}>{isRTL ? 'العودة للمتاجر' : 'Back to shops'}</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   const ChevronBack = isRTL ? ChevronRight : ChevronLeft;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ShopBrandingScope branding={shopBranding} className="min-h-screen bg-gray-50">
       <Navbar />
 
       {/* Cover / Hero */}
@@ -432,6 +377,6 @@ export default function ShopDetailPage() {
       </div>
 
       <Footer />
-    </div>
+    </ShopBrandingScope>
   );
 }

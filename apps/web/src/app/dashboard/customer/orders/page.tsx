@@ -7,6 +7,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { cn } from '@/lib/utils/cn';
 import { ordersApi, Order } from '@/lib/api/orders';
+import { getCustomerStageLabel } from '@mufasal/shared';
 import Link from 'next/link';
 
 export default function CustomerOrdersPage() {
@@ -34,14 +35,36 @@ export default function CustomerOrdersPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{isRTL ? 'طلباتي' : 'My Orders'}</h2>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {['ALL', 'PENDING', 'CONFIRMED', 'STAFF_ON_WAY', 'TAKING_MEASUREMENTS', 'SEWING_ASSEMBLY', 'DELIVERED', 'CANCELLED'].map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={cn('px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors', filter === f ? 'bg-primary-700 text-white' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600')}>
-              {isRTL ? { ALL: 'الكل', PENDING: 'قيد الانتظار', CONFIRMED: 'مؤكد', STAFF_ON_WAY: 'قياس', TAKING_MEASUREMENTS: 'أخذ المقاسات', SEWING_ASSEMBLY: 'خياطة', DELIVERED: 'مكتمل', CANCELLED: 'ملغي' }[f] || f : f}
-            </button>
-          ))}
+        <div>
+          <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-1">
+            {isRTL ? 'تابع' : 'Track'}
+          </p>
+          <h2 className="text-xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight">
+            {isRTL ? 'طلباتي' : 'My orders'}
+          </h2>
         </div>
+        <Button href="/dashboard/customer/orders/new" variant="primary" size="sm">
+          {isRTL ? '+ طلب جديد' : '+ New order'}
+        </Button>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+        {['ALL', 'PENDING', 'CONFIRMED', 'SEWING_ASSEMBLY', 'ON_WAY_TO_CUSTOMER', 'DELIVERED', 'CANCELLED'].map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setFilter(f)}
+            className={cn(
+              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border',
+              filter === f
+                ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] dark:bg-white dark:text-[#0A0A0A]'
+                : 'border-[#E8E8E8] text-neutral-600 hover:border-[#00373E]/30'
+            )}
+          >
+            {isRTL
+              ? { ALL: 'الكل', PENDING: 'جديد', CONFIRMED: 'مؤكد', SEWING_ASSEMBLY: 'تصنيع', ON_WAY_TO_CUSTOMER: 'توصيل', DELIVERED: 'مكتمل', CANCELLED: 'ملغي' }[f] || f
+              : f}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -61,7 +84,7 @@ export default function CustomerOrdersPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-gray-900 dark:text-slate-100">#{order.orderNumber || order.id}</p>
                       <Badge variant={order.status === 'DELIVERED' ? 'success' : order.status === 'CANCELLED' ? 'error' : order.status === 'PENDING' ? 'warning' : 'info'} size="sm">
-                        {order.status}
+                        {getCustomerStageLabel(order.status, isRTL)}
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{order.shopName}</p>

@@ -3,14 +3,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/shared/Navbar';
 import { Footer } from '@/components/shared/Footer';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { PageHero } from '@/components/shared/PageHero';
+import { HOME_IMAGES } from '@/components/home/homeImages';
 import { useAppStore } from '@/lib/stores/appStore';
 import { shopsApi } from '@/lib/api/shops';
 import { trackBehavior } from '@/lib/api/ai';
 import { RecommendedForYou } from '@/components/shared/RecommendedForYou';
 import {
-  Search,
   MapPin,
   Star,
   ShoppingBag,
@@ -23,7 +22,7 @@ import {
 } from 'lucide-react';
 
 const CITIES = ['الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام', 'الخبر', 'أبها', 'تبوك'];
-const CATEGORIES = ['الكل', 'خياطة رجالية', 'أطفال', 'بدل رسمية', 'بشوت ومشالح', 'تعديلات'];
+const CATEGORIES = ['الكل', 'خياطة رجالية', 'أطفال', 'ثوب سعودي', 'بشوت ومشالح', 'تعديلات'];
 const SORT_OPTIONS = [
   { value: 'smart', labelAr: 'الترتيب الذكي', labelEn: 'Smart' },
   { value: 'rating', labelAr: 'الأعلى تقييماً', labelEn: 'Top Rated' },
@@ -51,75 +50,73 @@ interface ShopCardData {
 
 function ShopCard({ shop, isRTL }: { shop: ShopCardData; isRTL: boolean }) {
   const initials = shop.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
-  const colors = ['#00373E', '#481719', '#735B4D', '#1A6470', '#8C4043'];
-  const bg = colors[shop.id.charCodeAt(0) % colors.length];
 
   return (
-    <Link href={`/shops/${shop.id}`} className="block" onClick={() => trackBehavior('VIEW_SHOP', { shopId: shop.id })}>
-    <Card className="overflow-hidden hover:shadow-mufasal-hover hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-      {/* Shop Banner */}
-      <div className="h-32 relative flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${bg}22, ${bg}44)` }}>
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg"
-          style={{ background: bg }}
-        >
-          {initials}
-        </div>
-        {shop.verified && (
-          <div className="absolute top-3 end-3 bg-white rounded-full px-2 py-1 flex items-center gap-1 shadow text-xs font-semibold text-primary-700">
-            <svg className="w-3 h-3 text-primary-600 fill-primary-600" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            {isRTL ? 'موثق' : 'Verified'}
+    <Link
+      href={`/shops/${shop.id}`}
+      className="group block"
+      onClick={() => trackBehavior('VIEW_SHOP', { shopId: shop.id })}
+    >
+      <article className="h-full flex flex-col">
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-[#00373E]/5 mb-3">
+          {shop.image ? (
+            <img src={shop.image} alt={shop.nameAr} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#00373E] flex items-center justify-center text-white text-lg font-semibold">
+            {initials}
           </div>
-        )}
-        <div className={`absolute top-3 start-3 w-2.5 h-2.5 rounded-full ${shop.isOpen ? 'bg-green-400' : 'bg-gray-300'} ring-2 ring-white`} />
-      </div>
+          </div>
+          )}
+          {shop.verified && (
+            <span className="absolute top-3 end-3 text-[10px] font-medium px-2.5 py-1 rounded-full bg-white/95 text-[#0A0A0A]">
+              {isRTL ? 'موثق' : 'Verified'}
+            </span>
+          )}
+          <span className={`absolute top-3 start-3 w-2 h-2 rounded-full ${shop.isOpen ? 'bg-emerald-500' : 'bg-neutral-300'} ring-2 ring-white`} />
+        </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <h3 className="font-bold text-gray-900 text-base leading-tight">{isRTL ? shop.nameAr : shop.nameEn}</h3>
-            <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
-              <MapPin size={11} />
-              <span>{shop.city} - {shop.district}</span>
+        <div className="flex-1 flex flex-col px-0.5">
+          <p className="text-[10px] uppercase tracking-wider text-neutral-400 mb-1">{shop.category}</p>
+          <h3 className="text-sm font-medium text-[#0A0A0A] dark:text-white leading-snug mb-1 line-clamp-2">
+            {isRTL ? shop.nameAr : shop.nameEn}
+          </h3>
+          <div className="flex items-center gap-1 text-xs text-neutral-500 mb-2">
+            <MapPin size={11} />
+            <span>{shop.city}{shop.district ? ` · ${shop.district}` : ''}</span>
+          </div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-1">
+              <Star size={11} className="fill-[#B8963E] text-[#B8963E]" />
+              <span className="text-xs text-neutral-600">{shop.rating || '—'}</span>
+              {shop.reviewCount > 0 && <span className="text-xs text-neutral-400">({shop.reviewCount})</span>}
             </div>
+            <span className="text-xs text-neutral-400 flex items-center gap-1">
+              <ShoppingBag size={11} />
+              {shop.orderCount.toLocaleString()}
+            </span>
+          </div>
+          {shop.specialties.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3">
+              {shop.specialties.slice(0, 2).map((s) => (
+                <span key={s} className="text-[10px] text-neutral-500 border border-[#E8E8E8] dark:border-white/10 px-2 py-0.5 rounded-full">
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="mt-auto flex items-baseline justify-between gap-2 pt-2 border-t border-[#E8E8E8] dark:border-white/10">
+            <div>
+              <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">﷼{shop.minPrice}</span>
+              <span className="text-xs text-neutral-400 ms-1">{isRTL ? 'يبدأ من' : 'from'}</span>
+            </div>
+            <span className="text-xs text-neutral-400 flex items-center gap-1">
+              <Clock size={11} />
+              {shop.deliveryDays}{isRTL ? ' ي' : 'd'}
+            </span>
           </div>
         </div>
-
-        {/* Rating Row */}
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center gap-1">
-            <Star size={13} className="fill-gold-400 text-gold-400" />
-            <span className="text-sm font-bold text-gray-800">{shop.rating}</span>
-            <span className="text-xs text-gray-400">({shop.reviewCount})</span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-400 text-xs">
-            <ShoppingBag size={11} />
-            <span>{shop.orderCount.toLocaleString()} {isRTL ? 'طلب' : 'orders'}</span>
-          </div>
-        </div>
-
-        {/* Specialties */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {shop.specialties.slice(0, 3).map((s) => (
-            <span key={s} className="text-[10px] bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">{s}</span>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-          <div>
-            <p className="text-xs text-gray-400">{isRTL ? 'يبدأ من' : 'Starting from'}</p>
-            <p className="text-sm font-bold text-primary-700">﷼{shop.minPrice}</p>
-          </div>
-          <div className="flex items-center gap-1 text-gray-400 text-xs">
-            <Clock size={11} />
-            <span>{shop.deliveryDays} {isRTL ? 'أيام' : 'days'}</span>
-          </div>
-        </div>
-      </div>
-    </Card>
+      </article>
     </Link>
   );
 }
@@ -137,12 +134,12 @@ function mapShop(raw: any): ShopCardData {
     rating: raw.rating || 0,
     reviewCount: raw.reviewCount || 0,
     orderCount: raw.totalOrders || raw.orderCount || 0,
-    minPrice: raw.minPrice || 0,
-    deliveryDays: raw.deliveryDays || 7,
+    minPrice: raw.minPrice || raw.minOrderAmount || 200,
+    deliveryDays: raw.estimatedDeliveryTime || raw.deliveryDays || 7,
     verified: raw.status === 'ACTIVE' || raw.isVerified || false,
-    specialties: raw.specialties || [],
-    image: raw.logo || null,
-    isOpen: raw.isOpen || false,
+    specialties: raw.specialties || raw.categories || [],
+    image: raw.coverImage || raw.logo || null,
+    isOpen: raw.isOpen !== false,
   };
 }
 
@@ -180,80 +177,49 @@ export default function ShopsPage() {
     return result;
   }, [search, selectedCity, selectedCategory, minRating, verifiedOnly, openOnly, shops]);
 
+  const selectClass =
+    'appearance-none bg-white dark:bg-[#111] border border-[#E8E8E8] dark:border-white/10 rounded-full px-4 py-2 text-sm text-[#0A0A0A] dark:text-white pe-9 focus:outline-none focus:border-[#00373E]/40';
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
       <Navbar />
 
-      {/* Hero */}
-      <div className="bg-gradient-hero text-white py-16 px-4">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Scissors size={28} className="text-gold-300" />
-            <h1 className="text-4xl md:text-5xl font-bold">
-              {isRTL ? 'اكتشف المتاجر' : 'Discover Shops'}
-            </h1>
-          </div>
-          <p className="text-xl text-primary-200 mb-8 max-w-xl mx-auto">
-            {isRTL
-              ? 'تصفح أفضل ورش الخياطة المعتمدة في مختلف مدن المملكة'
-              : 'Browse top verified tailoring workshops across Saudi Arabia'}
-          </p>
-          {/* Search Bar */}
-          <div className="flex gap-2 max-w-2xl mx-auto bg-white rounded-2xl p-1.5 shadow-xl">
-            <div className="flex-1 flex items-center gap-2 px-3">
-              <Search size={18} className="text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={isRTL ? 'ابحث باسم المتجر أو المدينة...' : 'Search by shop name or city...'}
-                className="w-full text-gray-800 text-sm outline-none bg-transparent"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-            <Button variant="primary" className="rounded-xl px-6">
-              {isRTL ? 'بحث' : 'Search'}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        isRTL={isRTL}
+        title={isRTL ? 'محلات الخياطة' : 'Tailor Shops'}
+        subtitle={isRTL
+          ? 'ورش خياطة رجالية وأطفال معتمدة — ثوب، بشوت.'
+          : 'Verified men’s and boys’ tailoring — thobe, bisht.'}
+        image={HOME_IMAGES.shops}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={isRTL ? 'ابحث باسم المتجر أو المدينة...' : 'Search shop or city...'}
+      />
 
-      {/* Stats Bar */}
-      <div className="bg-white border-b border-gray-100 py-3 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-sm text-gray-600">
-          <span>
-            {isRTL ? `${filtered.length} متجر متاح` : `${filtered.length} shops available`}
-          </span>
+      <div className="border-b border-[#E8E8E8] dark:border-white/10 bg-[#FAFAFA] dark:bg-[#111]">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-500">
+          <span>{isRTL ? `${filtered.length} متجر` : `${filtered.length} shops`}</span>
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-              {isRTL ? `${shops.filter(s => s.isOpen).length} مفتوح الآن` : `${shops.filter(s => s.isOpen).length} open now`}
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              {shops.filter((s) => s.isOpen).length} {isRTL ? 'مفتوح' : 'open'}
             </span>
-            <span className="flex items-center gap-1 text-primary-700">
-              <svg className="w-3 h-3 fill-primary-600" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              {isRTL ? `${shops.filter(s => s.verified).length} موثق` : `${shops.filter(s => s.verified).length} verified`}
-            </span>
+            <span>{shops.filter((s) => s.verified).length} {isRTL ? 'موثق' : 'verified'}</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Category Tabs */}
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-8 md:py-10">
         <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar mb-6">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 selectedCategory === cat
-                  ? 'bg-primary-500 text-white shadow-md'
-                  : 'bg-white text-gray-600 hover:bg-primary-50 border border-gray-200'
+                  ? 'bg-[#0A0A0A] text-white dark:bg-white dark:text-[#0A0A0A]'
+                  : 'bg-[#FAFAFA] dark:bg-white/5 text-neutral-600 dark:text-neutral-300 border border-[#E8E8E8] dark:border-white/10 hover:border-[#00373E]/30'
               }`}
             >
               {cat}
@@ -261,64 +227,52 @@ export default function ShopsPage() {
           ))}
         </div>
 
-        {/* Filters + Sort Row */}
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            {/* City Filter */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-300"
-              >
-                <option value="">{isRTL ? 'كل المدن' : 'All Cities'}</option>
+              <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className={selectClass}>
+                <option value="">{isRTL ? 'كل المدن' : 'All cities'}</option>
                 {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
-              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-2.5 text-gray-400 pointer-events-none" />
+              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-3 text-neutral-400 pointer-events-none" />
             </div>
-
-            {/* More Filters Toggle */}
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                showFilters ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                showFilters
+                  ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] dark:bg-white dark:text-[#0A0A0A]'
+                  : 'border-[#E8E8E8] dark:border-white/10 text-neutral-600 hover:border-[#00373E]/30'
               }`}
             >
               <SlidersHorizontal size={14} />
               {isRTL ? 'فلاتر' : 'Filters'}
             </button>
           </div>
-
-          {/* Sort */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 hidden sm:block">{isRTL ? 'ترتيب:' : 'Sort:'}</span>
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-300"
-              >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{isRTL ? o.labelAr : o.labelEn}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-2.5 text-gray-400 pointer-events-none" />
-            </div>
+          <div className="relative">
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className={selectClass}>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{isRTL ? o.labelAr : o.labelEn}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-3 text-neutral-400 pointer-events-none" />
           </div>
         </div>
 
-        {/* Extended Filters */}
         {showFilters && (
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-[#E8E8E8] dark:border-white/10 p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <p className="text-xs font-semibold text-gray-600 mb-2">{isRTL ? 'الحد الأدنى للتقييم' : 'Minimum Rating'}</p>
-              <div className="flex gap-2">
+              <p className="text-xs font-medium text-neutral-500 mb-2">{isRTL ? 'التقييم' : 'Rating'}</p>
+              <div className="flex flex-wrap gap-2">
                 {[0, 4, 4.5, 4.8].map((r) => (
                   <button
                     key={r}
+                    type="button"
                     onClick={() => setMinRating(r)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${
-                      minRating === r ? 'bg-gold-400 text-white border-gold-400' : 'bg-white text-gray-600 border-gray-200'
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      minRating === r
+                        ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                        : 'border-[#E8E8E8] text-neutral-600 hover:border-[#00373E]/30'
                     }`}
                   >
                     {r === 0 ? (isRTL ? 'الكل' : 'All') : `${r}+`}
@@ -326,23 +280,24 @@ export default function ShopsPage() {
                 ))}
               </div>
             </div>
-            <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} className="w-4 h-4 rounded text-primary-500 focus:ring-primary-300" />
-                <span className="text-sm text-gray-700">{isRTL ? 'موثق فقط' : 'Verified only'}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-600">
+                <input type="checkbox" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} className="rounded border-[#E8E8E8]" />
+                {isRTL ? 'موثق فقط' : 'Verified only'}
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} className="w-4 h-4 rounded text-primary-500 focus:ring-primary-300" />
-                <span className="text-sm text-gray-700">{isRTL ? 'مفتوح الآن' : 'Open now'}</span>
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-600">
+                <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} className="rounded border-[#E8E8E8]" />
+                {isRTL ? 'مفتوح الآن' : 'Open now'}
               </label>
             </div>
-            <div className="flex items-center justify-end">
+            <div className="flex items-center sm:justify-end">
               <button
+                type="button"
                 onClick={() => { setMinRating(0); setVerifiedOnly(false); setOpenOnly(false); setSelectedCity(''); setSelectedCategory('الكل'); }}
-                className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1"
+                className="text-sm text-neutral-500 hover:text-[#0A0A0A] flex items-center gap-1"
               >
                 <X size={14} />
-                {isRTL ? 'مسح الفلاتر' : 'Clear filters'}
+                {isRTL ? 'مسح' : 'Clear'}
               </button>
             </div>
           </div>
@@ -353,31 +308,24 @@ export default function ShopsPage() {
 
         {/* Results Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
-                <div className="h-32 bg-gray-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-2/3" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="flex gap-2">
-                    <div className="h-5 bg-gray-200 rounded-full w-16" />
-                    <div className="h-5 bg-gray-200 rounded-full w-12" />
-                    <div className="h-5 bg-gray-200 rounded-full w-14" />
-                  </div>
-                  <div className="h-6 bg-gray-200 rounded w-1/4" />
-                </div>
+              <div key={i} className="animate-pulse">
+                <div className="aspect-[4/3] rounded-xl bg-neutral-100 mb-3" />
+                <div className="h-3 bg-neutral-100 rounded w-1/3 mb-2" />
+                <div className="h-4 bg-neutral-100 rounded w-2/3 mb-2" />
+                <div className="h-3 bg-neutral-100 rounded w-1/2" />
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <Scissors size={48} className="text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium">{isRTL ? 'لا توجد متاجر تطابق البحث' : 'No shops match your search'}</p>
-            <p className="text-gray-400 text-sm mt-1">{isRTL ? 'حاول تغيير معايير البحث' : 'Try adjusting your filters'}</p>
+          <div className="text-center py-24">
+            <Scissors size={40} className="text-neutral-200 mx-auto mb-4" />
+            <p className="text-[#0A0A0A] dark:text-white font-medium">{isRTL ? 'لا توجد متاجر' : 'No shops found'}</p>
+            <p className="text-neutral-400 text-sm mt-1">{isRTL ? 'جرّب تغيير الفلاتر' : 'Try different filters'}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
             {filtered.map((shop) => (
               <ShopCard key={shop.id} shop={shop} isRTL={isRTL} />
             ))}

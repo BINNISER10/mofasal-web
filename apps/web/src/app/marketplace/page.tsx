@@ -1,25 +1,15 @@
 'use client';
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/shared/Navbar';
 import { Footer } from '@/components/shared/Footer';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { PageHero } from '@/components/shared/PageHero';
 import { useAppStore } from '@/lib/stores/appStore';
 import { productsApi } from '@/lib/api/products';
-import {
-  Search,
-  Star,
-  Heart,
-  ChevronDown,
-  Package,
-  X,
-  SlidersHorizontal,
-  TrendingUp,
-  Sparkles,
-  Loader2,
-} from 'lucide-react';
+import { HOME_IMAGES } from '@/components/home/homeImages';
+import { Star, Heart, ChevronDown, Package, X, SlidersHorizontal } from 'lucide-react';
 
 interface ProductCard {
   id: string;
@@ -29,12 +19,12 @@ interface ProductCard {
   material: string;
   origin: string;
   pricePerMeter: number;
-  minMeters: number;
   rating: number;
   reviewCount: number;
   inStock: boolean;
   isFeatured: boolean;
   colors: string[];
+  imageUrl: string | null;
   merchant: string;
   tag: string | null;
   descAr: string;
@@ -42,145 +32,138 @@ interface ProductCard {
 
 const CATEGORIES = [
   { id: 'all', labelAr: 'الكل', labelEn: 'All' },
-  { id: 'mens', labelAr: 'أقمشة رجالية', labelEn: "Men's Fabrics" },
-  { id: 'kids', labelAr: 'أطفال', labelEn: 'Kids' },
+  { id: 'mens', labelAr: 'رجالي', labelEn: "Men's" },
+  { id: 'kids', labelAr: 'أطفال', labelEn: 'Boys' },
   { id: 'accessories', labelAr: 'إكسسوارات', labelEn: 'Accessories' },
   { id: 'lining', labelAr: 'بطانات', labelEn: 'Lining' },
 ];
 
 const MATERIALS = ['الكل', 'قطن', 'صوف', 'حرير', 'كتان', 'بوليستر', 'تريكو', 'جلد'];
 const ORIGINS = ['الكل', 'إيطالي', 'مصري', 'هندي', 'تركي', 'إماراتي', 'سعودي'];
+const TRENDING = ['صوف إيطالي', 'قطن مصري', 'ثوب صيفي', 'ثوب سعودي'];
 
 const SLUG_CATEGORY: Record<string, string> = {
-  mens: "Men's Fabrics", kids: 'Kids Fabrics',
-  accessories: 'Accessories', lining: 'Lining',
+  mens: "Men's Fabrics",
+  kids: 'Kids Fabrics',
+  accessories: 'Accessories',
+  lining: 'Lining',
 };
 
-function FabricCard({ product, isRTL }: { product: ProductCard; isRTL: boolean }) {
-  const [liked, setLiked] = useState(false);
-
-  return (
-    <Link href={`/marketplace/${product.id}`} className="block">
-    <Card className="overflow-hidden group hover:shadow-mufasal-hover hover:-translate-y-1 transition-all duration-300">
-      {/* Image Area */}
-      <div className="relative h-44 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="grid grid-cols-4 gap-1 p-6 w-full">
-            {product.colors.slice(0, 4).map((c, i) => (
-              <div
-                key={i}
-                className="h-20 rounded-lg shadow-sm transition-transform group-hover:scale-105"
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="absolute top-2 start-2 flex flex-col gap-1">
-          {product.tag && (
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white ${
-              product.tag === 'الأكثر مبيعاً' ? 'bg-gold-500' :
-              product.tag === 'جديد' ? 'bg-primary-500' :
-              'bg-red-500'
-            }`}>
-              {product.tag}
-            </span>
-          )}
-          {product.isFeatured && !product.tag && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white bg-purple-500 flex items-center gap-0.5">
-              <Sparkles size={9} />
-              {isRTL ? 'مميز' : 'Featured'}
-            </span>
-          )}
-        </div>
-
-        {/* Like Button */}
-        <button
-          onClick={() => setLiked(!liked)}
-          className="absolute top-2 end-2 w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:scale-110 transition-transform"
-        >
-          <Heart size={14} className={liked ? 'fill-red-500 text-red-500' : 'text-gray-400'} />
-        </button>
-
-        {/* Out of Stock Overlay */}
-        {!product.inStock && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-            <span className="bg-red-100 text-red-700 text-sm font-bold px-3 py-1 rounded-full">
-              {isRTL ? 'نفذ المخزون' : 'Out of Stock'}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="p-4">
-        <div className="mb-1">
-          <h3 className="font-bold text-gray-900 text-sm leading-tight">
-            {isRTL ? product.nameAr : product.nameEn}
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-            {isRTL ? product.descAr : product.nameEn}
-          </p>
-        </div>
-
-        {/* Meta Row */}
-        <div className="flex items-center gap-2 mb-2 mt-2">
-          <span className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">{product.material}</span>
-          <span className="text-xs text-gray-400">{product.origin}</span>
-        </div>
-
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-3">
-          <Star size={11} className="fill-gold-400 text-gold-400" />
-          <span className="text-xs font-bold text-gray-700">{product.rating}</span>
-          <span className="text-xs text-gray-400">({product.reviewCount})</span>
-          <span className="text-xs text-gray-300 mx-1">·</span>
-          <span className="text-xs text-gray-500">{product.merchant}</span>
-        </div>
-
-        {/* Price + Cart */}
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-xs text-gray-400">{isRTL ? 'المتر' : 'per meter'}</span>
-            <p className="text-lg font-bold text-primary-700">﷼{product.pricePerMeter}</p>
-          </div>
-          <Button
-            variant={product.inStock ? 'primary' : 'ghost'}
-            size="sm"
-            disabled={!product.inStock}
-          >
-            {isRTL ? 'عرض التفاصيل' : 'View Details'}
-          </Button>
-        </div>
-      </div>
-    </Card>
-    </Link>
-  );
+function resolveTag(raw: any): string | null {
+  const inStock = raw.inStock !== undefined
+    ? raw.inStock
+    : (raw.stockQuantity ?? raw.stock ?? 1) > 0;
+  if (!inStock) return 'نفذ المخزون';
+  const tags = String(raw.tags || '').toLowerCase();
+  if (tags.includes('bestseller') || tags.includes('best') || tags.includes('الأكثر')) return 'الأكثر مبيعاً';
+  if (tags.includes('new') || tags.includes('جديد')) return 'جديد';
+  if (raw.isFeatured) return 'مميز';
+  return null;
 }
 
 function mapProduct(raw: any): ProductCard {
   const attrs = raw.attributes || {};
-  const catSlug = raw.category
-    ? Object.entries(SLUG_CATEGORY).find(([, v]) => v === raw.category)?.[0] || 'all'
+  const categoryName = typeof raw.category === 'string'
+    ? raw.category
+    : raw.category?.name || raw.category?.nameAr || '';
+  const catSlug = categoryName
+    ? Object.entries(SLUG_CATEGORY).find(([, v]) => v === categoryName || categoryName.includes(v))?.[0]
+      || (raw.category?.slug ?? 'all')
     : 'all';
+  const inStock = raw.inStock !== undefined
+    ? raw.inStock
+    : (raw.stockQuantity ?? raw.stock ?? 1) > 0;
+
   return {
     id: raw.id,
     nameAr: raw.nameAr || raw.name,
     nameEn: raw.nameEn || raw.name,
     category: catSlug,
-    material: raw.material || attrs.material || '',
+    material: raw.material || attrs.material || raw.category?.nameAr || '',
     origin: raw.origin || attrs.origin || '',
     pricePerMeter: raw.price || raw.pricePerMeter || 0,
-    minMeters: raw.minMeters || attrs.minMeters || 1,
-    rating: raw.rating || 0,
+    rating: raw.rating || raw.shop?.rating || 0,
     reviewCount: raw.reviewCount || 0,
-    inStock: raw.inStock !== undefined ? raw.inStock : raw.stock ? raw.stock > 0 : true,
+    inStock,
     isFeatured: raw.isFeatured ?? false,
-    colors: raw.colors || attrs.colors || [],
-    merchant: raw.merchantName || '',
-    tag: raw.isFeatured ? (raw.inStock !== false ? 'مميز' : 'نفذ المخزون') : null,
-    descAr: raw.description || '',
+    colors: raw.colors || attrs.colors || ['#F5F5F5', '#E8E8E8', '#D4D4D4', '#A3A3A3'],
+    imageUrl: Array.isArray(raw.images) && raw.images[0] ? raw.images[0] : null,
+    merchant: raw.merchantName || raw.shop?.nameAr || raw.shop?.name || '',
+    tag: resolveTag(raw),
+    descAr: raw.descriptionAr || raw.description || '',
   };
+}
+
+function FabricCard({ product, isRTL }: { product: ProductCard; isRTL: boolean }) {
+  const [liked, setLiked] = useState(false);
+
+  return (
+    <article className="group h-full flex flex-col">
+      <Link href={`/marketplace/${product.id}`} className="block flex-1 flex flex-col">
+        <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-neutral-100 mb-3">
+          {product.imageUrl ? (
+            <img src={product.imageUrl} alt={product.nameAr} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          ) : (
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+            {product.colors.slice(0, 4).map((c, i) => (
+              <div key={i} style={{ backgroundColor: c }} className="transition-transform duration-500 group-hover:scale-[1.02]" />
+            ))}
+          </div>
+          )}
+
+          {product.tag && (
+            <span className={`absolute top-3 start-3 text-[10px] font-medium px-2.5 py-1 rounded-full ${
+              product.tag === 'نفذ المخزون'
+                ? 'bg-neutral-800/80 text-white'
+                : 'bg-white/95 text-[#0A0A0A]'
+            }`}>
+              {product.tag}
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); }}
+            className="absolute top-3 end-3 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+          >
+            <Heart size={14} className={liked ? 'fill-red-500 text-red-500' : 'text-neutral-400'} />
+          </button>
+
+          {!product.inStock && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]" />
+          )}
+        </div>
+
+        <div className="flex-1 flex flex-col px-0.5">
+          <p className="text-[10px] uppercase tracking-wider text-neutral-400 mb-1">{product.merchant}</p>
+          <h3 className="text-sm font-medium text-[#0A0A0A] dark:text-white leading-snug mb-1 line-clamp-2">
+            {isRTL ? product.nameAr : product.nameEn}
+          </h3>
+          <p className="text-xs text-neutral-500 mb-2">
+            {product.material}{product.origin ? ` · ${product.origin}` : ''}
+          </p>
+          <div className="flex items-center gap-1 mb-3">
+            <Star size={11} className="fill-[#B8963E] text-[#B8963E]" />
+            <span className="text-xs text-neutral-600">{product.rating || '—'}</span>
+            {product.reviewCount > 0 && (
+              <span className="text-xs text-neutral-400">({product.reviewCount})</span>
+            )}
+          </div>
+          <div className="mt-auto flex items-baseline justify-between gap-2">
+            <div>
+              <span className="text-base font-semibold text-[#0A0A0A] dark:text-white">
+                ﷼{product.pricePerMeter}
+              </span>
+              <span className="text-xs text-neutral-400 ms-1">{isRTL ? '/ متر' : '/ m'}</span>
+            </div>
+            <span className="text-xs font-medium text-[#00373E] dark:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+              {isRTL ? 'عرض ←' : 'View →'}
+            </span>
+          </div>
+        </div>
+      </Link>
+    </article>
+  );
 }
 
 export default function MarketplacePage() {
@@ -222,58 +205,34 @@ export default function MarketplacePage() {
     return result;
   }, [search, activeCategory, selectedMaterial, selectedOrigin, sortBy, maxPrice, inStockOnly, products]);
 
+  const selectClass =
+    'appearance-none bg-white dark:bg-[#111] border border-[#E8E8E8] dark:border-white/10 rounded-full px-4 py-2 text-sm text-[#0A0A0A] dark:text-white pe-9 focus:outline-none focus:border-[#00373E]/40';
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
       <Navbar />
 
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-accent-600 via-accent-500 to-primary-700 text-white py-14 px-4">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Package size={28} className="text-gold-300" />
-            <h1 className="text-4xl md:text-5xl font-bold">
-              {isRTL ? 'سوق الأقمشة' : 'Fabric Marketplace'}
-            </h1>
-          </div>
-          <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto">
-            {isRTL
-              ? 'تصفح آلاف الأقمشة والإكسسوارات من أفضل التجار في المملكة'
-              : 'Browse thousands of fabrics and accessories from top Saudi merchants'}
-          </p>
-          {/* Search */}
-          <div className="flex gap-2 max-w-2xl mx-auto bg-white rounded-2xl p-1.5 shadow-xl">
-            <div className="flex-1 flex items-center gap-2 px-3">
-              <Search size={18} className="text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={isRTL ? 'ابحث عن قماش أو مادة أو تاجر...' : 'Search fabric, material or merchant...'}
-                className="w-full text-gray-800 text-sm outline-none bg-transparent"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-            <Button variant="primary" className="rounded-xl px-6">
-              {isRTL ? 'بحث' : 'Search'}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        isRTL={isRTL}
+        title={isRTL ? 'سوق الأقمشة' : 'Fabric Market'}
+        subtitle={isRTL
+          ? 'أجود أقمشة الثوب السعودي للرجال والأطفال — من تجار موثوقين.'
+          : 'Finest Saudi thobe fabrics for men and boys — from trusted merchants.'}
+        image={HOME_IMAGES.marketplace}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={isRTL ? 'ابحث عن قماش أو مادة...' : 'Search fabric or material...'}
+      />
 
-      {/* Trending Bar */}
-      <div className="bg-white border-b border-gray-100 py-2.5 px-4">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm overflow-x-auto hide-scrollbar">
-          <TrendingUp size={14} className="text-gold-500 flex-shrink-0" />
-          <span className="text-gray-500 flex-shrink-0">{isRTL ? 'رائج:' : 'Trending:'}</span>
-          {['صوف إيطالي', 'قطن مصري', 'نياقة فاخر', 'دورمى'].map((t) => (
+      <div className="border-b border-[#E8E8E8] dark:border-white/10 py-3">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 flex items-center gap-2 text-sm overflow-x-auto hide-scrollbar">
+          <span className="text-neutral-400 shrink-0">{isRTL ? 'رائج' : 'Trending'}</span>
+          {TRENDING.map((t) => (
             <button
               key={t}
+              type="button"
               onClick={() => setSearch(t)}
-              className="whitespace-nowrap text-primary-600 hover:text-primary-800 font-medium px-2 py-0.5 rounded-lg hover:bg-primary-50"
+              className="shrink-0 px-3 py-1 rounded-full border border-[#E8E8E8] dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-[#00373E] hover:text-[#00373E] text-xs transition-colors"
             >
               {t}
             </button>
@@ -281,17 +240,17 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Category Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar mb-6">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-8 md:py-12">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar mb-8 pb-1">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
+              type="button"
               onClick={() => setActiveCategory(cat.id)}
-              className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 activeCategory === cat.id
-                  ? 'bg-accent-500 text-white shadow-md'
-                  : 'bg-white text-gray-600 hover:bg-accent-50 border border-gray-200'
+                  ? 'bg-[#0A0A0A] dark:bg-white text-white dark:text-[#0A0A0A]'
+                  : 'border border-[#E8E8E8] dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-[#0A0A0A]'
               }`}
             >
               {isRTL ? cat.labelAr : cat.labelEn}
@@ -299,140 +258,108 @@ export default function MarketplacePage() {
           ))}
         </div>
 
-        {/* Filters Row */}
-        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
-              <select
-                value={selectedMaterial}
-                onChange={(e) => setSelectedMaterial(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-300"
-              >
+              <select value={selectedMaterial} onChange={(e) => setSelectedMaterial(e.target.value)} className={selectClass}>
                 {MATERIALS.map((m) => <option key={m}>{m}</option>)}
               </select>
-              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-2.5 text-gray-400 pointer-events-none" />
+              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-3 text-neutral-400 pointer-events-none" />
             </div>
             <div className="relative">
-              <select
-                value={selectedOrigin}
-                onChange={(e) => setSelectedOrigin(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-300"
-              >
+              <select value={selectedOrigin} onChange={(e) => setSelectedOrigin(e.target.value)} className={selectClass}>
                 {ORIGINS.map((o) => <option key={o}>{o}</option>)}
               </select>
-              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-2.5 text-gray-400 pointer-events-none" />
+              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-3 text-neutral-400 pointer-events-none" />
             </div>
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                showFilters ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-600 border-gray-200'
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm border transition-all ${
+                showFilters
+                  ? 'bg-[#00373E] text-white border-[#00373E]'
+                  : 'border-[#E8E8E8] dark:border-white/10 text-neutral-600'
               }`}
             >
               <SlidersHorizontal size={14} />
-              {isRTL ? 'فلاتر إضافية' : 'More Filters'}
+              {isRTL ? 'فلاتر' : 'Filters'}
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">{isRTL ? `${filtered.length} منتج` : `${filtered.length} products`}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-neutral-500">
+              {filtered.length} {isRTL ? 'منتج' : 'items'}
+            </span>
             <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-700 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-300"
-              >
-                <option value="featured">{isRTL ? 'المميزة أولاً' : 'Featured First'}</option>
-                <option value="rating">{isRTL ? 'الأعلى تقييماً' : 'Top Rated'}</option>
-                <option value="price_asc">{isRTL ? 'السعر: الأقل' : 'Price: Low'}</option>
-                <option value="price_desc">{isRTL ? 'السعر: الأعلى' : 'Price: High'}</option>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className={selectClass}>
+                <option value="featured">{isRTL ? 'المميزة' : 'Featured'}</option>
+                <option value="rating">{isRTL ? 'التقييم' : 'Rating'}</option>
+                <option value="price_asc">{isRTL ? 'السعر ↑' : 'Price ↑'}</option>
+                <option value="price_desc">{isRTL ? 'السعر ↓' : 'Price ↓'}</option>
               </select>
-              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-2.5 text-gray-400 pointer-events-none" />
+              <ChevronDown size={14} className="absolute top-1/2 -translate-y-1/2 end-3 text-neutral-400 pointer-events-none" />
             </div>
           </div>
         </div>
 
-        {/* Extended Filters */}
         {showFilters && (
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="mb-8 p-6 rounded-2xl border border-[#E8E8E8] dark:border-white/10 bg-[#FAFAFA] dark:bg-[#111] grid sm:grid-cols-3 gap-6">
             <div>
-              <p className="text-xs font-semibold text-gray-600 mb-2">
-                {isRTL ? `الحد الأقصى للسعر: ﷼${maxPrice}` : `Max Price: ﷼${maxPrice}`}
-              </p>
-              <input
-                type="range"
-                min={20}
-                max={1000}
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full accent-primary-500"
-              />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>﷼20</span>
-                <span>﷼1000</span>
-              </div>
+              <p className="text-xs text-neutral-500 mb-2">{isRTL ? `حتى ﷼${maxPrice}` : `Up to ﷼${maxPrice}`}</p>
+              <input type="range" min={20} max={1000} value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full accent-[#00373E]" />
             </div>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="w-4 h-4 rounded text-primary-500" />
-                <span className="text-sm text-gray-700">{isRTL ? 'متوفر فقط' : 'In stock only'}</span>
-              </label>
-            </div>
-            <div className="flex items-center justify-end">
-              <button
-                onClick={() => { setSelectedMaterial('الكل'); setSelectedOrigin('الكل'); setMaxPrice(1000); setInStockOnly(false); setActiveCategory('all'); }}
-                className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1"
-              >
-                <X size={14} />
-                {isRTL ? 'مسح الكل' : 'Clear all'}
-              </button>
-            </div>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-600">
+              <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="rounded" />
+              {isRTL ? 'متوفر فقط' : 'In stock only'}
+            </label>
+            <button
+              type="button"
+              onClick={() => { setSelectedMaterial('الكل'); setSelectedOrigin('الكل'); setMaxPrice(1000); setInStockOnly(false); setActiveCategory('all'); }}
+              className="text-sm text-neutral-500 hover:text-[#0A0A0A] flex items-center gap-1 justify-end"
+            >
+              <X size={14} />
+              {isRTL ? 'مسح' : 'Clear'}
+            </button>
           </div>
         )}
 
-        {/* Products Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse">
-                <div className="h-44 bg-gray-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="flex gap-2">
-                    <div className="h-5 bg-gray-200 rounded-full w-16" />
-                    <div className="h-5 bg-gray-200 rounded-full w-12" />
-                  </div>
-                  <div className="h-6 bg-gray-200 rounded w-1/3" />
-                </div>
+              <div key={i} className="animate-pulse">
+                <div className="aspect-[3/4] bg-neutral-200 rounded-xl mb-3" />
+                <div className="h-3 bg-neutral-200 rounded w-1/3 mb-2" />
+                <div className="h-4 bg-neutral-200 rounded w-2/3" />
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <Package size={48} className="text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg font-medium">{isRTL ? 'لا توجد منتجات تطابق البحث' : 'No products match your search'}</p>
+          <div className="text-center py-24">
+            <Package size={40} className="text-neutral-300 mx-auto mb-4" />
+            <p className="text-neutral-500">{isRTL ? 'لا توجد منتجات' : 'No products found'}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-y-12">
             {filtered.map((product) => (
               <FabricCard key={product.id} product={product} isRTL={isRTL} />
             ))}
           </div>
         )}
 
-        {/* CTA for merchants */}
-        <div className="mt-16 rounded-3xl bg-gradient-to-br from-primary-500 to-primary-700 p-8 text-white text-center">
-          <h3 className="text-2xl font-bold mb-2">
-            {isRTL ? 'هل أنت تاجر أقمشة؟' : 'Are you a fabric merchant?'}
+        <div className="mt-20 md:mt-28 text-center py-14 px-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#111] border border-[#E8E8E8] dark:border-white/10">
+          <h3 className="text-xl md:text-2xl font-semibold text-[#0A0A0A] dark:text-white mb-2">
+            {isRTL ? 'تاجر أقمشة؟' : 'Fabric merchant?'}
           </h3>
-          <p className="text-primary-200 mb-6 max-w-md mx-auto">
-            {isRTL
-              ? 'أضف منتجاتك للسوق وصل لآلاف الخياطين والعملاء'
-              : 'List your products and reach thousands of tailors and customers'}
+          <p className="text-neutral-500 text-sm mb-6 max-w-md mx-auto">
+            {isRTL ? 'انضم للسوق واصل لآلاف الخياطين' : 'Join the market and reach thousands of tailors'}
           </p>
-          <Button variant="gold" size="lg" onClick={() => router.push('/register?role=merchant')}>
-            {isRTL ? 'انضم كتاجر' : 'Join as Merchant'}
-          </Button>
+          <button
+            type="button"
+            onClick={() => router.push('/register?role=merchant')}
+            className="inline-flex min-h-[48px] items-center px-8 text-sm font-medium bg-[#00373E] text-white rounded-full hover:bg-[#002F35] transition-colors"
+          >
+            {isRTL ? 'انضم كتاجر' : 'Join as merchant'}
+          </button>
         </div>
       </div>
 

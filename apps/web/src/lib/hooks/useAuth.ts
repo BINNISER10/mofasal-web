@@ -1,33 +1,37 @@
 'use client';
-import { useAuthStore, UserRole, User } from '@/lib/stores/authStore';
+import { useAuthStore, UserRole, User, hydrateAuthFromStorage } from '@/lib/stores/authStore';
 import { authApi } from '@/lib/api/auth';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { getDemoUserFromToken } from '@/lib/demoAuth';
 
 export function useAuth() {
-  const store = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const error = useAuthStore((s) => s.error);
+  const hasRole = useAuthStore((s) => s.hasRole);
   const router = useRouter();
+  const checked = useRef(false);
 
-  const login = useCallback(
-    async (phone: string, password: string) => {
-      store.setLoading(true);
-      store.setError(null);
-      try {
-        const response = await authApi.login({ phone, password });
-        store.setUser(response.user);
-        store.setToken(response.token);
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('refreshToken', response.refreshToken);
-        return response;
-      } catch (err: any) {
-        store.setError(err.message);
-        throw err;
-      } finally {
-        store.setLoading(false);
-      }
-    },
-    [store]
-  );
+  const login = useCallback(async (phone: string, password: string) => {
+    const store = useAuthStore.getState();
+    store.setLoading(true);
+    store.setError(null);
+    try {
+      const response = await authApi.login({ phone, password });
+      store.setUser(response.user);
+      store.setToken(response.token);
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      return response;
+    } catch (err: any) {
+      store.setError(err.message);
+      throw err;
+    } finally {
+      store.setLoading(false);
+    }
+  }, []);
 
   const register = useCallback(
     async (data: {
@@ -37,6 +41,7 @@ export function useAuth() {
       password: string;
       role: 'customer' | 'tailor' | 'merchant';
     }) => {
+      const store = useAuthStore.getState();
       store.setLoading(true);
       store.setError(null);
       try {
@@ -53,45 +58,62 @@ export function useAuth() {
         store.setLoading(false);
       }
     },
-    [store]
+    []
   );
 
   const logout = useCallback(() => {
     authApi.logout().catch(() => {});
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
-    store.logout();
+    useAuthStore.getState().logout();
     router.push('/login');
-  }, [store, router]);
+  }, [router]);
 
   const checkAuth = useCallback(async () => {
+    hydrateAuthFromStorage();
     const token = localStorage.getItem('token');
-    if (token) {
-      store.setToken(token);
-      try {
-        const user = await authApi.getProfile();
-        store.setUser(user);
-      } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        store.logout();
-      }
+    const store = useAuthStore.getState();
+
+    if (!token) {
+      store.setLoading(false);
+      return;
     }
-  }, [store]);
+
+    const demoUser = getDemoUserFromToken(token);
+    if (demoUser) {
+      store.setUser(demoUser);
+      store.setToken(token);
+      return;
+    }
+
+    store.setLoading(true);
+    try {
+      const profile = await authApi.getProfile();
+      store.setUser(profile);
+    } catch {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      store.logout();
+    } finally {
+      store.setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    if (checked.current) return;
+    checked.current = true;
     checkAuth();
   }, [checkAuth]);
 
   return {
-    user: store.user,
-    isAuthenticated: store.isAuthenticated,
-    isLoading: store.isLoading,
-    error: store.error,
+    user,
+    isAuthenticated,
+    isLoading,
+    error,
     login,
     register,
     logout,
-    hasRole: store.hasRole,
+    hasRole,
   };
 }
 

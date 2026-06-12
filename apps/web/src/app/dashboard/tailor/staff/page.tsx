@@ -12,13 +12,6 @@ import toast from 'react-hot-toast';
 
 const POSITIONS = ['خياط رئيسي', 'خياط', 'مساعد خياط', 'مشرف إنتاج', 'استقبال', 'مندوب قياس'];
 
-// قالب احتياطي بأسماء ذكور (يظهر فقط عند تعذّر الاتصال)
-const FALLBACK: Employee[] = [
-  { id: 'f1', shopId: '', name: 'علي محمد', position: 'خياط رئيسي', salary: 4500, isActive: true, phone: '+966 55 111 2222' },
-  { id: 'f2', shopId: '', name: 'فيصل الحربي', position: 'خياط', salary: 3500, isActive: true, phone: '+966 55 333 4444' },
-  { id: 'f3', shopId: '', name: 'ماجد الشمري', position: 'مساعد خياط', salary: 3000, isActive: true, phone: '+966 55 777 8888' },
-];
-
 export default function StaffPage() {
   const { isRTL } = useAppStore();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -31,9 +24,9 @@ export default function StaffPage() {
     setLoading(true);
     try {
       const res = await hrApi.getEmployees({ limit: '50' });
-      setEmployees(res.items.length ? res.items : FALLBACK);
+      setEmployees(res.items);
     } catch {
-      setEmployees(FALLBACK);
+      setEmployees([]);
     } finally {
       setLoading(false);
     }

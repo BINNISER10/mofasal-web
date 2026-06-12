@@ -1,0 +1,72 @@
+{
+  "$schema": "description",
+  "project": "MUFASAL",
+  "sourceOfTruth": "apps/web/src/components/home/homeImages.ts",
+  "basePath": "/images",
+  "sectionsPath": "apps/web/public/images/sections",
+  "fashionPath": "apps/web/public/images/fashion",
+  "guide": "AUTOCORE SYSTEM FILES/IMAGES-GUIDE-DEVELOPERS.md",
+  "groups": {
+    "hero": {
+      "count": 1,
+      "files": [
+        { "file": "sections/hero.png", "key": "HOME_IMAGES.hero", "component": "HomeHero", "route": "/" }
+      ]
+    },
+    "tailoring": {
+      "count": 7,
+      "files": [
+        { "file": "sections/category-tailoring.png", "key": "HOME_IMAGES.tailoring", "component": "HomeCategories", "route": "/" },
+        { "file": "sections/shops-hero.png", "key": "HOME_IMAGES.shops", "component": "PageHero", "route": "/shops" },
+        { "file": "sections/craftsmanship.png", "key": "HOME_IMAGES.craftsmanship", "component": "HomeCraftsmanship", "route": "/" },
+        { "file": "sections/workshop-needle.png", "key": "HOME_IMAGES.workshop[0]" },
+        { "file": "sections/workshop-sewing.png", "key": "HOME_IMAGES.workshop[1]" },
+        { "file": "sections/workshop-thread-spools.png", "key": "HOME_IMAGES.workshop[2]" },
+        { "file": "sections/workshop-supplies.png", "key": "HOME_IMAGES.workshop[3]" }
+      ],
+      "demo": {
+        "shop-riyadh-1": { "logo": "sections/category-tailoring.png", "cover": "sections/shops-hero.png" }
+      }
+    },
+    "fabric": {
+      "count": 11,
+      "files": [
+        { "file": "sections/category-fabric.png", "key": "HOME_IMAGES.fabric", "component": "HomeCategories", "route": "/" },
+        { "file": "sections/marketplace-hero.png", "key": "HOME_IMAGES.marketplace", "component": "PageHero", "route": "/marketplace" },
+        { "file": "sections/fabric-silk-white.png", "key": "HOME_IMAGES.fabrics[0]" },
+        { "file": "sections/fabric-cream-flow.png", "key": "HOME_IMAGES.fabrics[1]" },
+        { "file": "sections/fabric-white-drape.png", "key": "HOME_IMAGES.fabrics[2]" },
+        { "file": "sections/fabric-texture.png", "key": "HOME_IMAGES.fabrics[3]" },
+        { "file": "sections/fabric-suit-fold.png", "key": "HOME_IMAGES.fabrics[4]" },
+        { "file": "sections/product-1.png", "key": "HOME_IMAGES.products[0]", "component": "HomeCraftsmanship" },
+        { "file": "sections/product-2.png", "key": "HOME_IMAGES.products[1]", "component": "HomeCraftsmanship" },
+        { "file": "sections/product-3.png", "key": "HOME_IMAGES.products[2]", "component": "HomeCraftsmanship" },
+        { "file": "sections/product-4.png", "key": "HOME_IMAGES.products[3]", "component": "HomeCraftsmanship" }
+      ],
+      "demo": {
+        "shop-jeddah-1": { "logo": "sections/category-fabric.png", "cover": "sections/marketplace-hero.png" },
+        "products": ["fabric-silk-white.png", "fabric-cream-flow.png", "fabric-white-drape.png", "fabric-suit-fold.png"]
+      }
+    },
+    "lookbook": {
+      "countActive": 5,
+      "countTotal": 25,
+      "activePattern": "fashion/model-{1-5}.png",
+      "inactivePattern": "fashion/model-{6-20}.jpg",
+      "component": "HomeLookbook",
+      "route": "/"
+    }
+  },
+  "namingConvention": {
+    "hero": "hero.png",
+    "categoryTailoring": "category-tailoring.png",
+    "categoryFabric": "category-fabric.png",
+    "shopsHero": "shops-hero.png",
+    "marketplaceHero": "marketplace-hero.png",
+    "craftsmanship": "craftsmanship.png",
+    "fabricGallery": "fabric-<description>.png",
+    "productCard": "product-{1-4}.png",
+    "workshop": "workshop-<description>.png",
+    "lookbook": "fashion/model-{n}.png"
+  }
+}

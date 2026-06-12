@@ -15,21 +15,7 @@ import {
   Store, Sparkles, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 
-const mockShops = [
-  { id: '1', name: 'خياطة الرجال الراقية', city: 'الرياض', rating: 4.9, reviews: 312, specialties: ['بدل', 'ثياب'], price: '500-2000', delivery: 3, verified: true, type: 'shop' as const },
-  { id: '2', name: 'أتيليه النخبة', city: 'جدة', rating: 4.8, reviews: 198, specialties: ['بشوت', 'ثياب'], price: '300-1500', delivery: 4, verified: true, type: 'shop' as const },
-  { id: '3', name: 'خياطة الخليج', city: 'الدمام', rating: 4.7, reviews: 145, specialties: ['بشوت', 'ثياب'], price: '400-1800', delivery: 5, verified: false, type: 'shop' as const },
-  { id: '4', name: 'تيلور هاوس', city: 'الرياض', rating: 4.6, reviews: 89, specialties: ['بدل', 'قمصان'], price: '600-2500', delivery: 3, verified: true, type: 'shop' as const },
-];
-
-const mockProducts = [
-  { id: '1', name: 'قماش صوف إيطالي فاخر', merchant: 'بيت الأقمشة الراقية', price: 185, rating: 4.9, reviews: 218, category: 'صوف', color: '#1a1a2e', type: 'product' as const },
-  { id: '2', name: 'قماش كتان مصري أصيل', merchant: 'سوق الأقمشة المصرية', price: 95, rating: 4.7, reviews: 143, category: 'كتان', color: '#f5e6c8', type: 'product' as const },
-  { id: '3', name: 'قماش حرير طبيعي فاخر', merchant: 'دار الحرير', price: 320, rating: 4.8, reviews: 97, category: 'حرير', color: '#f8bbd0', type: 'product' as const },
-  { id: '4', name: 'قطيفة مخملية ملكية', merchant: 'بيت القطيفة', price: 210, rating: 4.6, reviews: 63, category: 'مخمل', color: '#4a0080', type: 'product' as const },
-];
-
-const TRENDING = ['بدلة رجالية', 'قماش صوف', 'بشت فاخر', 'ثوب أبيض', 'قماش كتان'];
+const TRENDING = ['ثوب سعودي', 'قماش صوف', 'بشت فاخر', 'ثوب أبيض', 'قماش كتان'];
 const CITIES = ['الكل', 'الرياض', 'جدة', 'الدمام', 'مكة', 'المدينة'];
 const SORT_OPTIONS = [
   { value: 'relevance', labelAr: 'الأكثر صلة' },
@@ -51,63 +37,52 @@ function SearchContent() {
   const [sortBy, setSortBy] = useState('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState(0);
-  const [recentSearches, setRecentSearches] = useState<string[]>(['بدلة رسمية', 'قماش صوف', 'خياط جدة']);
-  const [shops, setShops] = useState<any[]>(mockShops);
-  const [products, setProducts] = useState<any[]>(mockProducts);
+  const [recentSearches, setRecentSearches] = useState<string[]>(['ثوب سعودي', 'قماش صوف', 'خياط جدة']);
+  const [shops, setShops] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    
+    setLoading(true);
+
     const shopParams: Record<string, string> = { limit: '50' };
     if (city !== 'الكل') shopParams.city = city;
     if (minRating > 0) shopParams.minRating = minRating.toString();
     if (query) shopParams.search = query;
 
-    shopsApi.list(shopParams)
-      .then((res) => {
-        if (!active) return;
-        if (!res.shops?.length) {
-          setShops([]);
-          return;
-        }
-        setShops(res.shops.map((s: any) => ({
-          id: s.id,
-          name: s.nameAr || s.name,
-          city: s.city || '',
-          rating: s.rating || 0,
-          reviews: s.reviewCount || 0,
-          specialties: s.specialties || [],
-          price: s.minOrderAmount ? String(s.minOrderAmount) : '—',
-          delivery: s.deliveryDays || 0,
-          verified: s.isVerified || false,
-          type: 'shop' as const,
-        })));
-      })
-      .catch(() => { /* الإبقاء على الاحتياطي */ });
-
     const productParams: Record<string, string> = { limit: '50' };
     if (query) productParams.search = query;
 
-    productsApi.list(productParams)
-      .then((res) => {
-        if (!active) return;
-        if (!res.products?.length) {
-          setProducts([]);
-          return;
-        }
-        setProducts(res.products.map((p: any) => ({
-          id: p.id,
-          name: p.nameAr || p.name,
-          merchant: p.shop?.nameAr || p.shop?.name || p.merchantName || '',
-          price: p.price || 0,
-          rating: p.rating || 0,
-          reviews: p.reviewCount || 0,
-          category: p.category?.nameAr || p.category?.name || p.category || '',
-          color: '#735B4D',
-          type: 'product' as const,
-        })));
-      })
-      .catch(() => { /* الإبقاء على الاحتياطي */ });
+    Promise.all([
+      shopsApi.list(shopParams).catch(() => ({ shops: [] as any[] })),
+      productsApi.list(productParams).catch(() => ({ products: [] as any[] })),
+    ]).then(([shopsRes, productsRes]) => {
+      if (!active) return;
+      setShops((shopsRes.shops || []).map((s: any) => ({
+        id: s.id,
+        name: s.nameAr || s.name,
+        city: s.city || '',
+        rating: s.rating || 0,
+        reviews: s.reviewCount || 0,
+        specialties: s.specialties || [],
+        price: s.minOrderAmount ? String(s.minOrderAmount) : '—',
+        delivery: s.deliveryDays || 0,
+        verified: s.isVerified || false,
+        type: 'shop' as const,
+      })));
+      setProducts((productsRes.products || []).map((p: any) => ({
+        id: p.id,
+        name: p.nameAr || p.name,
+        merchant: p.shop?.nameAr || p.shop?.name || p.merchantName || '',
+        price: p.price || 0,
+        rating: p.rating || 0,
+        reviews: p.reviewCount || 0,
+        category: p.category?.nameAr || p.category?.name || p.category || '',
+        color: '#735B4D',
+        type: 'product' as const,
+      })));
+    }).finally(() => { if (active) setLoading(false); });
 
     return () => { active = false; };
   }, [query, city, minRating]);
@@ -135,21 +110,24 @@ function SearchContent() {
     : activeTab === 'shops' ? filteredShops.length : filteredProducts.length);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a]">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 pt-24 pb-16">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 pt-24 pb-16">
+        <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-3">مفصل · بحث</p>
+        <h1 className="text-2xl md:text-3xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight mb-6">
+          {isRTL ? 'ابحث في المنصة' : 'Search the platform'}
+        </h1>
 
-        {/* Search Bar */}
         <div className="relative mb-6">
           <div className="relative">
-            <Search className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute start-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
-              placeholder={isRTL ? 'ابحث عن خياط، قماش، أو خدمة...' : 'Search tailors, fabrics, services...'}
-              className="w-full ps-12 pe-32 py-4 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-sm"
+              placeholder={isRTL ? 'خياط، قماش، ثوب...' : 'Tailor, fabric, thobe...'}
+              className="w-full ps-12 pe-32 py-3.5 rounded-full border border-[#E8E8E8] dark:border-white/10 bg-[#FAFAFA] dark:bg-white/5 text-[#0A0A0A] dark:text-white text-base focus:outline-none focus:border-[#00373E]/40"
               autoFocus
             />
             <div className="absolute end-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -176,7 +154,7 @@ function SearchContent() {
               <div className="flex flex-wrap gap-2">
                 {TRENDING.map((t) => (
                   <button key={t} onClick={() => handleSearch(t)}
-                    className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-800/40 transition-colors">
+                    className="px-3 py-1.5 border border-[#E8E8E8] dark:border-white/10 text-neutral-600 dark:text-neutral-300 rounded-full text-sm font-medium hover:border-[#00373E]/30 hover:bg-[#FAFAFA] dark:hover:bg-white/5 transition-colors">
                     {t}
                   </button>
                 ))}

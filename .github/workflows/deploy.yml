@@ -1,0 +1,133 @@
+name: Deploy MUFASAL
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ─── Quality Checks ────────────────────────────────────
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mufasal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mufasal_test?schema=public
+      JWT_SECRET: test-jwt-secret-for-ci
+      JWT_REFRESH_SECRET: test-jwt-refresh-secret-for-ci
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: services/api/package-lock.json
+
+      - name: Install API dependencies
+        working-directory: services/api
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: services/api
+        run: npx prisma generate
+
+      - name: Push Database Schema
+        working-directory: services/api
+        run: npx prisma db push --skip-generate
+
+      - name: Run TypeScript Check
+        working-directory: services/api
+        run: npx tsc --noEmit
+
+      - name: Run Tests
+        working-directory: services/api
+        run: npm test
+
+      - name: Install Web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build Web
+        working-directory: apps/web
+        run: npm run build
+
+  # ─── Deploy to Server ──────────────────────────────────
+  deploy:
+    name: Deploy to Server
+    needs: quality
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script: |
+            # Navigate to project directory
+            cd /opt/mufasal || cd ~/mufasal || { echo "Project directory not found"; exit 1; }
+
+            # Pull latest changes
+            echo "Pulling latest changes..."
+            git pull origin master
+
+            # Copy environment file
+            if [ -f .env.production ]; then
+              cp .env.production .env
+            fi
+
+            # Build and deploy with Docker Compose
+            echo "Building and deploying..."
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+            # Wait for services to be healthy
+            echo "Waiting for services..."
+            sleep 10
+
+            # Run database migrations
+            echo "Running database migrations..."
+            docker compose exec -T api npx prisma db push --skip-generate
+
+            # Clean up old images
+            docker image prune -f
+
+            # Show running containers
+            echo "Running containers:"
+            docker compose ps
+
+            echo "Deployment completed successfully!"

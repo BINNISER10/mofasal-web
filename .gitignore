@@ -1,3 +1,4 @@
+.render-tmp/
 node_modules/
 dist/
 .next/
@@ -19,3 +20,7 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+.github/workflows/render-build.yml
+
+# Local Netlify folder
+.netlify

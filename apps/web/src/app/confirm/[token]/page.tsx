@@ -13,35 +13,7 @@ import {
   User, Phone, ChevronDown, ChevronUp, Shield, Loader2,
 } from 'lucide-react';
 
-const mockConfirmation = {
-  token: 'CONF-2024-XK8M',
-  orderId: 'ORD-1284',
-  shopName: 'خياطة الرجال الراقية',
-  shopLogo: 'خ',
-  shopPhone: '+966 55 123 4567',
-  representativeName: 'ماجد الشمري',
-  representativePhone: '+966 55 789 0123',
-  customerName: 'أحمد محمد',
-  measurements: {
-    chest: 102, waist: 88, shoulderWidth: 46,
-    sleeveLength: 62, shirtLength: 76, neckCircumference: 40,
-    pantLength: 106, inseam: 82,
-  },
-  items: [
-    { name: 'بدلة رسمية كاملة', qty: 1, price: 1200 },
-    { name: 'قميص رسمي', qty: 2, price: 250 },
-  ],
-  fabric: { name: 'قماش صوف إيطالي - كحلي', price: 350, per: 'متر', meters: 3 },
-  subtotal: 1700,
-  fabricCost: 1050,
-  vatAmount: 413,
-  totalAmount: 3163,
-  estimatedDelivery: '2024-04-10',
-  estimatedDays: 10,
-  notes: 'يرجى الانتباه لتضييق الياقة قليلاً كما طلبه العميل',
-  expiresAt: '2024-03-28T23:59:00Z',
-  status: 'PENDING',
-};
+// Mock data removed - now fetched from API in useEffect
 
 const MEASUREMENTS_AR: Record<string, string> = {
   chest: 'محيط الصدر', waist: 'محيط الخصر', shoulderWidth: 'عرض الكتف',

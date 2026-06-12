@@ -1,3 +1,5 @@
+import type { User } from './user';
+
 export enum UserRole {
   CUSTOMER = 'CUSTOMER',
   TAILOR = 'TAILOR',

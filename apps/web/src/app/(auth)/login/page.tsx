@@ -9,6 +9,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { authApi } from '@/lib/api/auth';
 import { Eye, EyeOff, Phone, Lock, AlertCircle, Scissors } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getDemoSession, isDemoModeEnabled } from '@/lib/demoAuth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,23 +24,23 @@ export default function LoginPage() {
     { role: 'admin' as const, label: isRTL ? 'مدير' : 'Admin', color: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100', route: '/dashboard/admin' },
     { role: 'tailor' as const, label: isRTL ? 'خياط' : 'Tailor', color: 'bg-primary-50 text-primary-700 border-primary-200 hover:bg-primary-100', route: '/dashboard/tailor' },
     { role: 'merchant' as const, label: isRTL ? 'تاجر' : 'Merchant', color: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100', route: '/dashboard/merchant' },
+    { role: 'rep' as const, label: isRTL ? 'مندوب' : 'Rep', color: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100', route: '/dashboard/rep' },
     { role: 'customer' as const, label: isRTL ? 'عميل' : 'Customer', color: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100', route: '/dashboard/customer' },
   ];
 
   const handleDemoLogin = (demo: typeof DEMO_USERS[0]) => {
-    const mockUser = {
-      id: `demo-${demo.role}`,
-      name: demo.role === 'admin' ? 'أحمد المدير' : demo.role === 'tailor' ? 'خالد الخياط' : demo.role === 'merchant' ? 'سعد التاجر' : 'محمد العميل',
-      email: `${demo.role}@mufasal.sa`,
-      phone: '966500000000',
-      role: demo.role,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
-    setUser(mockUser);
-    setToken('demo-token');
-    toast.success(isRTL ? `دخول تجريبي: ${demo.label}` : `Demo login: ${demo.label}`);
-    router.push(demo.route);
+    setIsLoading(true);
+    const session = getDemoSession(demo.role);
+    setUser(session.user);
+    setToken(session.token);
+    useAuthStore.setState({ isLoading: false, isAuthenticated: true });
+    localStorage.setItem('token', session.token);
+    localStorage.setItem('refreshToken', `demo-refresh-${demo.role}`);
+    toast.success(
+      isRTL ? `دخول تجريبي: ${demo.label}` : `Demo login: ${demo.label}`,
+    );
+    router.replace(demo.route);
+    setIsLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,15 +51,18 @@ export default function LoginPage() {
       const response = await authApi.login({ phone: `966${phone}`, password });
       setUser(response.user);
       setToken(response.token);
+      useAuthStore.setState({ isLoading: false, isAuthenticated: true });
       localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
       toast.success(isRTL ? 'تم تسجيل الدخول بنجاح' : 'Login successful');
       const roleRoutes: Record<string, string> = {
         admin: '/dashboard/admin',
         tailor: '/dashboard/tailor',
         merchant: '/dashboard/merchant',
         customer: '/dashboard/customer',
+        rep: '/dashboard/rep',
       };
-      router.push(roleRoutes[response.user.role] || '/dashboard');
+      router.replace(roleRoutes[response.user.role] || '/dashboard');
     } catch (err: any) {
       setError(err.message || (isRTL ? 'فشل تسجيل الدخول' : 'Login failed'));
     } finally {
@@ -80,6 +84,11 @@ export default function LoginPage() {
           <p className="text-sm text-white/70 mt-1">
             {isRTL ? 'مرحباً بعودتك إلى مفصل' : 'Welcome back to MUFASAL'}
           </p>
+          {isDemoModeEnabled() && (
+            <p className="mt-2 inline-block text-[11px] font-bold px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/30">
+              {isRTL ? 'وضع العرض مفعّل — يعمل بدون خادم' : 'Demo mode — works offline'}
+            </p>
+          )}
         </div>
 
         <Card className="p-6">
@@ -137,11 +146,12 @@ export default function LoginPage() {
             <p className="text-xs text-gray-500 text-center mb-3 font-semibold">
               {isRTL ? '⚡ دخول تجريبي سريع' : '⚡ Quick Demo Login'}
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {DEMO_USERS.map((demo) => (
                 <button
                   key={demo.role}
                   type="button"
+                  disabled={isLoading}
                   onClick={() => handleDemoLogin(demo)}
                   className={`py-2 px-3 border rounded-xl text-xs font-bold transition-colors ${demo.color}`}
                 >
@@ -149,6 +159,9 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
+            <p className="text-[10px] text-gray-400 text-center mt-2">
+              {isRTL ? 'كلمة المرور: admin123' : 'Password: admin123'}
+            </p>
           </div>
         </Card>
       </div>

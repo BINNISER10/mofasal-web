@@ -35,6 +35,16 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [statusFilter]);
 
+  const handleStatusChange = async (userId: string, status: string) => {
+    try {
+      await adminApi.updateUserStatus(userId, status);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status } : u)));
+      setShowActions(null);
+    } catch (err) {
+      console.error('Failed to update user status', err);
+    }
+  };
+
   const columns = [
     { key: 'name', header: isRTL ? 'الاسم' : 'Name', sortable: true,
       render: (user: AdminUser) => (
@@ -77,14 +87,14 @@ export default function AdminUsersPage() {
           {showActions === user.id && (
             <div className={cn('absolute top-full mt-1 z-40 bg-white dark:bg-slate-800 rounded-xl shadow-jahez-lg border border-gray-100 dark:border-slate-700 w-44 overflow-hidden', isRTL ? 'left-0' : 'right-0')}>
               {[
-                { icon: <CheckCircle size={14} />, label: isRTL ? 'تفعيل' : 'Activate', color: 'text-green-600' },
-                { icon: <Ban size={14} />, label: isRTL ? 'تعليق' : 'Suspend', color: 'text-yellow-600' },
-                { icon: <AlertTriangle size={14} />, label: isRTL ? 'حظر' : 'Ban', color: 'text-red-600' },
+                { icon: <CheckCircle size={14} />, label: isRTL ? 'تفعيل' : 'Activate', color: 'text-green-600', status: 'ACTIVE' },
+                { icon: <Ban size={14} />, label: isRTL ? 'تعليق' : 'Suspend', color: 'text-yellow-600', status: 'SUSPENDED' },
+                { icon: <AlertTriangle size={14} />, label: isRTL ? 'حظر' : 'Ban', color: 'text-red-600', status: 'BANNED' },
               ].map((action, i) => (
                 <button
                   key={i}
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
-                  onClick={() => { setShowActions(null); }}
+                  onClick={() => handleStatusChange(user.id, action.status)}
                 >
                   <span className={action.color}>{action.icon}</span>
                   <span>{action.label}</span>

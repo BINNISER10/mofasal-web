@@ -71,8 +71,8 @@ export function SmartAdvisor() {
   };
 
   const quickQuestions = isRTL
-    ? ['كيف أقيس مقاسي؟', 'ما أفضل قماش للصيف؟', 'ما الفرق بين البدلة المفصلة والجاهزة؟']
-    : ['How to measure my size?', 'Best fabric for summer?', 'Custom vs ready-made suit?'];
+    ? ['كيف أقيس مقاسي؟', 'ما أفضل قماش للصيف؟', 'ما الفرق بين الثوب المفصل والجاهز؟']
+    : ['How to measure my size?', 'Best fabric for summer?', 'Custom vs ready-made thobe?'];
 
   return (
     <>

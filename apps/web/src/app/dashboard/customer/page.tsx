@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { useAppStore } from '@/lib/stores/appStore';
-import { useAuthStore } from '@/lib/stores/authStore';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency, getRelativeTime } from '@/lib/utils/formatting';
 import { ShoppingBag, Clock, Heart, Ruler, RefreshCw, Package, Plus, Store, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -19,17 +19,21 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function CustomerDashboardPage() {
   const { isRTL } = useAppStore();
-  const { user } = useAuthStore();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState({ active: 0, past: 0, measurements: 0 });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     Promise.all([
-      ordersApi.getByCustomer(user.id, { limit: '5' }),
+      ordersApi.list({ limit: '5' }),
       usersApi.getMeasurements(user.id),
     ]).then(([ordersRes, measRes]) => {
       if (!active) return;
@@ -40,33 +44,41 @@ export default function CustomerDashboardPage() {
       setRecentOrders(activeOrders.slice(0, 3));
     }).catch(() => {}).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [user]);
+  }, [user, authLoading]);
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-white flex items-center justify-between gap-4">
+      <div className="rounded-2xl border border-[#E8E8E8] dark:border-white/10 bg-white dark:bg-[#111] p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
-          <h2 className="text-xl font-bold mb-1">{isRTL ? 'مرحباً بك في مفصل 👋' : 'Welcome to Mufasal 👋'}</h2>
-          <p className="text-primary-200 text-sm">{isRTL ? 'اطلب تفصيل ملابسك من أفضل الخياطين' : 'Get your clothes tailored by the best tailors'}</p>
-          <div className="flex gap-2 mt-4">
-            <Button variant="gold" size="sm" icon={<Plus size={14} />} onClick={() => router.push('/dashboard/customer/orders/new')}>
+          <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-400 mb-2">
+            {isRTL ? 'ثلاث خطوات' : 'Three steps'}
+          </p>
+          <h2 className="text-xl md:text-2xl font-semibold text-[#0A0A0A] dark:text-white mb-2 tracking-tight">
+            {isRTL ? 'مرحباً — اطلب ثوبك' : 'Welcome — order your thobe'}
+          </h2>
+          <p className="text-neutral-500 text-sm max-w-md">
+            {isRTL ? 'اختر · أكد · تابع — مثل طلب الطعام' : 'Choose · Confirm · Track — like food delivery'}
+          </p>
+          <div className="flex flex-wrap gap-2 mt-5">
+            <Button variant="primary" size="sm" icon={<Plus size={14} />} onClick={() => router.push('/dashboard/customer/orders/new')}>
               {isRTL ? 'طلب جديد' : 'New Order'}
             </Button>
+            <Button variant="gold" size="sm" icon={<Ruler size={14} />} onClick={() => router.push('/dashboard/customer/book-measurement')}>
+              {isRTL ? 'قياس منزلي' : 'Home Measurement'}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => router.push('/shops')}>
-              {isRTL ? 'تصفح المتاجر' : 'Browse Shops'}
+              {isRTL ? 'المتاجر' : 'Shops'}
             </Button>
           </div>
         </div>
-        <div className="hidden sm:flex flex-col gap-2">
-          <a href="/shops" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 rounded-xl px-3 py-2 text-sm font-medium transition-all">
-            <Store size={15} />
-            <span>{isRTL ? 'المتاجر' : 'Shops'}</span>
-            {isRTL ? <ArrowLeft size={12} /> : <ArrowRight size={12} />}
+        <div className="hidden sm:flex flex-col gap-2 w-full sm:w-auto">
+          <a href="/shops" className="flex items-center justify-between gap-4 rounded-xl border border-[#E8E8E8] dark:border-white/10 px-4 py-3 text-sm hover:bg-[#FAFAFA] dark:hover:bg-white/5 transition-colors">
+            <span className="flex items-center gap-2 text-[#0A0A0A] dark:text-white"><Store size={15} />{isRTL ? 'المتاجر' : 'Shops'}</span>
+            {isRTL ? <ArrowLeft size={14} className="text-neutral-400" /> : <ArrowRight size={14} className="text-neutral-400" />}
           </a>
-          <a href="/marketplace" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 rounded-xl px-3 py-2 text-sm font-medium transition-all">
-            <Package size={15} />
-            <span>{isRTL ? 'سوق الأقمشة' : 'Marketplace'}</span>
-            {isRTL ? <ArrowLeft size={12} /> : <ArrowRight size={12} />}
+          <a href="/marketplace" className="flex items-center justify-between gap-4 rounded-xl border border-[#E8E8E8] dark:border-white/10 px-4 py-3 text-sm hover:bg-[#FAFAFA] dark:hover:bg-white/5 transition-colors">
+            <span className="flex items-center gap-2 text-[#0A0A0A] dark:text-white"><Package size={15} />{isRTL ? 'الأقمشة' : 'Fabrics'}</span>
+            {isRTL ? <ArrowLeft size={14} className="text-neutral-400" /> : <ArrowRight size={14} className="text-neutral-400" />}
           </a>
         </div>
       </div>
