@@ -1,64 +1,94 @@
 'use client';
 
-import { Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, Quote, Star } from 'lucide-react';
+import { TESTIMONIALS } from './homeData';
 
 interface HomeTestimonialsProps {
   isRTL: boolean;
 }
 
-const reviews = [
-  {
-    nameAr: 'أحمد الحربي',
-    nameEn: 'Ahmad Al-Harbi',
-    textAr: 'جودة القماش والخياطة ممتازة. التتبع كان واضح من البداية للنهاية.',
-    textEn: 'Excellent fabric and tailoring. Clear tracking from start to finish.',
-  },
-  {
-    nameAr: 'عبدالله الفهد',
-    nameEn: 'Abdullah Al-Fahad',
-    textAr: 'وصل الطلب قبل الموعد. المقاس مضبوط تماماً.',
-    textEn: 'Arrived early. Perfect fit.',
-  },
-  {
-    nameAr: 'سعد الدوسري',
-    nameEn: 'Saad Al-Dosari',
-    textAr: 'تجربة سهلة — ثلاث خطوات فعلاً.',
-    textEn: 'Easy experience — truly three steps.',
-  },
-] as const;
-
 export function HomeTestimonials({ isRTL }: HomeTestimonialsProps) {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActive((prev) => (prev + 1) % TESTIMONIALS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const current = TESTIMONIALS[active];
+
   return (
-    <section className="py-16 md:py-24 bg-white dark:bg-[#0a0a0a] border-t border-[#E8E8E8] dark:border-white/10">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6">
-        <div className="mb-10">
-          <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-500 mb-3">
-            {isRTL ? 'آراء العملاء' : 'Reviews'}
-          </p>
-          <h2 className="text-2xl md:text-3xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight">
-            {isRTL ? 'ماذا يقول عملاؤنا' : 'What Customers Say'}
+    <section className="py-20 bg-white dark:bg-slate-900">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="section-title">
+            {isRTL ? 'ماذا يقول عملاؤنا' : 'What Our Customers Say'}
           </h2>
+          <p className="section-subtitle">
+            {isRTL ? 'آراء حقيقية من عملاء موثوقين' : 'Real reviews from verified customers'}
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-          {reviews.map((review, i) => (
-            <div
-              key={i}
-              className="p-6 md:p-8 rounded-2xl border border-[#E8E8E8] dark:border-white/10 bg-[#FAFAFA] dark:bg-[#111]"
-            >
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} size={14} className="fill-[#B8963E] text-[#B8963E]" />
+        <div className="relative">
+          <div className="card-mufasal p-8 md:p-12 text-center relative overflow-hidden">
+            <div className="absolute top-6 right-8 text-primary-100 dark:text-primary-900">
+              <Quote size={64} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex justify-center gap-1 mb-6">
+                {[...Array(current.rating)].map((_, i) => (
+                  <Star key={i} size={20} className="text-yellow-400 fill-yellow-400" />
                 ))}
               </div>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-                &ldquo;{isRTL ? review.textAr : review.textEn}&rdquo;
+              <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8 font-medium">
+                &ldquo;{isRTL ? current.textAr : current.textEn}&rdquo;
               </p>
-              <p className="text-sm font-medium text-[#0A0A0A] dark:text-white">
-                {isRTL ? review.nameAr : review.nameEn}
-              </p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-700 flex items-center justify-center text-white font-bold text-lg">
+                  {current.avatar}
+                </div>
+                <div className="text-right rtl:text-right ltr:text-left">
+                  <p className="font-bold text-gray-900 dark:text-white">
+                    {isRTL ? current.nameAr : current.nameEn}
+                  </p>
+                  <p className="text-sm text-accent-500">
+                    {isRTL ? current.roleAr : current.roleEn}
+                  </p>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
+
+          <div className="flex justify-center gap-2 mt-6">
+            {TESTIMONIALS.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setActive(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === active ? 'w-8 bg-primary-600' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setActive((active - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)}
+            className="absolute top-1/2 -translate-y-1/2 -right-4 md:-right-8 w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-100 dark:border-slate-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-50 transition-colors"
+          >
+            {isRTL ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActive((active + 1) % TESTIMONIALS.length)}
+            className="absolute top-1/2 -translate-y-1/2 -left-4 md:-left-8 w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-100 dark:border-slate-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-50 transition-colors"
+          >
+            {isRTL ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
+          </button>
         </div>
       </div>
     </section>

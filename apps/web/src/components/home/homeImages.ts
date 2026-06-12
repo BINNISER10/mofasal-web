@@ -1,8 +1,10 @@
-/** صور مفصل — صور سعودية أصيلة من Google Drive
- * تم تحميل 21 صورة تلقائياً
- * التاريخ: 11 يونيو 2026
- */
+/** مسارات الوسائط الثابتة للصفحة الرئيسية — لا تُستبدل بصور خارجية */
+export const HOME_MEDIA = {
+  heroVideo: '/videos/fashion.mp4',
+  lookbookImage: (index: number) => `/images/fashion/model-${index + 1}.jpg`,
+} as const;
 
+/** صور محلية للمكونات الاختيارية (HomeCategories / HomeCraftsmanship) */
 export const HOME_IMAGES = {
   hero: '/images/hero-thobe.jpg',
   heroSlides: [

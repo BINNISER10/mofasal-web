@@ -1,7 +1,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { Ruler, Smartphone, Truck, Store } from 'lucide-react';
+import { Ruler, Smartphone, Store, Truck } from 'lucide-react';
 import siteConfig from '@/data/site-config.json';
 
 interface HomeFeaturesProps {
@@ -19,34 +19,43 @@ export function HomeFeatures({ isRTL }: HomeFeaturesProps) {
   const { features } = siteConfig;
 
   return (
-    <section className="py-16 md:py-24 bg-white dark:bg-[#0a0a0a] border-y border-[#E8E8E8] dark:border-white/10">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6">
-        <div className="mb-12 max-w-xl">
-          <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-neutral-500 mb-3">
-            {isRTL ? 'لماذا مفصل' : 'Why MUFASAL'}
-          </p>
-          <h2 className="text-2xl md:text-3xl font-semibold text-[#0A0A0A] dark:text-white tracking-tight mb-2">
+    <section className="py-24 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-tr from-primary-700 via-primary-600 to-primary-800 dark:from-primary-950 dark:via-slate-900 dark:to-primary-950" />
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-10 right-10 w-96 h-96 rounded-full bg-accent-400 blur-3xl" />
+        <div className="absolute bottom-10 left-10 w-80 h-80 rounded-full bg-gold-400 blur-3xl" />
+      </div>
+      <div className="relative max-w-7xl mx-auto px-4">
+        <div className="text-center mb-16">
+          <span className="inline-block px-4 py-1.5 rounded-full glass text-white/80 text-xs font-semibold mb-3 border-white/20">
+            {isRTL ? '✦ لماذا مفصل؟' : '✦ Why MUFASAL?'}
+          </span>
+          <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
             {isRTL ? features.titleAr : features.titleEn}
           </h2>
-          <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+          <p className="text-lg text-white/60">
             {isRTL ? features.subtitleAr : features.subtitleEn}
           </p>
         </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
-          {features.items.map((item, i) => {
-            const Icon = ICONS[item.icon] || Store;
+        <div className="grid md:grid-cols-2 gap-5">
+          {features.items.map((feature, i) => {
+            const Icon = ICONS[feature.icon] || Store;
             return (
-              <div key={i}>
-                <div className="w-10 h-10 rounded-full border border-[#E8E8E8] dark:border-white/15 flex items-center justify-center mb-4 text-[#00373E] dark:text-white">
-                  <Icon size={18} />
+              <div
+                key={i}
+                className="glass flex items-start gap-5 p-6 border-white/15 hover:border-white/30 group"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center flex-shrink-0 group-hover:bg-gold-500/20 group-hover:border-gold-400/40 transition-all">
+                  <Icon size={32} />
                 </div>
-                <h3 className="font-medium text-[#0A0A0A] dark:text-white mb-2">
-                  {isRTL ? item.titleAr : item.titleEn}
-                </h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                  {isRTL ? item.descAr : item.descEn}
-                </p>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1.5">
+                    {isRTL ? feature.titleAr : feature.titleEn}
+                  </h3>
+                  <p className="text-sm text-white/60 leading-relaxed">
+                    {isRTL ? feature.descAr : feature.descEn}
+                  </p>
+                </div>
               </div>
             );
           })}
