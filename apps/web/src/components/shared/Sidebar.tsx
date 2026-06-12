@@ -1,9 +1,10 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
 import { useAuthStore, UserRole } from '@/lib/stores/authStore';
 import { useAppStore } from '@/lib/stores/appStore';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -102,6 +103,14 @@ const menuItems: MenuItem[] = [
     roles: ['tailor'],
   },
   {
+    label: 'New Order',
+    labelAr: 'طلب جديد',
+    icon: <Plus size={20} />,
+    href: '/dashboard/tailor/orders/new',
+    roles: ['tailor'],
+    exact: true,
+  },
+  {
     label: 'Orders',
     labelAr: 'الطلبات',
     icon: <ShoppingBag size={20} />,
@@ -148,6 +157,27 @@ const menuItems: MenuItem[] = [
     labelAr: 'العمولات',
     icon: <DollarSign size={20} />,
     href: '/dashboard/admin/commissions',
+    roles: ['admin'],
+  },
+  {
+    label: 'Attendance',
+    labelAr: 'الحضور',
+    icon: <ClipboardList size={20} />,
+    href: '/dashboard/admin/attendance',
+    roles: ['admin'],
+  },
+  {
+    label: 'Leave',
+    labelAr: 'الإجازات',
+    icon: <FileText size={20} />,
+    href: '/dashboard/admin/leave',
+    roles: ['admin'],
+  },
+  {
+    label: 'Procurement',
+    labelAr: 'المشتريات',
+    icon: <Truck size={20} />,
+    href: '/dashboard/admin/procurement',
     roles: ['admin'],
   },
   {
@@ -301,8 +331,15 @@ const menuItems: MenuItem[] = [
     label: 'Profile',
     labelAr: 'الملف الشخصي',
     icon: <UserCircle size={20} />,
+    href: '/dashboard/customer/profile',
+    roles: ['customer'],
+  },
+  {
+    label: 'Profile',
+    labelAr: 'الملف الشخصي',
+    icon: <UserCircle size={20} />,
     href: '/dashboard/profile',
-    roles: ['admin', 'tailor', 'merchant', 'customer'],
+    roles: ['admin', 'tailor', 'merchant'],
   },
 ];
 
@@ -311,20 +348,36 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+const ROLE_HOME: Record<UserRole, string> = {
+  admin: '/dashboard/admin',
+  tailor: '/dashboard/tailor',
+  merchant: '/dashboard/merchant',
+  customer: '/dashboard/customer',
+  rep: '/dashboard/rep',
+};
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, logout } = useAuthStore();
   const { isRTL, sidebarCollapsed, toggleSidebarCollapsed, theme, toggleTheme } = useAppStore();
+
+  const resolveHref = (href: string) => {
+    if (href === '/dashboard' && user) return ROLE_HOME[user.role] ?? href;
+    return href;
+  };
 
   const filteredItems = menuItems.filter(
     (item) => user && item.roles.includes(user.role)
   );
 
   const isActive = (href: string, exact?: boolean) => {
-    if (exact) return pathname === href;
-    if (href === '/dashboard') return pathname === '/dashboard';
-    return pathname === href || pathname.startsWith(href + '/');
+    const resolved = resolveHref(href);
+    if (exact) return pathname === resolved;
+    if (href === '/dashboard') {
+      const home = user ? ROLE_HOME[user.role] : '/dashboard';
+      return pathname === home || pathname === '/dashboard';
+    }
+    return pathname === resolved || pathname.startsWith(resolved + '/');
   };
 
   return (
@@ -350,7 +403,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="flex items-center justify-between p-4 border-b border-[#E8E8E8] dark:border-white/10">
           {!sidebarCollapsed && (
-            <a href="/dashboard" className="flex items-center gap-2.5">
+            <Link href={user ? (ROLE_HOME[user.role] ?? '/dashboard') : '/dashboard'} className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#00373E] flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">م</span>
               </div>
@@ -358,7 +411,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">مفصل</span>
                 <p className="text-[10px] text-neutral-400 -mt-0.5">ERP</p>
               </div>
-            </a>
+            </Link>
           )}
           {sidebarCollapsed && (
             <div className="w-8 h-8 rounded-lg bg-[#00373E] flex items-center justify-center mx-auto">
@@ -386,14 +439,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           {filteredItems.map((item) => {
+            const href = resolveHref(item.href);
             const active = isActive(item.href, item.exact);
             return (
-              <button
-                key={item.href}
-                onClick={() => {
-                  router.push(item.href);
-                  onClose();
-                }}
+              <Link
+                key={`${item.href}-${item.label}`}
+                href={href}
+                onClick={onClose}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all duration-200 text-right group relative',
                   active
@@ -436,7 +488,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {item.badge}
                   </span>
                 )}
-              </button>
+              </Link>
             );
           })}
         </nav>

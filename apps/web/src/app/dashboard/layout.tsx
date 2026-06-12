@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useLayoutEffect } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -268,20 +269,22 @@ export default function DashboardLayout({
                         <p className="text-sm font-semibold text-[#00373E] dark:text-slate-200">{activeUser.name}</p>
                         <p className="text-xs text-[#735B4D]/60 dark:text-slate-500">{activeUser.email}</p>
                       </div>
-                      <a
+                      <Link
                         href={getProfilePath()}
+                        onClick={() => setShowUserMenu(false)}
                         className="flex items-center gap-3 px-4 py-3 text-sm text-[#00373E] dark:text-slate-300 hover:bg-[#F2E8D4]/30 dark:hover:bg-slate-700 transition-colors"
                       >
                         <UserIcon size={16} className="text-[#735B4D]" />
                         {isRTL ? 'الملف الشخصي' : 'Profile'}
-                      </a>
-                      <a
+                      </Link>
+                      <Link
                         href={getSettingsPath()}
+                        onClick={() => setShowUserMenu(false)}
                         className="flex items-center gap-3 px-4 py-3 text-sm text-[#00373E] dark:text-slate-300 hover:bg-[#F2E8D4]/30 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Settings size={16} className="text-[#735B4D]" />
                         {isRTL ? 'الإعدادات' : 'Settings'}
-                      </a>
+                      </Link>
                       <hr className="border-[#D0D6D7]/30" />
                       <button
                         onClick={logout}
@@ -311,9 +314,9 @@ export default function DashboardLayout({
                     {i === breadcrumbs.length - 1 ? (
                       <span className="text-[#00373E] font-semibold">{crumb.label}</span>
                     ) : (
-                      <a href={crumb.path} className="text-[#735B4D]/60 hover:text-[#00373E] transition-colors">
+                      <Link href={crumb.path} className="text-[#735B4D]/60 hover:text-[#00373E] transition-colors">
                         {crumb.label}
-                      </a>
+                      </Link>
                     )}
                   </React.Fragment>
                 ))}

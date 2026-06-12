@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -11,6 +12,7 @@ interface StatsCardProps {
   trendLabel?: string;
   color?: 'primary' | 'gold' | 'accent' | 'secondary' | 'success' | 'info' | 'danger';
   className?: string;
+  href?: string;
 }
 
 const colorConfig = {
@@ -73,55 +75,60 @@ export function StatsCard({
   trendLabel,
   color = 'primary',
   className,
+  href,
 }: StatsCardProps) {
   const config = colorConfig[color] ?? colorConfig.primary;
 
-  return (
-    <div
-      className={cn(
-        'rounded-2xl p-5 transition-colors',
-        'bg-white dark:bg-[#111] border border-[#E8E8E8] dark:border-white/10',
-        'hover:border-[#00373E]/20 dark:hover:border-white/20',
-        className
-      )}
-    >
-      <div className="flex items-start gap-4">
-        <div className={cn(
-          'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-          config.iconBg
-        )}>
-          <span className={config.iconColor}>{icon}</span>
-        </div>
+  const body = (
+    <div className="flex items-start gap-4">
+      <div className={cn(
+        'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
+        config.iconBg
+      )}>
+        <span className={config.iconColor}>{icon}</span>
+      </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-semibold text-[#0A0A0A] dark:text-white mt-1 tracking-tight">{value}</p>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">{label}</p>
+        <p className="text-2xl font-semibold text-[#0A0A0A] dark:text-white mt-1 tracking-tight">{value}</p>
 
-          {/* Trend */}
-          {trend !== undefined && (
-            <div className="flex items-center gap-1.5 mt-1.5">
-              {trend >= 0 ? (
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00373E]/10">
-                  <TrendingUp size={12} className="text-[#00373E]" />
-                  <span className="text-xs font-semibold text-[#00373E]">
-                    +{Math.abs(trend)}%
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#481719]/10">
-                  <TrendingDown size={12} className="text-[#481719]" />
-                  <span className="text-xs font-semibold text-[#481719]">
-                    -{Math.abs(trend)}%
-                  </span>
-                </div>
-              )}
-              {trendLabel && (
-                <span className="text-xs text-[#735B4D]/60">{trendLabel}</span>
-              )}
-            </div>
-          )}
-        </div>
+        {trend !== undefined && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {trend >= 0 ? (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00373E]/10">
+                <TrendingUp size={12} className="text-[#00373E]" />
+                <span className="text-xs font-semibold text-[#00373E]">
+                  +{Math.abs(trend)}%
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#481719]/10">
+                <TrendingDown size={12} className="text-[#481719]" />
+                <span className="text-xs font-semibold text-[#481719]">
+                  -{Math.abs(trend)}%
+                </span>
+              </div>
+            )}
+            {trendLabel && (
+              <span className="text-xs text-[#735B4D]/60">{trendLabel}</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
+
+  const shellClass = cn(
+    'rounded-2xl p-5 transition-colors block',
+    'bg-white dark:bg-[#111] border border-[#E8E8E8] dark:border-white/10',
+    href && 'hover:border-[#00373E]/30 hover:shadow-sm cursor-pointer',
+    !href && 'hover:border-[#00373E]/20 dark:hover:border-white/20',
+    className
+  );
+
+  if (href) {
+    return <Link href={href} className={shellClass}>{body}</Link>;
+  }
+
+  return <div className={shellClass}>{body}</div>;
 }
