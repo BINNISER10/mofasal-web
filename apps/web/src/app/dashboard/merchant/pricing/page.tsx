@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { Layers, Plus, Trash2, Edit3, Save, X, Percent, Tag } from 'lucide-react';
+import { apiClient } from '@/lib/api/client';
 import toast from 'react-hot-toast';
 
 interface PricingTier {
@@ -20,43 +21,10 @@ interface PricingTier {
   isActive: boolean;
 }
 
-const FALLBACK_TIERS: PricingTier[] = [
-  {
-    id: '1',
-    productId: 'prod-1',
-    productName: 'نياقة أبيض فاخر',
-    minQuantity: 10,
-    discountPercent: 5,
-    b2bPrice: 85,
-    b2cPrice: 100,
-    isActive: true,
-  },
-  {
-    id: '2',
-    productId: 'prod-1',
-    productName: 'نياقة أبيض فاخر',
-    minQuantity: 50,
-    discountPercent: 10,
-    b2bPrice: 80,
-    b2cPrice: 100,
-    isActive: true,
-  },
-  {
-    id: '3',
-    productId: 'prod-2',
-    productName: 'دورمى كحلي',
-    minQuantity: 20,
-    discountPercent: 7,
-    b2bPrice: 130,
-    b2cPrice: 150,
-    isActive: true,
-  },
-];
-
 export default function MerchantPricingPage() {
   const { isRTL } = useAppStore();
-  const [tiers, setTiers] = useState<PricingTier[]>(FALLBACK_TIERS);
-  const [loading, setLoading] = useState(false);
+  const [tiers, setTiers] = useState<PricingTier[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -67,6 +35,15 @@ export default function MerchantPricingPage() {
     b2bPrice: '',
     b2cPrice: '',
   });
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<PricingTier[]>('/pricing/tiers')
+      .then((data) => { if (active) setTiers(data); })
+      .catch(() => { if (active) setTiers([]); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const handleAdd = () => {
     if (!form.minQuantity || !form.discountPercent) {

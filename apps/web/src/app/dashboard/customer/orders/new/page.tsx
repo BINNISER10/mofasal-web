@@ -16,13 +16,6 @@ import {
   ChevronRight, ChevronLeft, Search, Star, MapPin, Clock, Check, Truck,
 } from 'lucide-react';
 
-const FALLBACK_SERVICES = [
-  { id: 'thobe', nameAr: 'ثوب رجالي', price: 350, days: 5, icon: '👘' },
-  { id: 'suit', nameAr: 'بدلة رسمية', price: 850, days: 10, icon: '🤵' },
-  { id: 'bisht', nameAr: 'بشت / مشلح', price: 800, days: 6, icon: '🧥' },
-  { id: 'kids', nameAr: 'ثوب أطفال', price: 150, days: 4, icon: '👕' },
-];
-
 const PAYMENT_METHODS = [
   { id: 'mada', labelAr: 'بطاقة مدى', icon: '💳' },
   { id: 'applepay', labelAr: 'Apple Pay', icon: '🍎' },
@@ -76,7 +69,7 @@ function NewOrderPageContent() {
   const [order, setOrder] = useState<OrderState>(initialOrder);
   const [search, setSearch] = useState('');
   const [shops, setShops] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>(FALLBACK_SERVICES);
+  const [services, setServices] = useState<any[]>([]);
   const [loadingShops, setLoadingShops] = useState(true);
   const [loadingServices, setLoadingServices] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -112,25 +105,21 @@ function NewOrderPageContent() {
 
   useEffect(() => {
     if (!order.shopId) {
-      setServices(FALLBACK_SERVICES);
+      setServices([]);
       return;
     }
     setLoadingServices(true);
     shopsApi.getServices(String(order.shopId))
       .then((res) => {
-        if (res?.length) {
-          setServices(res.map((s: any) => ({
-            id: s.id,
-            nameAr: s.nameAr || s.name,
-            price: s.price,
-            days: s.duration || 5,
-            icon: '✂️',
-          })));
-        } else {
-          setServices(FALLBACK_SERVICES);
-        }
+        setServices((res || []).map((s: any) => ({
+          id: s.id,
+          nameAr: s.nameAr || s.name,
+          price: s.price,
+          days: s.duration || 5,
+          icon: '✂️',
+        })));
       })
-      .catch(() => setServices(FALLBACK_SERVICES))
+      .catch(() => setServices([]))
       .finally(() => setLoadingServices(false));
   }, [order.shopId]);
 

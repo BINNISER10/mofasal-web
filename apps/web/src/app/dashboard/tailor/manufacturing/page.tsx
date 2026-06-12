@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { Settings, Play, Pause, CheckCircle, Clock, Loader2, User } from 'lucide-react';
+import { apiClient } from '@/lib/api/client';
 import toast from 'react-hot-toast';
 
 interface ManufacturingTask {
@@ -28,46 +29,20 @@ const STAGES = [
   { id: 'PACKING_WRAPPING', labelAr: 'التغليف والتعبئة', labelEn: 'Packing & Wrapping', color: '#1A6470' },
 ];
 
-const FALLBACK_TASKS: ManufacturingTask[] = [
-  {
-    id: '1',
-    orderId: 'ord-1',
-    orderNumber: 'MUF-1284',
-    stage: 'CUTTING_FABRIC',
-    status: 'IN_PROGRESS',
-    assignedTo: 'علي محمد',
-    estimatedHours: 2,
-    actualHours: 1.5,
-    startedAt: '2024-01-15T09:00:00Z',
-  },
-  {
-    id: '2',
-    orderId: 'ord-2',
-    orderNumber: 'MUF-1283',
-    stage: 'SEWING_ASSEMBLY',
-    status: 'PENDING',
-    assignedTo: 'فيصل الحربي',
-    estimatedHours: 4,
-  },
-  {
-    id: '3',
-    orderId: 'ord-3',
-    orderNumber: 'MUF-1282',
-    stage: 'IRONING_FINISHING',
-    status: 'COMPLETED',
-    assignedTo: 'ماجد الشمري',
-    estimatedHours: 1,
-    actualHours: 1,
-    startedAt: '2024-01-14T14:00:00Z',
-    completedAt: '2024-01-14T15:00:00Z',
-  },
-];
-
 export default function ManufacturingPage() {
   const { isRTL } = useAppStore();
-  const [tasks, setTasks] = useState<ManufacturingTask[]>(FALLBACK_TASKS);
-  const [loading, setLoading] = useState(false);
+  const [tasks, setTasks] = useState<ManufacturingTask[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<ManufacturingTask[]>('/manufacturing/tasks')
+      .then((data) => { if (active) setTasks(data); })
+      .catch(() => { if (active) setTasks([]); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const filteredTasks = selectedStage
     ? tasks.filter((t) => t.stage === selectedStage)

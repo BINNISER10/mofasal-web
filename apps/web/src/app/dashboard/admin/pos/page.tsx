@@ -18,18 +18,10 @@ interface CartItem {
   total: number;
 }
 
-const FALLBACK_PRODUCTS: Product[] = [
-  { id: '1', name: 'Italian Wool Suit', nameAr: 'بدلة صوف إيطالية', price: 2500, stockQuantity: 15, sku: 'SUIT-001', images: [], category: { id: 'cat1', name: 'Suits', nameAr: 'بدل' } },
-  { id: '2', name: 'White Thobe', nameAr: 'ثوب أبيض', price: 350, stockQuantity: 50, sku: 'THOBE-001', images: [], category: { id: 'cat2', name: 'Thobes', nameAr: 'ثوب' } },
-  { id: '3', name: 'Egyptian Cotton Fabric', nameAr: 'قماش قطني مصري', price: 120, stockQuantity: 100, sku: 'FAB-001', images: [], category: { id: 'cat3', name: 'Fabrics', nameAr: 'أقمشة' } },
-  { id: '4', name: 'Premium White Thobe', nameAr: 'ثوب أبيض فاخر', price: 650, stockQuantity: 25, sku: 'THOBE-002', images: [], category: { id: 'cat2', name: 'Thobes', nameAr: 'ثوب' } },
-  { id: '5', name: 'Wool Blend Fabric', nameAr: 'قماش صوف مخلوط', price: 280, stockQuantity: 75, sku: 'FAB-002', images: [], category: { id: 'cat3', name: 'Fabrics', nameAr: 'أقمشة' } },
-];
-
 export default function AdminPOSPage() {
   const { isRTL } = useAppStore();
-  const [products, setProducts] = useState<Product[]>(FALLBACK_PRODUCTS);
-  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState('');
@@ -44,9 +36,7 @@ export default function AdminPOSPage() {
       setLoading(true);
       try {
         const data = await posApi.getProducts();
-        if (data.length > 0) {
-          setProducts(data);
-        }
+        setProducts(data);
       } catch (error) {
         console.error('Failed to fetch products:', error);
       } finally {

@@ -1,10 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
+import { hrApi } from '@/lib/api/hr';
 import { DollarSign, Calendar, Users, CheckCircle2, Clock, Download, FileText, TrendingUp } from 'lucide-react';
 
 interface PayrollRecord {
@@ -22,50 +23,6 @@ interface PayrollRecord {
   paidAt?: string;
 }
 
-const FALLBACK_PAYROLL: PayrollRecord[] = [
-  {
-    id: '1',
-    employeeId: '1',
-    employeeName: 'خالد الأحمد',
-    month: 6,
-    year: 2024,
-    baseSalary: 8000,
-    overtime: 500,
-    bonuses: 1000,
-    deductions: 300,
-    netSalary: 9200,
-    status: 'PAID',
-    paidAt: '2024-06-01',
-  },
-  {
-    id: '2',
-    employeeId: '2',
-    employeeName: 'محمد السلمي',
-    month: 6,
-    year: 2024,
-    baseSalary: 5000,
-    overtime: 200,
-    bonuses: 500,
-    deductions: 150,
-    netSalary: 5550,
-    status: 'PAID',
-    paidAt: '2024-06-01',
-  },
-  {
-    id: '3',
-    employeeId: '3',
-    employeeName: 'فهد القحطاني',
-    month: 6,
-    year: 2024,
-    baseSalary: 4500,
-    overtime: 0,
-    bonuses: 300,
-    deductions: 100,
-    netSalary: 4700,
-    status: 'PENDING',
-  },
-];
-
 const MONTHS = [
   'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
@@ -78,9 +35,36 @@ const STATUS_CONFIG = {
 
 export default function AdminPayrollPage() {
   const { isRTL } = useAppStore();
-  const [payroll, setPayroll] = useState<PayrollRecord[]>(FALLBACK_PAYROLL);
-  const [selectedMonth, setSelectedMonth] = useState(6);
-  const [selectedYear, setSelectedYear] = useState(2024);
+  const [payroll, setPayroll] = useState<PayrollRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    hrApi.getPayroll({ month: selectedMonth, year: selectedYear })
+      .then((rows) => {
+        if (!active) return;
+        setPayroll(rows.map((r) => ({
+          id: r.id,
+          employeeId: r.employeeId,
+          employeeName: r.employeeNameAr || r.employeeName,
+          month: r.month,
+          year: r.year,
+          baseSalary: r.baseSalary,
+          overtime: Math.round((r.additions || 0) * 0.4),
+          bonuses: Math.round((r.additions || 0) * 0.6),
+          deductions: r.deductions || 0,
+          netSalary: r.netSalary,
+          status: r.status,
+          paidAt: r.paidAt,
+        })));
+      })
+      .catch(() => { if (active) setPayroll([]); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [selectedMonth, selectedYear]);
 
   const filtered = payroll.filter((p) => p.month === selectedMonth && p.year === selectedYear);
 

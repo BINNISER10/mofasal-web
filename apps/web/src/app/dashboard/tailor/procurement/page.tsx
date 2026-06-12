@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { ShoppingCart, Plus, Package, Clock, CheckCircle, XCircle, Loader2, Search } from 'lucide-react';
+import { procurementApi } from '@/lib/api/procurement';
 import toast from 'react-hot-toast';
 
 interface PurchaseOrder {
@@ -28,36 +29,34 @@ const STATUS_CONFIG: Record<string, { labelAr: string; labelEn: string; color: s
   CANCELLED: { labelAr: 'ملغي', labelEn: 'Cancelled', color: '#C62828', icon: XCircle },
 };
 
-const FALLBACK_ORDERS: PurchaseOrder[] = [
-  {
-    id: '1',
-    orderNumber: 'PO-ABC123',
-    status: 'PENDING',
-    totalAmount: 4500,
-    supplierName: 'مصنع الأقمشة السعودية',
-    createdAt: '2024-01-15',
-    expectedDate: '2024-01-20',
-    items: [{ name: 'نياقة أبيض', quantity: 50, unitPrice: 90 }],
-  },
-  {
-    id: '2',
-    orderNumber: 'PO-DEF456',
-    status: 'CONFIRMED',
-    totalAmount: 2800,
-    supplierName: 'تجارة الأقمشة الحديثة',
-    createdAt: '2024-01-10',
-    expectedDate: '2024-01-18',
-    items: [{ name: 'دورمى كحلي', quantity: 20, unitPrice: 140 }],
-  },
-];
-
 export default function ProcurementPage() {
   const { isRTL } = useAppStore();
-  const [orders, setOrders] = useState<PurchaseOrder[]>(FALLBACK_ORDERS);
-  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    procurementApi.getPurchaseOrders()
+      .then((res) => {
+        if (!active) return;
+        setOrders(res.items.map((o) => ({
+          id: o.id,
+          orderNumber: o.orderNumber,
+          status: o.status,
+          totalAmount: o.grandTotal || o.totalAmount,
+          supplierName: o.supplier?.nameAr || o.supplier?.name,
+          createdAt: o.createdAt,
+          expectedDate: o.expectedDate,
+          items: o.items?.map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice })),
+        })));
+      })
+      .catch(() => { if (active) setOrders([]); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const filtered = orders.filter((o) => {
     if (!search) return true;

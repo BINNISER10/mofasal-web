@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/lib/stores/appStore';
+import { hrApi } from '@/lib/api/hr';
 import { Clock, CheckCircle2, XCircle, Calendar, Users, TrendingUp } from 'lucide-react';
 
 interface AttendanceRecord {
@@ -16,36 +17,6 @@ interface AttendanceRecord {
   status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EARLY_LEAVE';
 }
 
-const FALLBACK_ATTENDANCE: AttendanceRecord[] = [
-  {
-    id: '1',
-    employeeId: '1',
-    employeeName: 'خالد الأحمد',
-    date: '2024-06-11',
-    checkIn: '08:00',
-    checkOut: '17:00',
-    status: 'PRESENT',
-  },
-  {
-    id: '2',
-    employeeId: '2',
-    employeeName: 'محمد السلمي',
-    date: '2024-06-11',
-    checkIn: '08:15',
-    checkOut: '17:00',
-    status: 'LATE',
-  },
-  {
-    id: '3',
-    employeeId: '3',
-    employeeName: 'فهد القحطاني',
-    date: '2024-06-11',
-    checkIn: '08:00',
-    checkOut: '16:30',
-    status: 'EARLY_LEAVE',
-  },
-];
-
 const STATUS_CONFIG = {
   PRESENT: { label: 'حاضر', labelEn: 'Present', variant: 'success' as const, icon: <CheckCircle2 size={14} /> },
   ABSENT: { label: 'غائب', labelEn: 'Absent', variant: 'error' as const, icon: <XCircle size={14} /> },
@@ -55,9 +26,30 @@ const STATUS_CONFIG = {
 
 export default function AdminAttendancePage() {
   const { isRTL } = useAppStore();
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>(FALLBACK_ATTENDANCE);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    hrApi.getAttendance({ date: selectedDate })
+      .then((rows) => {
+        if (!active) return;
+        setAttendance(rows.map((r) => ({
+          id: r.id,
+          employeeId: r.employeeId,
+          employeeName: r.employeeNameAr || r.employeeName,
+          date: r.date,
+          checkIn: r.checkIn || '—',
+          checkOut: r.checkOut,
+          status: r.status === 'HALF_DAY' ? 'EARLY_LEAVE' : r.status as AttendanceRecord['status'],
+        })));
+      })
+      .catch(() => { if (active) setAttendance([]); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [selectedDate]);
 
   const presentCount = attendance.filter((a) => a.status === 'PRESENT').length;
   const absentCount = attendance.filter((a) => a.status === 'ABSENT').length;

@@ -26,78 +26,10 @@ const MODULES = [
 
 const ACTIONS = ['view', 'create', 'update', 'delete', 'approve', 'export'];
 
-const FALLBACK_ROLES: Role[] = [
-  {
-    id: '1',
-    name: 'ADMIN',
-    displayName: 'System Admin',
-    displayNameAr: 'مدير النظام',
-    permissions: Object.fromEntries(MODULES.map(m => [m.id, ACTIONS])),
-    userCount: 1,
-    isSystem: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'TAILOR_SHOP',
-    displayName: 'Tailor Shop Manager',
-    displayNameAr: 'مدير محل الخياطة',
-    permissions: {
-      orders: ACTIONS,
-      products: ACTIONS,
-      inventory: ACTIONS,
-      manufacturing: ACTIONS,
-      hr: ACTIONS,
-      payroll: ['view', 'approve'],
-      accounting: ACTIONS,
-      reports: ACTIONS,
-      settings: ACTIONS,
-    },
-    userCount: 3,
-    isSystem: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'TAILOR',
-    displayName: 'Tailor',
-    displayNameAr: 'خياط',
-    permissions: {
-      orders: ['view', 'update'],
-      products: ['view'],
-      inventory: ['view'],
-      manufacturing: ['view', 'update'],
-      hr: ['view'],
-    },
-    userCount: 5,
-    isSystem: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    name: 'MERCHANT',
-    displayName: 'Merchant',
-    displayNameAr: 'تاجر',
-    permissions: {
-      products: ACTIONS,
-      inventory: ACTIONS,
-      accounting: ACTIONS,
-      reports: ACTIONS,
-      procurement: ACTIONS,
-      pos: ACTIONS,
-      b2b: ACTIONS,
-      settings: ACTIONS,
-    },
-    userCount: 2,
-    isSystem: false,
-    createdAt: new Date().toISOString(),
-  },
-];
-
 export default function AdminRolesPage() {
   const { isRTL } = useAppStore();
-  const [roles, setRoles] = useState<Role[]>(FALLBACK_ROLES);
-  const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -113,9 +45,7 @@ export default function AdminRolesPage() {
       setLoading(true);
       try {
         const data = await rolesApi.getRoles();
-        if (data.length > 0) {
-          setRoles(data);
-        }
+        setRoles(data);
       } catch (error) {
         console.error('Failed to fetch roles:', error);
       } finally {

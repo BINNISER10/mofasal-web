@@ -10,58 +10,6 @@ import { procurementApi, PurchaseOrder } from '@/lib/api/procurement';
 import { Package, Plus, Search, Filter, Truck, FileText, CheckCircle2, Clock, XCircle, Calendar, Building2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const FALLBACK_ORDERS: PurchaseOrder[] = [
-  {
-    id: '1',
-    shopId: '1',
-    supplierId: '1',
-    supplier: { id: '1', name: 'مؤسسة النسيج السعودي', nameAr: 'مؤسسة النسيج السعودي' },
-    orderNumber: 'PO-2024-001',
-    status: 'PENDING',
-    totalAmount: 5500,
-    taxAmount: 825,
-    grandTotal: 6325,
-    expectedDate: '2024-06-20',
-    createdAt: '2024-06-10',
-    updatedAt: '2024-06-10',
-    items: [{ id: '1', productId: '1', name: 'قماش قطني مصري', quantity: 50, unitPrice: 110, totalPrice: 5500 }],
-  },
-  {
-    id: '2',
-    shopId: '1',
-    supplierId: '2',
-    supplier: { id: '2', name: 'شركة الأقمشة الإيطالية', nameAr: 'شركة الأقمشة الإيطالية' },
-    orderNumber: 'PO-2024-002',
-    status: 'CONFIRMED',
-    totalAmount: 12000,
-    taxAmount: 1800,
-    grandTotal: 13800,
-    expectedDate: '2024-06-25',
-    createdAt: '2024-06-08',
-    updatedAt: '2024-06-08',
-    items: [
-      { id: '2', productId: '2', name: 'قماش حرير إيطالي', quantity: 20, unitPrice: 450, totalPrice: 9000 },
-      { id: '3', productId: '3', name: 'قماش صوف مخلوط', quantity: 10, unitPrice: 300, totalPrice: 3000 },
-    ],
-  },
-  {
-    id: '3',
-    shopId: '1',
-    supplierId: '1',
-    supplier: { id: '1', name: 'مؤسسة النسيج السعودي', nameAr: 'مؤسسة النسيج السعودي' },
-    orderNumber: 'PO-2024-003',
-    status: 'RECEIVED',
-    totalAmount: 3500,
-    taxAmount: 525,
-    grandTotal: 4025,
-    expectedDate: '2024-06-10',
-    deliveredAt: '2024-06-10',
-    createdAt: '2024-06-01',
-    updatedAt: '2024-06-10',
-    items: [{ id: '4', productId: '4', name: 'قماش كتان', quantity: 25, unitPrice: 140, totalPrice: 3500 }],
-  },
-];
-
 const STATUS_CONFIG = {
   DRAFT: { label: 'مسودة', labelEn: 'Draft', variant: 'neutral' as const, icon: <FileText size={14} /> },
   PENDING: { label: 'قيد الانتظار', labelEn: 'Pending', variant: 'warning' as const, icon: <Clock size={14} /> },
@@ -72,8 +20,8 @@ const STATUS_CONFIG = {
 
 export default function AdminProcurementPage() {
   const { isRTL } = useAppStore();
-  const [orders, setOrders] = useState<PurchaseOrder[]>(FALLBACK_ORDERS);
-  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showAdd, setShowAdd] = useState(false);
@@ -84,9 +32,7 @@ export default function AdminProcurementPage() {
       setLoading(true);
       try {
         const data = await procurementApi.getPurchaseOrders();
-        if (data.items.length > 0) {
-          setOrders(data.items);
-        }
+        setOrders(data.items);
       } catch (error) {
         console.error('Failed to fetch orders:', error);
       } finally {

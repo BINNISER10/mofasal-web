@@ -1,11 +1,12 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useAppStore } from '@/lib/stores/appStore';
 import { Calendar, Clock, CheckCircle2, XCircle, Plus, User, FileText } from 'lucide-react';
+import { hrApi } from '@/lib/api/hr';
 import toast from 'react-hot-toast';
 
 interface LeaveRequest {
@@ -20,31 +21,6 @@ interface LeaveRequest {
   days: number;
 }
 
-const FALLBACK_REQUESTS: LeaveRequest[] = [
-  {
-    id: '1',
-    employeeId: '1',
-    employeeName: 'خالد الأحمد',
-    type: 'ANNUAL',
-    startDate: '2024-06-15',
-    endDate: '2024-06-19',
-    reason: 'إجازة سنوية',
-    status: 'PENDING',
-    days: 5,
-  },
-  {
-    id: '2',
-    employeeId: '2',
-    employeeName: 'محمد السلمي',
-    type: 'SICK',
-    startDate: '2024-06-10',
-    endDate: '2024-06-11',
-    reason: 'مرض',
-    status: 'APPROVED',
-    days: 2,
-  },
-];
-
 const TYPE_CONFIG = {
   ANNUAL: { label: 'سنوية', labelEn: 'Annual', variant: 'primary' as const },
   SICK: { label: 'مرضية', labelEn: 'Sick', variant: 'warning' as const },
@@ -58,9 +34,15 @@ const STATUS_CONFIG = {
   REJECTED: { label: 'مرفوض', labelEn: 'Rejected', variant: 'danger' as const, icon: <XCircle size={14} /> },
 };
 
+function calcDays(start: string, end: string) {
+  const diff = new Date(end).getTime() - new Date(start).getTime();
+  return Math.max(1, Math.round(diff / 86400000) + 1);
+}
+
 export default function AdminLeavePage() {
   const { isRTL } = useAppStore();
-  const [requests, setRequests] = useState<LeaveRequest[]>(FALLBACK_REQUESTS);
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
     employeeId: '',
@@ -69,6 +51,29 @@ export default function AdminLeavePage() {
     endDate: '',
     reason: '',
   });
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    hrApi.getLeaveRequests()
+      .then((rows) => {
+        if (!active) return;
+        setRequests(rows.map((r) => ({
+          id: r.id,
+          employeeId: r.employeeId,
+          employeeName: r.employeeNameAr || r.employeeName,
+          type: r.type,
+          startDate: r.startDate,
+          endDate: r.endDate,
+          reason: r.reason,
+          status: r.status,
+          days: calcDays(r.startDate, r.endDate),
+        })));
+      })
+      .catch(() => { if (active) setRequests([]); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
   const approvedCount = requests.filter((r) => r.status === 'APPROVED').length;
