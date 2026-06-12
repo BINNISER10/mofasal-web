@@ -1,8 +1,9 @@
 # مفصل — Netlify (Next.js monorepo)
 
 [build]
-  command = "cd apps/web && npm ci --no-audit --no-fund --ignore-scripts --omit=optional && npx prisma generate --schema=./prisma/schema.prisma && npm run build"
-  publish = "apps/web/.next"
+  base = "apps/web"
+  command = "npm ci --no-audit --no-fund --ignore-scripts --omit=optional && npx prisma generate --schema=./prisma/schema.prisma && npm run build"
+  publish = ".next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
