@@ -20,6 +20,7 @@ import redisService from './services/RedisService';
 import logger from './utils/logger';
 import { swaggerSpec } from './config/swagger';
 import monitoringService from './services/MonitoringService';
+import { startNotificationWorker, stopNotificationWorker } from './queues/notification.queue';
 
 import authRoutes from './routes/v1/auth.routes';
 import userRoutes from './routes/v1/users.routes';
@@ -220,8 +221,10 @@ async function start() {
   try {
     await redisService.connect();
     logger.info('Redis connected');
+    await startNotificationWorker();
   } catch (error) {
     logger.warn('Redis connection failed, continuing without cache', error);
+    await startNotificationWorker();
   }
 
   server.listen(config.port, () => {
@@ -238,6 +241,7 @@ start();
 const gracefulShutdown = async (signal: string) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
   server.close(async () => {
+    await stopNotificationWorker();
     await redisService.disconnect();
     logger.info('Server closed');
     process.exit(0);

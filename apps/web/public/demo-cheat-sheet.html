@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>مفصل — بطاقة العرض السريعة</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: #FAFAF8;
+      color: #1C1C1E;
+      padding: 16px;
+      line-height: 1.5;
+    }
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      border: 2px solid #00373E;
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid #D4AF37;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    h1 { font-size: 22px; color: #00373E; }
+    .url { font-size: 13px; color: #735B4D; direction: ltr; text-align: left; }
+    h2 {
+      font-size: 14px;
+      color: #00373E;
+      margin: 14px 0 8px;
+      padding-right: 8px;
+      border-right: 4px solid #D4AF37;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+    th, td { border: 1px solid #E8E8E8; padding: 6px 8px; text-align: right; }
+    th { background: #00373E; color: #fff; }
+    .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .step {
+      background: #F2E8D4;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+    }
+    .step strong { color: #00373E; display: block; margin-bottom: 2px; }
+    .footer {
+      margin-top: 14px;
+      font-size: 10px;
+      color: #735B4D;
+      text-align: center;
+      border-top: 1px solid #E8E8E8;
+      padding-top: 10px;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { border: none; border-radius: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>مفصل — بطاقة العرض السريعة</h1>
+        <p style="font-size:12px;color:#735B4D">يوم السبت · 12–15 دقيقة</p>
+      </div>
+      <div class="url">mofasal.netlify.app</div>
+    </header>
+
+    <h2>مسار العرض (10 خطوات)</h2>
+    <div class="steps">
+      <div class="step"><strong>1. الرئيسية</strong> / — انطباع أول + 14 قسم</div>
+      <div class="step"><strong>2. المحلات</strong> /shops — اختر خياط الرياض</div>
+      <div class="step"><strong>3. الأقمشة</strong> /marketplace — سوق B2B/B2C</div>
+      <div class="step"><strong>4. الدخول</strong> /login — أزرار تجريبية</div>
+      <div class="step"><strong>5. عميل</strong> /dashboard/customer — طلب + قياس منزلي</div>
+      <div class="step"><strong>6. الطلبات</strong> /dashboard/customer/orders — Timeline</div>
+      <div class="step"><strong>7. خياط</strong> زر خياط — طلبات + موظفين</div>
+      <div class="step"><strong>8. تاجر</strong> زر تاجر — مبيعات + مخزون</div>
+      <div class="step"><strong>9. مندوب</strong> زر مندوب — مهام قياس</div>
+      <div class="step"><strong>10. مدير</strong> زر مدير — إحصائيات المنصة</div>
+    </div>
+
+    <h2>حسابات الدخول السريع</h2>
+    <table>
+      <tr><th>الدور</th><th>الجوال</th><th>كلمة المرور</th></tr>
+      <tr><td>عميل</td><td dir="ltr">966511111111</td><td>admin123</td></tr>
+      <tr><td>خياط</td><td dir="ltr">966533333333</td><td>admin123</td></tr>
+      <tr><td>تاجر</td><td dir="ltr">966544444444</td><td>admin123</td></tr>
+      <tr><td>مندوب</td><td dir="ltr">966522222222</td><td>admin123</td></tr>
+      <tr><td>مدير</td><td dir="ltr">966500000000</td><td>admin123</td></tr>
+    </table>
+
+    <h2>جمل مقترحة للعرض</h2>
+    <table>
+      <tr><th>اللحظة</th><th>ماذا تقول</th></tr>
+      <tr><td>الافتتاح</td><td>«مفصل — طلب ثوبك من بيتك وشاهد خياطك يعمل عليه خطوة بخطوة»</td></tr>
+      <tr><td>الميزة الفريدة</td><td>«قياس منزلي + تتبع 11 مرحلة — لا يوجد منافس مباشر بهذا التخصص»</td></tr>
+      <tr><td>الختام</td><td>«بنية تحتية رقمية لقطاع الخياطة — عمولات + اشتراكات SaaS»</td></tr>
+    </table>
+
+    <h2>طوارئ</h2>
+    <p style="font-size:11px">API بطيء؟ → اضغط أي زر تجريبي (وضع العرض يعمل بدون خادم) · نافذة خاصة Incognito · refresh</p>
+
+    <div class="footer">
+      مفصل MUFASAL · itbinniser@gmail.com · يونيو 2026
+      <br />
+      <span class="no-print">للطباعة PDF: Ctrl+P → حفظ كـ PDF</span>
+    </div>
+  </div>
+</body>
+</html>

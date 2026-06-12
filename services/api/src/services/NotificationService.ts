@@ -1,7 +1,6 @@
-import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import logger from '../utils/logger';
-import socketService from './SocketService';
+import { enqueueNotification } from '../queues/notification.queue';
 
 interface NotificationData {
   title: string;
@@ -19,23 +18,10 @@ interface NotificationWhereClause {
 export class NotificationService {
   static async sendToUser(userId: string, type: string, data: NotificationData) {
     try {
-      const notification = await prisma.notification.create({
-        data: {
-          userId,
-          type: type as 'ORDER_UPDATE' | 'PAYMENT_UPDATE' | 'DELIVERY_UPDATE' | 'PROMOTION' | 'SYSTEM' | 'CHAT_MESSAGE',
-          title: data.title,
-          titleAr: data.titleAr,
-          body: data.body,
-          bodyAr: data.bodyAr,
-          data: data.data as unknown as Prisma.InputJsonValue,
-        },
-      });
-
-      socketService.emitNotification(userId, notification);
-
-      return notification;
+      await enqueueNotification({ userId, type, data });
+      return { queued: true, userId, type };
     } catch (error) {
-      logger.error('Failed to create notification', error);
+      logger.error('Failed to enqueue notification', error);
       return null;
     }
   }
