@@ -9,6 +9,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { authApi } from '@/lib/api/auth';
 import { Eye, EyeOff, Phone, Lock, AlertCircle, Scissors } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { DEMO_CREDENTIALS, getDemoSession, isDemoModeEnabled } from '@/lib/demoAuth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,19 +30,34 @@ export default function LoginPage() {
 
   const handleDemoLogin = async (demo: typeof DEMO_USERS[0]) => {
     setIsLoading(true);
+    const creds = DEMO_CREDENTIALS[demo.role];
     try {
-      const response = await authApi.login({ phone: '966500000000', password: 'admin123' });
+      const response = await authApi.login({
+        phone: creds?.phone ?? '966500000000',
+        password: creds?.password ?? 'admin123',
+      });
       setUser(response.user);
       setToken(response.token);
       localStorage.setItem('token', response.token);
       toast.success(isRTL ? `دخول تجريبي: ${demo.label}` : `Demo login: ${demo.label}`);
-      const roleRoutes: Record<string, string> = {
-        admin: '/dashboard/admin', tailor: '/dashboard/tailor',
-        merchant: '/dashboard/merchant', customer: '/dashboard/customer',
-      };
-      router.push(roleRoutes[response.user.role] || '/dashboard');
+      router.push(demo.route);
     } catch {
-      toast.error(isRTL ? 'تعذر الاتصال بالخادم - تأكد من تشغيل API' : 'Cannot connect to API - make sure API is running');
+      if (isDemoModeEnabled()) {
+        const session = getDemoSession(demo.role);
+        setUser(session.user);
+        setToken(session.token);
+        localStorage.setItem('token', session.token);
+        toast.success(
+          isRTL
+            ? `وضع العرض (بدون خادم): ${demo.label}`
+            : `Demo mode (offline): ${demo.label}`,
+        );
+        router.push(demo.route);
+      } else {
+        toast.error(
+          isRTL ? 'تعذر الاتصال بالخادم — جرّب لاحقاً' : 'Cannot connect to API — try again later',
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +78,7 @@ export default function LoginPage() {
         tailor: '/dashboard/tailor',
         merchant: '/dashboard/merchant',
         customer: '/dashboard/customer',
+        rep: '/dashboard/rep',
       };
       router.push(roleRoutes[response.user.role] || '/dashboard');
     } catch (err: any) {

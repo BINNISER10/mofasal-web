@@ -2,7 +2,8 @@
 const path = require('path');
 
 const nextConfig = {
-  output: 'standalone',
+  // standalone للـ Docker/Render — Netlify يستخدم runtime الخاص به
+  ...(process.env.NETLIFY ? {} : { output: 'standalone' }),
   outputFileTracingRoot: path.join(__dirname, '../../'),
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },

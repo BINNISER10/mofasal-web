@@ -8,6 +8,15 @@ interface HomeAppDownloadProps {
 
 export function HomeAppDownload({ isRTL }: HomeAppDownloadProps) {
   const { appDownload } = siteConfig;
+  const hasStoreLinks =
+    appDownload.appStoreUrl &&
+    appDownload.playStoreUrl &&
+    appDownload.appStoreUrl !== '#' &&
+    appDownload.playStoreUrl !== '#';
+
+  if (!hasStoreLinks) {
+    return null;
+  }
 
   return (
     <section className="py-20 bg-gradient-hero relative overflow-hidden">
