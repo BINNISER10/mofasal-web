@@ -135,7 +135,7 @@ export const DEMO_PRODUCTS = [
     price: 120,
     stock: 60,
     minStock: 8,
-    category: 'أقمshة',
+    category: 'أقمشة',
     images: ['/images/sections/fabric-white-drape.png'],
     merchantId: 'demo-merchant',
     merchantName: 'بيت الأقمشة الفاخرة',
