@@ -7,15 +7,20 @@ export const HOME_IMAGES = {
     '/images/sections/category-tailoring.png',
     '/images/sections/product-2.png',
   ],
-  /** قسم الخدمات — بطاقة 1: تفصيل الثوب (بشت فاخر) */
+  /** قسم الخدمات — بطاقة 1: تفصيل الثوب (معامل خياطة) */
   tailoring: '/images/sections/category-tailoring.png',
   /** قسم الخدمات — بطاقة 2: سوق الأقمشة (شماغ/أقمشة) */
   fabric: '/images/sections/category-fabric.png',
-  /** قسم الحرفية — تفاصيل خياطة الثوب الأبيض */
+  /** قسم الحرفية — مقص وباترون */
   craftsmanship: '/images/sections/craftsmanship.png',
   whiteFabric: '/images/sections/craftsmanship.png',
-  /** صفحة المحلات — Hero */
+  /** صفحة محلات الخياطة — Hero (ماكينة خياطة حديثة) */
   shops: '/images/sections/shops-hero.png',
+  /** صور إضافية للورشة */
+  workshop: [
+    '/images/sections/workshop-needle.png',
+    '/images/sections/workshop-sewing.png',
+  ],
   /** قسم المنتجات المختارة */
   products: [
     '/images/sections/product-1.png',
