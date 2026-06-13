@@ -1,0 +1,9 @@
+apps/mobile/node_modules/
+apps/mobile/dist/
+apps/mobile/.expo/
+apps/web/
+services/
+node_modules/
+.git/
+*.log
+desktop.ini
