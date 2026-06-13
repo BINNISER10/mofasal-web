@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import EncryptedStorage from 'react-native-encrypted-storage';
+import { secureStorage } from '../storage/secureStorage';
 import { authApi, UserProfile } from '../api/auth';
 import { clearTokens, setAuthToken, setRefreshToken } from '../api/client';
 import apiClient from '../api/client';
@@ -28,8 +28,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loadStoredAuth = async () => {
     try {
-      const storedToken = await EncryptedStorage.getItem('auth_token');
-      const storedUser = await EncryptedStorage.getItem('user_data');
+      const storedToken = await secureStorage.getItem('auth_token');
+      const storedUser = await secureStorage.getItem('user_data');
       if (storedToken) {
         setToken(storedToken);
         if (storedUser) {
@@ -38,13 +38,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // Fetch from API
           const profile = await authApi.getMe();
           setUser(profile);
-          await EncryptedStorage.setItem('user_data', JSON.stringify(profile));
+          await secureStorage.setItem('user_data', JSON.stringify(profile));
         }
       }
     } catch {
       // Token expired or no stored auth — clear everything
       await clearTokens();
-      await EncryptedStorage.removeItem('user_data');
+      await secureStorage.removeItem('user_data');
     } finally {
       setIsLoading(false);
     }
@@ -55,9 +55,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const profile = await authApi.getMe();
       setUser(profile);
-      const tok = await EncryptedStorage.getItem('auth_token');
+      const tok = await secureStorage.getItem('auth_token');
       setToken(tok);
-      await EncryptedStorage.setItem('user_data', JSON.stringify(profile));
+      await secureStorage.setItem('user_data', JSON.stringify(profile));
     } catch {
       // getMe failed — store minimal user from phone
       const minimal: UserProfile = {
@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         role: 'CUSTOMER', is_active: true,
       };
       setUser(minimal);
-      const tok = await EncryptedStorage.getItem('auth_token');
+      const tok = await secureStorage.getItem('auth_token');
       setToken(tok);
     }
   }, []);
@@ -74,18 +74,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setToken(null);
     await clearTokens();
-    await EncryptedStorage.removeItem('user_data');
+    await secureStorage.removeItem('user_data');
   }, []);
 
   const updateUser = useCallback((updatedUser: UserProfile) => {
     setUser(updatedUser);
-    EncryptedStorage.setItem('user_data', JSON.stringify(updatedUser));
+    secureStorage.setItem('user_data', JSON.stringify(updatedUser));
   }, []);
 
   const refreshUser = useCallback(async () => {
     const profile = await authApi.getMe();
     setUser(profile);
-    await EncryptedStorage.setItem('user_data', JSON.stringify(profile));
+    await secureStorage.setItem('user_data', JSON.stringify(profile));
   }, []);
 
   return (

@@ -59,11 +59,15 @@
             "buildToolsVersion": "34.0.0",
             "kotlinVersion": "1.9.23",
             "packagingOptions": {
-              "pickFirst": ["**/libc++_shared.so", "**/libjsc.so"]
+              "pickFirst": [
+                "**/libc++_shared.so",
+                "**/libjsc.so"
+              ]
             }
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

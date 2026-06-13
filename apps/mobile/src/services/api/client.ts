@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import EncryptedStorage from 'react-native-encrypted-storage';
+import { secureStorage } from '../storage/secureStorage';
 import { API_BASE_URL, API_TIMEOUT, API_HEADERS } from './config';
 
 interface FailedRequest {
@@ -30,7 +30,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
-      const token = await EncryptedStorage.getItem('auth_token');
+      const token = await secureStorage.getItem('auth_token');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -72,7 +72,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = await EncryptedStorage.getItem('refresh_token');
+        const refreshToken = await secureStorage.getItem('refresh_token');
         if (!refreshToken) throw new Error('No refresh token');
 
         const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
@@ -87,8 +87,8 @@ apiClient.interceptors.response.use(
         };
         const accessToken = payload.access_token;
         const newRefreshToken = payload.refresh_token;
-        await EncryptedStorage.setItem('auth_token', accessToken);
-        await EncryptedStorage.setItem('refresh_token', newRefreshToken);
+        await secureStorage.setItem('auth_token', accessToken);
+        await secureStorage.setItem('refresh_token', newRefreshToken);
 
         processQueue(null, accessToken);
 
@@ -98,8 +98,8 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        await EncryptedStorage.removeItem('auth_token');
-        await EncryptedStorage.removeItem('refresh_token');
+        await secureStorage.removeItem('auth_token');
+        await secureStorage.removeItem('refresh_token');
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -111,20 +111,20 @@ apiClient.interceptors.response.use(
 );
 
 export const setAuthToken = async (token: string) => {
-  await EncryptedStorage.setItem('auth_token', token);
+  await secureStorage.setItem('auth_token', token);
 };
 
 export const setRefreshToken = async (token: string) => {
-  await EncryptedStorage.setItem('refresh_token', token);
+  await secureStorage.setItem('refresh_token', token);
 };
 
 export const clearTokens = async () => {
-  await EncryptedStorage.removeItem('auth_token');
-  await EncryptedStorage.removeItem('refresh_token');
+  await secureStorage.removeItem('auth_token');
+  await secureStorage.removeItem('refresh_token');
 };
 
 export const getAuthToken = async (): Promise<string | null> => {
-  return EncryptedStorage.getItem('auth_token');
+  return secureStorage.getItem('auth_token');
 };
 
 export default apiClient;
