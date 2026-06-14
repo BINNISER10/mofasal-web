@@ -23,10 +23,10 @@ const DOWNLOADS = [
   },
   {
     title: 'التوقيع الإلكتروني',
-    desc: 'وقّع المذكرة وحمّل PDF موقّع بشهادة تحقق',
+    desc: 'عدّل البيانات ووقّع المذكرة — يُحفظ تلقائياً في المتصفح',
     href: '/investor/mou',
     primary: false,
-    size: '4 شركاء',
+    size: 'قابل للتعديل',
     external: true,
   },
   {

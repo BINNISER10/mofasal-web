@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MOU_PARTIES } from '@/data/mouContent';
+import type { MouPartyDraft } from '@/lib/mouStorage';
 import { SignaturePad } from '@/components/investor/SignaturePad';
 import {
   clearAllSignatures,
@@ -13,15 +13,19 @@ import {
   type PartySignature,
 } from '@/lib/generateSignedMouPdf';
 
-export function MouSignPanel() {
+type MouSignPanelProps = {
+  parties: MouPartyDraft[];
+};
+
+export function MouSignPanel({ parties }: MouSignPanelProps) {
   const [signatures, setSignatures] = useState<MouSignState>({});
-  const [activeId, setActiveId] = useState(MOU_PARTIES[0].id);
+  const [activeId, setActiveId] = useState(parties[0]?.id ?? 1);
   const [idNumber, setIdNumber] = useState('');
   const [draftSig, setDraftSig] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const activeParty = MOU_PARTIES.find((p) => p.id === activeId)!;
+  const activeParty = parties.find((p) => p.id === activeId) ?? parties[0];
 
   useEffect(() => {
     setSignatures(loadSignatures());
@@ -29,11 +33,12 @@ export function MouSignPanel() {
 
   useEffect(() => {
     const saved = signatures[activeId];
-    setIdNumber(saved?.idNumber ?? '');
+    setIdNumber(saved?.idNumber ?? activeParty?.idNumber ?? '');
     setDraftSig(null);
-  }, [activeId, signatures]);
+  }, [activeId, signatures, activeParty?.idNumber]);
 
   const sign = () => {
+    if (!activeParty) return;
     if (!draftSig) {
       setMsg('يرجى رسم التوقيع في المربع أولاً');
       return;
@@ -93,7 +98,7 @@ export function MouSignPanel() {
         </div>
 
         <div className="flex flex-wrap gap-2 justify-center">
-          {MOU_PARTIES.map((p) => {
+          {parties.map((p) => {
             const done = !!signatures[p.id];
             return (
               <button
@@ -115,6 +120,8 @@ export function MouSignPanel() {
         </div>
 
         <div className="rounded-2xl border border-[#00373E]/15 p-6 bg-[#F2E8D4]/40 space-y-4">
+          {activeParty && (
+          <>
           <div>
             <p className="font-bold text-[#00373E]">{activeParty.name}</p>
             <p className="text-sm text-[#735B4D]">{activeParty.role}</p>
@@ -152,6 +159,8 @@ export function MouSignPanel() {
               </button>
             </>
           )}
+          </>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-3 justify-center">
@@ -168,7 +177,7 @@ export function MouSignPanel() {
             disabled={busy || signedCount === 0}
             className="px-6 py-3 rounded-xl bg-[#D4A017] text-[#00373E] font-bold text-sm hover:opacity-90 disabled:opacity-40"
           >
-            {busy ? 'جاري التوليد...' : `تحميل PDF الموقّع (${signedCount}/4)`}
+            {busy ? 'جاري التوليد...' : `تحميل PDF الموقّع (${signedCount}/${parties.length})`}
           </button>
           {signedCount > 0 && (
             <button type="button" onClick={resetAll} className="px-4 py-3 text-sm text-red-600 hover:underline">

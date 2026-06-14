@@ -1,5 +1,8 @@
+'use client';
+
 import Image from 'next/image';
-import { MOU_META, MOU_PARTIES, MOU_SECTIONS } from '@/data/mouContent';
+import { MOU_META, MOU_SECTIONS } from '@/data/mouContent';
+import { applyPartyNames, type MouDraft } from '@/lib/mouStorage';
 
 const SCREENSHOTS = [
   { src: '/investor/screenshots/01-home.png', alt: 'الصفحة الرئيسية' },
@@ -9,16 +12,17 @@ const SCREENSHOTS = [
 
 type MouDocumentProps = {
   mode?: 'screen' | 'print';
+  draft: MouDraft;
 };
 
-export function MouDocument({ mode = 'screen' }: MouDocumentProps) {
+export function MouDocument({ mode = 'screen', draft }: MouDocumentProps) {
   const isPrint = mode === 'print';
 
   return (
     <div className={`min-h-screen bg-[#F2E8D4] text-[#1A1A1A] ${isPrint ? 'print-mou' : ''}`} dir="rtl">
       <section className="min-h-[90vh] bg-[#00373E] text-white flex flex-col items-center justify-center px-6 text-center print:min-h-screen print:break-after-page">
         <Image src="/images/logo.png" alt="مفصل" width={120} height={120} className="mb-8 rounded-2xl" priority />
-        <p className="text-[#D4A017] text-sm tracking-widest mb-4">MUFASAL — شركة عرين التقنية</p>
+        <p className="text-[#D4A017] text-sm tracking-widest mb-4">{draft.project} — {draft.company}</p>
         <h1 className="text-4xl md:text-5xl font-black mb-4">{MOU_META.title}</h1>
         <p className="text-white/80 max-w-xl text-lg leading-relaxed">
           منصة الخياطة الذكية للرجال والأطفال في المملكة العربية السعودية
@@ -28,7 +32,7 @@ export function MouDocument({ mode = 'screen' }: MouDocumentProps) {
           <span>•</span>
           <span>وثيقة شراكة — سري</span>
         </div>
-        <p className="mt-6 text-[#D4A017]/80 text-xs">نسخة PDF رسمية — غلاف معتمد</p>
+        <p className="mt-6 text-[#D4A017]/80 text-xs">نسخة قابلة للتعديل — غلاف معتمد</p>
       </section>
 
       <section className="py-16 px-6 max-w-5xl mx-auto print:break-after-page">
@@ -50,10 +54,12 @@ export function MouDocument({ mode = 'screen' }: MouDocumentProps) {
           فقد تم الاتفاق بين كل من (ويشار إليهم مجتمعين بـ «الشركاء» أو «الأطراف»):
         </p>
         <div className="space-y-4">
-          {MOU_PARTIES.map((p) => (
+          {draft.parties.map((p) => (
             <div key={p.id} className="p-4 rounded-xl bg-[#F5F5F5] border-r-4 border-[#00373E]">
-              <p className="font-bold text-[#00373E]">الأستاذ/ {p.name} — {p.role}</p>
-              <p className="text-sm text-[#735B4D] mt-1">{p.idLabel}: (................)</p>
+              <p className="font-bold text-[#00373E]">الأستاذ/ {p.name || '________'} — {p.role}</p>
+              <p className="text-sm text-[#735B4D] mt-1">
+                {p.idLabel}: {p.idNumber || '(................)'}
+              </p>
               <p className="text-sm mt-3 text-[#8F786B]">التوقيع: ____________________</p>
             </div>
           ))}
@@ -72,7 +78,7 @@ export function MouDocument({ mode = 'screen' }: MouDocumentProps) {
             </h3>
             <ul className="space-y-2 text-[#4D3B32] text-sm leading-relaxed">
               {sec.body.map((line, j) => (
-                <li key={j}>{line}</li>
+                <li key={j}>{applyPartyNames(line, draft.parties)}</li>
               ))}
             </ul>
           </article>
@@ -84,15 +90,16 @@ export function MouDocument({ mode = 'screen' }: MouDocumentProps) {
         >
           <h3 className="text-xl font-black mb-6 text-center">التوقيع والاعتماد</h3>
           <div className="grid md:grid-cols-2 gap-6">
-            {MOU_PARTIES.map((p) => (
+            {draft.parties.map((p) => (
               <div key={p.id} className="border border-white/20 rounded-xl p-4 min-h-[120px]">
-                <p className="font-bold">{p.name}</p>
+                <p className="font-bold">{p.name || '________'}</p>
                 <p className="text-sm text-white/70">{p.role}</p>
+                {p.idNumber && <p className="text-xs text-white/50 mt-1">{p.idLabel}: {p.idNumber}</p>}
                 <p className="mt-6 text-white/50 text-sm">التوقيع: _______________</p>
               </div>
             ))}
           </div>
-          <p className="text-center mt-8 text-white/60 text-sm">التاريخ: {MOU_META.datePlaceholder}</p>
+          <p className="text-center mt-8 text-white/60 text-sm">التاريخ: {draft.date}</p>
         </div>
       </section>
     </div>

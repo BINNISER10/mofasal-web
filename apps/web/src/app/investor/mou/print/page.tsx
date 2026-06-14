@@ -1,4 +1,4 @@
-import { MouDocument } from '@/components/investor/MouDocument';
+import { MouPageClient } from '@/components/investor/MouPageClient';
 
 export const metadata = {
   title: 'مذكرة تفاهم — PDF | مفصل',
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function MouPrintPage() {
-  return <MouDocument mode="print" />;
+  return <MouPageClient mode="print" showSignPanel={false} showFooter={false} />;
 }
