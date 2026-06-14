@@ -34,6 +34,7 @@ const weeklyOrders = [
 
 function mapRecentOrders(orders: any[]) {
   return orders.slice(0, 4).map((o) => ({
+    orderId: o.id,
     id: `#${o.orderNumber || o.id?.slice(0, 6)}`,
     customer: o.customerName || o.customer?.name || '—',
     status: o.status || 'PENDING',
@@ -123,10 +124,10 @@ export default function TailorDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'طلبات اليوم' : "Today's Orders"} value={String(stats.today)} trend={8.5} color="primary" />
-        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'قيد الانتظار' : 'Pending Orders'} value={String(stats.pending)} trend={-3.2} color="gold" />
-        <StatsCard icon={<Users size={22} />} label={isRTL ? 'الموظفين' : 'Staff on Duty'} value="8" color="accent" />
-        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات اليوم' : "Today's Revenue"} value={formatCurrency(stats.revenue)} trend={15.3} color="success" />
+        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'طلبات اليوم' : "Today's Orders"} value={String(stats.today)} trend={8.5} color="primary" href="/dashboard/tailor/orders" />
+        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'قيد الانتظار' : 'Pending Orders'} value={String(stats.pending)} trend={-3.2} color="gold" href="/dashboard/tailor/orders" />
+        <StatsCard icon={<Users size={22} />} label={isRTL ? 'الموظفين' : 'Staff on Duty'} value="8" color="accent" href="/dashboard/tailor/staff" />
+        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'إيرادات اليوم' : "Today's Revenue"} value={formatCurrency(stats.revenue)} trend={15.3} color="success" href="/dashboard/finances" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -141,7 +142,11 @@ export default function TailorDashboardPage() {
             ) : recentOrders.length === 0 ? (
               <p className="text-sm text-gray-400 py-6 text-center">{isRTL ? 'لا توجد طلبات حالياً' : 'No orders yet'}</p>
             ) : recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-slate-700 last:border-0">
+              <Link
+                key={order.id}
+                href={`/dashboard/tailor/orders/${order.orderId}`}
+                className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-slate-700 last:border-0 hover:bg-[#FAFAFA] dark:hover:bg-white/5 -mx-2 px-2 rounded-lg transition-colors"
+              >
                 <div>
                   <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">{order.customer}</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400">{order.id} - {order.time}</p>
@@ -152,7 +157,7 @@ export default function TailorDashboardPage() {
                     {isRTL ? ({ PENDING: 'قيد الانتظار', TAKING_MEASUREMENTS: 'أخذ مقاسات', SEWING_ASSEMBLY: 'خياطة', ON_WAY_TO_CUSTOMER: 'توصيل' } as Record<string, string>)[order.status] || order.status : order.status}
                   </Badge>
                 </div>
-              </div>
+              </Link>
             ))}
           </Card>
 
@@ -169,11 +174,11 @@ export default function TailorDashboardPage() {
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
-            <Button href="/dashboard/tailor/orders" variant="primary" size="lg" fullWidth icon={<Plus size={18} />}>
-              {isRTL ? 'لوحة الطلبات' : 'Orders Board'}
+            <Button href="/dashboard/tailor/orders/new" variant="primary" size="lg" fullWidth icon={<Plus size={18} />}>
+              {isRTL ? 'طلب جديد' : 'New Order'}
             </Button>
-            <Button href="/dashboard/tailor/staff" variant="gold" size="lg" fullWidth icon={<UserPlus size={18} />}>
-              {isRTL ? 'إضافة موظف' : 'Add Staff'}
+            <Button href="/dashboard/tailor/orders" variant="gold" size="lg" fullWidth icon={<ShoppingBag size={18} />}>
+              {isRTL ? 'لوحة الطلبات' : 'Orders Board'}
             </Button>
             <Button href="/dashboard/inventory" variant="outline" size="lg" fullWidth icon={<Package size={18} />}>
               {isRTL ? 'جرد المخزون' : 'Inventory Check'}

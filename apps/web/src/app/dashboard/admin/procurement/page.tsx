@@ -9,6 +9,7 @@ import { formatCurrency } from '@/lib/utils/formatting';
 import { procurementApi, PurchaseOrder } from '@/lib/api/procurement';
 import { Package, Plus, Search, Filter, Truck, FileText, CheckCircle2, Clock, XCircle, Calendar, Building2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 const STATUS_CONFIG = {
   DRAFT: { label: 'مسودة', labelEn: 'Draft', variant: 'neutral' as const, icon: <FileText size={14} /> },
@@ -108,6 +109,7 @@ export default function AdminProcurementPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <DashboardStatLink href="/dashboard/admin/procurement">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
@@ -119,6 +121,8 @@ export default function AdminProcurementPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/procurement">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
@@ -130,6 +134,8 @@ export default function AdminProcurementPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/reports">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gold-50 dark:bg-gold-900/30 text-gold-600 flex items-center justify-center">
@@ -141,6 +147,7 @@ export default function AdminProcurementPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
       </div>
 
       {/* Filters */}

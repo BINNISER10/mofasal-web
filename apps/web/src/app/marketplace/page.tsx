@@ -40,7 +40,7 @@ const CATEGORIES = [
 
 const MATERIALS = ['الكل', 'قطن', 'صوف', 'حرير', 'كتان', 'بوليستر', 'تريكو', 'جلد'];
 const ORIGINS = ['الكل', 'إيطالي', 'مصري', 'هندي', 'تركي', 'إماراتي', 'سعودي'];
-const TRENDING = ['صوف إيطالي', 'قطن مصري', 'ثوب صيفي', 'ثوب سعودي'];
+const TRENDING = ['صوف إيطالي', 'قطن فاخر', 'ثوب صيفي', 'ثوب سعودي'];
 
 const SLUG_CATEGORY: Record<string, string> = {
   mens: "Men's Fabrics",

@@ -81,6 +81,18 @@ export class NotificationService {
     });
   }
 
+  /** إشعار العميل بإنشاء طلب بعد حفظ القياسات */
+  static async notifyMeasurementCompleted(customerId: string | null, orderNumber: string) {
+    if (!customerId) return null;
+    return this.sendToUser(customerId, 'ORDER_UPDATE', {
+      title: 'Measurements saved — order created',
+      titleAr: 'تم حفظ القياسات وإنشاء الطلب',
+      body: `Your tailoring order ${orderNumber} has been created.`,
+      bodyAr: `تم إنشاء طلب التفصيل ${orderNumber}. يمكنك متابعة مراحل الخياطة الآن.`,
+      data: { orderNumber },
+    });
+  }
+
   static async getNotifications(userId: string, page = 1, limit = 20, unreadOnly = false) {
     const where: NotificationWhereClause = { userId };
     if (unreadOnly) where.isRead = false;

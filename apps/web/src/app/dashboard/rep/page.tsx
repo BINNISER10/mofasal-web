@@ -107,9 +107,9 @@ export default function RepDashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatsCard icon={<ClipboardList size={22} />} label={isRTL ? 'مهام نشطة' : 'Active Jobs'} value={String(activeJobs.length)} color="primary" />
-        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'بانتظار التعيين' : 'Pending'} value={String(pendingJobs.length)} color="gold" />
-        <StatsCard icon={<CheckCircle2 size={22} />} label={isRTL ? 'مكتمل اليوم' : 'Completed Today'} value={String(requests.filter(r => r.status === 'COMPLETED').length)} color="success" />
+        <StatsCard icon={<ClipboardList size={22} />} label={isRTL ? 'مهام نشطة' : 'Active Jobs'} value={String(activeJobs.length)} color="primary" href="/dashboard/rep" />
+        <StatsCard icon={<Clock size={22} />} label={isRTL ? 'بانتظار التعيين' : 'Pending'} value={String(pendingJobs.length)} color="gold" href="/dashboard/rep" />
+        <StatsCard icon={<CheckCircle2 size={22} />} label={isRTL ? 'مكتمل اليوم' : 'Completed Today'} value={String(requests.filter(r => r.status === 'COMPLETED').length)} color="success" href="/dashboard/rep" />
       </div>
 
       {/* GPS Map Area */}

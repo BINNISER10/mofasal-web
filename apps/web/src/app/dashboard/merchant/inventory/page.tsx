@@ -152,7 +152,7 @@ export default function MerchantInventoryPage() {
         <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'حركة المخزون' : 'Stock Movement'}</h3>
         <div className="space-y-3">
           {[
-            { action: isRTL ? 'إضافة مخزون' : 'Stock Added', item: 'قطن مصري', qty: 50, date: '2024-03-15', type: 'in' },
+            { action: isRTL ? 'إضافة مخزون' : 'Stock Added', item: 'قطن فاخر', qty: 50, date: '2024-03-15', type: 'in' },
             { action: isRTL ? 'بيع' : 'Sold', item: 'حرير طبيعي', qty: 2, date: '2024-03-14', type: 'out' },
             { action: isRTL ? 'إضافة مخزون' : 'Stock Added', item: 'صوف إيطالي', qty: 30, date: '2024-03-12', type: 'in' },
             { action: isRTL ? 'بيع' : 'Sold', item: 'مخمل فاخر', qty: 1, date: '2024-03-11', type: 'out' },

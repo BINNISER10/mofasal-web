@@ -7,6 +7,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { adminApi } from '@/lib/api/admin';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { DollarSign, TrendingUp, ShoppingBag, Users, Store, Download, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 const MONTH_NAMES = ['ينا', 'فبر', 'مار', 'أبر', 'ماي', 'يون', 'يول', 'أغس', 'سبت', 'أكت', 'نوف', 'ديس'];
 const STATUS_LABELS: Record<string, string> = { PENDING: 'معلق', CONFIRMED: 'مؤكد', DELIVERED: 'مكتمل', CANCELLED: 'ملغي', SEWING_ASSEMBLY: 'خياطة' };
@@ -84,6 +85,7 @@ export default function AdminAnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardStatLink href="/dashboard/admin/reports">
         <Card className="p-5 bg-gradient-to-br from-primary-600 to-primary-800 text-white">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><DollarSign size={20} /></div>
@@ -94,6 +96,8 @@ export default function AdminAnalyticsPage() {
           <p className="text-sm text-primary-200">{isRTL ? 'إجمالي الإيرادات' : 'Total Revenue'}</p>
           <p className="text-2xl font-black mt-1">{formatCurrency(kpi.revenue)}</p>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/orders">
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-gold-50 text-gold-600 flex items-center justify-center"><ShoppingBag size={20} /></div>
@@ -104,16 +108,21 @@ export default function AdminAnalyticsPage() {
           <p className="text-sm text-gray-500">{isRTL ? 'إجمالي الطلبات' : 'Total Orders'}</p>
           <p className="text-2xl font-black text-gray-900 mt-1">{kpi.orders.toLocaleString()}</p>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/users">
         <Card className="p-5">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3"><Users size={20} /></div>
           <p className="text-sm text-gray-500">{isRTL ? 'المستخدمون' : 'Total Users'}</p>
           <p className="text-2xl font-black text-gray-900 mt-1">{kpi.users.toLocaleString()}</p>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/shops">
         <Card className="p-5">
           <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-3"><TrendingUp size={20} /></div>
           <p className="text-sm text-gray-500">{isRTL ? 'المتاجر النشطة' : 'Active Shops'}</p>
           <p className="text-2xl font-black text-gray-900 mt-1">{kpi.shops}</p>
         </Card>
+        </DashboardStatLink>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

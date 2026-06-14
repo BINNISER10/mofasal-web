@@ -54,7 +54,7 @@ const initialOrder: OrderState = {
   fabric: { type: 'shop' },
   thobeSpec: { ...DEFAULT_THOBE_SPEC },
   notes: '',
-  deliveryAddress: '',
+  deliveryAddress: 'حي العليا، شارع التحلية',
   deliveryCity: 'الرياض',
   paymentMethod: null,
 };
@@ -86,22 +86,30 @@ function NewOrderPageContent() {
 
   useEffect(() => {
     let active = true;
+    const queryShopId = searchParams.get('shop');
     shopsApi.list({ limit: '50' })
       .then((res) => {
         if (!active) return;
-        setShops((res.shops || []).map((s: any) => ({
+        const mapped = (res.shops || []).map((s: any) => ({
           id: s.id,
           nameAr: s.nameAr || s.name,
           rating: s.rating || 0,
           city: s.city || '',
           delivery: s.deliveryDays || 7,
           minPrice: s.minOrderAmount || 0,
-        })));
+        }));
+        setShops(mapped);
+        if (mapped.length) {
+          setOrder((p) => {
+            const shopId = queryShopId || p.shopId || mapped[0].id;
+            return shopId === p.shopId ? p : { ...p, shopId, serviceId: shopId === p.shopId ? p.serviceId : null };
+          });
+        }
       })
       .catch(() => setShops([]))
       .finally(() => { if (active) setLoadingShops(false); });
     return () => { active = false; };
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!order.shopId) {
@@ -119,8 +127,11 @@ function NewOrderPageContent() {
           icon: '✂️',
         }));
         setServices(list);
-        if (list.length === 1 && !order.serviceId) {
-          setOrder((p) => ({ ...p, serviceId: list[0].id }));
+        if (list.length > 0) {
+          setOrder((p) => ({
+            ...p,
+            serviceId: p.serviceId && list.some((s) => s.id === p.serviceId) ? p.serviceId : list[0].id,
+          }));
         }
       })
       .catch(() => setServices([]))
@@ -137,6 +148,16 @@ function NewOrderPageContent() {
     }
     if (step === 2) return order.paymentMethod !== null && !submitting;
     return true;
+  };
+
+  const getMissingFields = () => {
+    if (step !== 1) return [];
+    const missing: string[] = [];
+    if (!order.shopId) missing.push(isRTL ? 'المتجر' : 'Shop');
+    if (!order.serviceId) missing.push(isRTL ? 'الخدمة' : 'Service');
+    if (!(order.fabricChoice ?? order.fabric.type)) missing.push(isRTL ? 'القماش' : 'Fabric');
+    if (order.deliveryAddress.trim().length <= 3) missing.push(isRTL ? 'عنوان التوصيل' : 'Delivery address');
+    return missing;
   };
 
   const handleSubmit = async () => {
@@ -466,6 +487,12 @@ function NewOrderPageContent() {
 
       {error && (
         <div className="p-3 rounded-xl bg-red-50 text-red-700 text-sm">{error}</div>
+      )}
+
+      {step === 1 && !canProceed() && getMissingFields().length > 0 && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+          {isRTL ? 'أكمل: ' : 'Complete: '}{getMissingFields().join(isRTL ? ' · ' : ' · ')}
+        </p>
       )}
 
       <div className="flex items-center justify-between gap-3">

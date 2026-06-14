@@ -124,10 +124,10 @@ export default function B2BPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label={isRTL ? 'إجمالي الإيرادات' : 'Total Revenue'} value={`${totalRevenue.toLocaleString()} ر.س`} icon={<DollarSign size={20} />} trend={18} />
-        <StatsCard label={isRTL ? 'انتظار الموافقة' : 'Awaiting Approval'} value={pendingCount.toString()} icon={<Clock size={20} />} />
-        <StatsCard label={isRTL ? 'إجمالي الطلبات' : 'Total Orders'} value={orders.length.toString()} icon={<ShoppingCart size={20} />} />
-        <StatsCard label={isRTL ? 'مسلّمة' : 'Delivered'} value={orders.filter((o) => o.status === 'DELIVERED').length.toString()} icon={<Building2 size={20} />} />
+        <StatsCard label={isRTL ? 'إجمالي الإيرادات' : 'Total Revenue'} value={`${totalRevenue.toLocaleString()} ر.س`} icon={<DollarSign size={20} />} trend={18} href="/dashboard/merchant/finances" />
+        <StatsCard label={isRTL ? 'انتظار الموافقة' : 'Awaiting Approval'} value={pendingCount.toString()} icon={<Clock size={20} />} href="/dashboard/merchant/b2b?filter=PENDING" />
+        <StatsCard label={isRTL ? 'إجمالي الطلبات' : 'Total Orders'} value={orders.length.toString()} icon={<ShoppingCart size={20} />} href="/dashboard/merchant/b2b" />
+        <StatsCard label={isRTL ? 'مسلّمة' : 'Delivered'} value={orders.filter((o) => o.status === 'DELIVERED').length.toString()} icon={<Building2 size={20} />} href="/dashboard/merchant/b2b" />
       </div>
 
       {/* Pending Alert */}

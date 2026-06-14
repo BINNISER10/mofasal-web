@@ -103,6 +103,18 @@ export const serviceRequestsApi = {
     return response.data as ServiceRequest;
   },
 
+  // إكمال القياس وإنشاء طلب تفصيل
+  complete: async (id: string, data: {
+    measurements: Record<string, number>;
+    notes?: string;
+    garmentType?: string;
+    fabricId?: string;
+    fabricSource?: string;
+  }): Promise<{ order: { id: string; orderNumber: string }; request: ServiceRequest }> => {
+    const response = await apiClient.post(`${BASE}/${id}/complete`, data);
+    return response.data as { order: { id: string; orderNumber: string }; request: ServiceRequest };
+  },
+
   // تحديث كامل لبيانات وحالة طلب الخدمة
   update: async (id: string, data: Partial<ServiceRequest>): Promise<ServiceRequest> => {
     const response = await apiClient.put(`${BASE}/${id}`, data);

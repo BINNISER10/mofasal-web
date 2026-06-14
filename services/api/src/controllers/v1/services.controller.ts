@@ -8,6 +8,7 @@ import { ServiceRequestService } from '../../services/ServiceRequestService';
 interface ServiceRequestWhereClause {
   customerId?: string;
   shopId?: string;
+  representativeId?: string;
   status?: string;
 }
 
@@ -52,10 +53,23 @@ export class ServiceRequestController {
     } catch (error) { next(error); }
   }
 
+  // إكمال القياس وإنشاء طلب تفصيل
+  static async complete(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await ServiceRequestService.completeWithMeasurements(
+        req.params.id,
+        { userId: req.user!.id, role: req.user!.role },
+        req.body,
+      );
+      sendSuccess(res, result, 'تم حفظ القياسات وإنشاء الطلب');
+    } catch (error) { next(error); }
+  }
+
   static async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const where: ServiceRequestWhereClause = {};
       if (req.user!.role === 'CUSTOMER') where.customerId = req.user!.id;
+      if (req.user!.role === 'REPRESENTATIVE') where.representativeId = req.user!.id;
       const services = await prisma.serviceRequest.findMany({
         where,
         include: { shop: { select: { id: true, name: true, logo: true } } },

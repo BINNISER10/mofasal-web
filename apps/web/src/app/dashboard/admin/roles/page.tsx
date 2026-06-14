@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { rolesApi, Role } from '@/lib/api/roles';
 import { Shield, Plus, Edit3, Trash2, Search, Users, Lock, Unlock, Check, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 const MODULES = [
   { id: 'orders', label: 'الطلبات', labelEn: 'Orders' },
@@ -149,6 +150,7 @@ export default function AdminRolesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <DashboardStatLink href="/dashboard/admin/roles">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
@@ -160,6 +162,8 @@ export default function AdminRolesPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/users">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center">
@@ -171,6 +175,8 @@ export default function AdminRolesPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
+        <DashboardStatLink href="/dashboard/admin/roles">
         <Card className="p-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center">
@@ -182,6 +188,7 @@ export default function AdminRolesPage() {
             </div>
           </div>
         </Card>
+        </DashboardStatLink>
       </div>
 
       {/* Search */}

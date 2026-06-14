@@ -9,6 +9,7 @@ import { ordersApi } from '@/lib/api/orders';
 import { productsApi } from '@/lib/api/products';
 import { Package, ShoppingBag, DollarSign, AlertTriangle, TrendingUp, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import Link from 'next/link';
 import { MufasalAreaChart, CHART_COLORS } from '@/components/shared/Charts';
 
 const MONTHS_AR = ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'];
@@ -63,6 +64,7 @@ export default function MerchantDashboardPage() {
         setStats((s) => ({ ...s, active: activeCount, dailySales }));
         setMonthlySales(buildMonthlySales(orders));
         setRecentOrders(orders.slice(0, 3).map((o) => ({
+          orderId: o.id,
           id: `#${o.orderNumber || o.id?.slice(0, 6)}`,
           customer: o.customerName || o.customer?.name || '—',
           product: o.items?.[0]?.serviceName || o.fabricName || '—',
@@ -86,14 +88,14 @@ export default function MerchantDashboardPage() {
             {isRTL ? 'لوحة التاجر' : 'Merchant Dashboard'}
           </h2>
         </div>
-        <Button variant="primary" icon={<Plus size={18} />} onClick={() => window.location.href = '/dashboard/merchant/products/add'}>{isRTL ? 'إضافة منتج' : 'Add Product'}</Button>
+        <Button variant="primary" icon={<Plus size={18} />} href="/dashboard/merchant/products/add">{isRTL ? 'إضافة منتج' : 'Add Product'}</Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={<Package size={22} />} label={isRTL ? 'المنتجات' : 'Products'} value={String(stats.products)} trend={5.2} color="primary" />
-        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'الطلبات النشطة' : 'Active Orders'} value={String(stats.active)} trend={-2.1} color="gold" />
-        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'المبيعات اليومية' : 'Daily Sales'} value={formatCurrency(stats.dailySales)} trend={15.8} color="success" />
-        <StatsCard icon={<AlertTriangle size={22} />} label={isRTL ? 'منتجات منخفضة' : 'Low Stock'} value={String(stats.lowStock)} color="danger" />
+        <StatsCard icon={<Package size={22} />} label={isRTL ? 'المنتجات' : 'Products'} value={String(stats.products)} trend={5.2} color="primary" href="/dashboard/merchant/products" />
+        <StatsCard icon={<ShoppingBag size={22} />} label={isRTL ? 'الطلبات النشطة' : 'Active Orders'} value={String(stats.active)} trend={-2.1} color="gold" href="/dashboard/merchant/orders" />
+        <StatsCard icon={<DollarSign size={22} />} label={isRTL ? 'المبيعات اليومية' : 'Daily Sales'} value={formatCurrency(stats.dailySales)} trend={15.8} color="success" href="/dashboard/merchant/finances" />
+        <StatsCard icon={<AlertTriangle size={22} />} label={isRTL ? 'منتجات منخفضة' : 'Low Stock'} value={String(stats.lowStock)} color="danger" href="/dashboard/merchant/inventory" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -118,7 +120,11 @@ export default function MerchantDashboardPage() {
           ) : recentOrders.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">{isRTL ? 'لا توجد طلبات حالياً' : 'No orders yet'}</p>
           ) : recentOrders.map((order) => (
-            <div key={order.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-slate-700 last:border-0">
+            <Link
+              key={order.id}
+              href={`/dashboard/merchant/orders`}
+              className="flex items-center justify-between py-2.5 border-b border-gray-50 dark:border-slate-700 last:border-0 hover:bg-[#FAFAFA] dark:hover:bg-white/5 -mx-2 px-2 rounded-lg transition-colors"
+            >
               <div>
                 <p className="text-sm font-semibold">{order.customer}</p>
                 <p className="text-xs text-gray-500 dark:text-slate-400">{order.product} x{order.qty}</p>
@@ -127,7 +133,7 @@ export default function MerchantDashboardPage() {
                 <p className="text-sm font-semibold">{formatCurrency(order.amount)}</p>
                 <Badge variant={order.status === 'DELIVERED' ? 'success' : 'warning'} size="sm">{order.status}</Badge>
               </div>
-            </div>
+            </Link>
           ))}
         </Card>
       </div>

@@ -1,9 +1,10 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
 import { useAuthStore, UserRole } from '@/lib/stores/authStore';
 import { useAppStore } from '@/lib/stores/appStore';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -100,6 +101,14 @@ const menuItems: MenuItem[] = [
     icon: <ShoppingBag size={20} />,
     href: '/dashboard/tailor/orders',
     roles: ['tailor'],
+  },
+  {
+    label: 'New Order',
+    labelAr: 'طلب جديد',
+    icon: <Plus size={20} />,
+    href: '/dashboard/tailor/orders/new',
+    roles: ['tailor'],
+    exact: true,
   },
   {
     label: 'Orders',
@@ -349,7 +358,6 @@ const ROLE_HOME: Record<UserRole, string> = {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, logout } = useAuthStore();
   const { isRTL, sidebarCollapsed, toggleSidebarCollapsed, theme, toggleTheme } = useAppStore();
 
@@ -395,7 +403,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="flex items-center justify-between p-4 border-b border-[#E8E8E8] dark:border-white/10">
           {!sidebarCollapsed && (
-            <a href={user ? (ROLE_HOME[user.role] ?? '/dashboard') : '/dashboard'} className="flex items-center gap-2.5">
+            <Link href={user ? (ROLE_HOME[user.role] ?? '/dashboard') : '/dashboard'} className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#00373E] flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">م</span>
               </div>
@@ -403,7 +411,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <span className="font-semibold text-[#0A0A0A] dark:text-white">مفصل</span>
                 <p className="text-[10px] text-neutral-400 -mt-0.5">ERP</p>
               </div>
-            </a>
+            </Link>
           )}
           {sidebarCollapsed && (
             <div className="w-8 h-8 rounded-lg bg-[#00373E] flex items-center justify-center mx-auto">
@@ -434,12 +442,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             const href = resolveHref(item.href);
             const active = isActive(item.href, item.exact);
             return (
-              <button
-                key={item.href}
-                onClick={() => {
-                  router.push(href);
-                  onClose();
-                }}
+              <Link
+                key={`${item.href}-${item.label}`}
+                href={href}
+                onClick={onClose}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all duration-200 text-right group relative',
                   active
@@ -482,7 +488,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {item.badge}
                   </span>
                 )}
-              </button>
+              </Link>
             );
           })}
         </nav>

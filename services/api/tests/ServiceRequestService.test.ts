@@ -1,6 +1,7 @@
 import { ServiceRequestService } from '../src/services/ServiceRequestService';
 import prisma from '../src/config/database';
 import { NotificationService } from '../src/services/NotificationService';
+import { OrderService } from '../src/services/OrderService';
 
 jest.mock('../src/config/database', () => ({
   __esModule: true,
@@ -18,6 +19,30 @@ jest.mock('../src/config/database', () => ({
     shop: {
       findUnique: jest.fn(),
     },
+    customer: {
+      update: jest.fn(),
+    },
+    userMeasurement: {
+      create: jest.fn(),
+    },
+    order: {
+      create: jest.fn(),
+    },
+    orderMeasurement: {
+      create: jest.fn(),
+    },
+    confirmationLink: {
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(),
+  },
+}));
+
+jest.mock('../src/services/OrderService', () => ({
+  __esModule: true,
+  OrderService: {
+    resolveCustomerId: jest.fn(),
+    generateOrderNumber: jest.fn(() => 'MUF-TEST-001'),
   },
 }));
 
@@ -26,6 +51,7 @@ jest.mock('../src/services/NotificationService', () => ({
   NotificationService: {
     notifyMeasurementDispatched: jest.fn(),
     notifyMeasurementArrived: jest.fn(),
+    notifyMeasurementCompleted: jest.fn(),
     sendSMS: jest.fn(),
   },
 }));
@@ -35,7 +61,10 @@ describe('ServiceRequestService', () => {
     jest.clearAllMocks();
     (NotificationService.notifyMeasurementDispatched as jest.Mock).mockImplementation(() => Promise.resolve({}));
     (NotificationService.notifyMeasurementArrived as jest.Mock).mockImplementation(() => Promise.resolve({}));
+    (NotificationService.notifyMeasurementCompleted as jest.Mock).mockImplementation(() => Promise.resolve({}));
     (NotificationService.sendSMS as jest.Mock).mockImplementation(() => Promise.resolve(true));
+    (prisma.$transaction as jest.Mock).mockImplementation(async (fn: (tx: typeof prisma) => unknown) => fn(prisma));
+    (OrderService.resolveCustomerId as jest.Mock).mockResolvedValue('cust-record-1');
   });
 
   describe('haversineKm', () => {
@@ -227,6 +256,66 @@ describe('ServiceRequestService', () => {
       expect(tracking.id).toBe('req-1');
       expect(tracking.representative?.name).toBe('Mousa');
       expect(tracking.shop?.name).toBe('Fine Tailor');
+    });
+  });
+
+  describe('completeWithMeasurements', () => {
+    const baseRequest = {
+      id: 'req-1',
+      customerId: 'cust-1',
+      shopId: 'shop-1',
+      representativeId: 'rep-1',
+      status: 'ARRIVED',
+    };
+
+    it('should reject when request is not found', async () => {
+      (prisma.serviceRequest.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        ServiceRequestService.completeWithMeasurements('req-unknown', { userId: 'rep-1', role: 'REPRESENTATIVE' }, {
+          measurements: { chest: 100 },
+        }),
+      ).rejects.toThrow('Service request not found');
+    });
+
+    it('should reject when rep is not assigned to the request', async () => {
+      (prisma.serviceRequest.findUnique as jest.Mock).mockResolvedValue(baseRequest);
+
+      await expect(
+        ServiceRequestService.completeWithMeasurements('req-1', { userId: 'rep-2', role: 'REPRESENTATIVE' }, {
+          measurements: { chest: 100 },
+        }),
+      ).rejects.toThrow('هذا الطلب غير مُعيَّن لك');
+    });
+
+    it('should save measurements, create order, and mark request completed', async () => {
+      (prisma.serviceRequest.findUnique as jest.Mock).mockResolvedValue(baseRequest);
+      (prisma.serviceRequest.update as jest.Mock).mockResolvedValue({ ...baseRequest, status: 'COMPLETED' });
+      (prisma.customer.update as jest.Mock).mockResolvedValue({});
+      (prisma.userMeasurement.create as jest.Mock).mockResolvedValue({ id: 'um-1' });
+      (prisma.order.create as jest.Mock).mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'MUF-TEST-001',
+        status: 'IN_PROGRESS',
+        items: [{ name: 'ثوب' }],
+        customer: { id: 'cust-record-1', name: 'عميل' },
+        shop: { id: 'shop-1', name: 'محل' },
+      });
+      (prisma.orderMeasurement.create as jest.Mock).mockResolvedValue({ id: 'om-1' });
+      (prisma.confirmationLink.create as jest.Mock).mockResolvedValue({ token: 'tok-1' });
+
+      const result = await ServiceRequestService.completeWithMeasurements(
+        'req-1',
+        { userId: 'rep-1', role: 'REPRESENTATIVE' },
+        { measurements: { chest: 100, waist: 85 }, garmentType: 'thobe', notes: 'ملاحظة' },
+      );
+
+      expect(result.order.orderNumber).toBe('MUF-TEST-001');
+      expect(prisma.serviceRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: 'COMPLETED' } }),
+      );
+      expect(prisma.order.create).toHaveBeenCalled();
+      expect(NotificationService.notifyMeasurementCompleted).toHaveBeenCalledWith('cust-1', 'MUF-TEST-001');
     });
   });
 });
