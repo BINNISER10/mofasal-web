@@ -2,8 +2,8 @@
 =====================================
 
 المحتويات:
-1. MOFASAL-Investor-Deck.pdf — لقطات المنصة الحية (10 شاشات)
-2. مذكرة-تفاهم-نص.txt — نص المذكرة الكامل
-3. عرض المذكرة بالهوية الرسمية: https://mofasal.netlify.app/investor/mou
+1. MOFASAL-MOU.pdf — مذكرة التفاهم بغلاف البرند (جاهزة)
+2. MOFASAL-Investor-Deck.pdf — لقطات المنصة (10 شاشات)
+3. README.txt — هذا الملف
 
-التوصية: اعرض الموقع الحي أولاً، ثم أرسل هذه الحزمة كملحق.
+التوقيع الإلكتروني: https://mofasal.netlify.app/investor/mou

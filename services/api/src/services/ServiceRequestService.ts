@@ -1,8 +1,8 @@
+import { nanoid } from 'nanoid';
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
 import { NotificationService } from './NotificationService';
 import { OrderService } from './OrderService';
-import { MeasurementService } from './MeasurementService';
 /**
  * منطق طلبات الخدمة وتوزيع مندوب القياس + التتبّع اللحظي.
  * المندوب = User يملك دوراً باسم REPRESENTATIVE (أو ينتمي لنفس المحل).
@@ -162,66 +162,6 @@ export class ServiceRequestService {
     return updated;
   }
 
-  /** إكمال القياسات وحفظها وإنشاء طلب تصنيع تلقائي */
-  static async completeWithMeasurements(requestId: string, data: {
-    measurements: Record<string, number>;
-    notes?: string;
-    garmentType?: string;
-    fabricId?: string;
-    fabricSource?: string;
-  }) {
-    const request = await prisma.serviceRequest.findUnique({ where: { id: requestId } });
-    if (!request) throw ApiError.notFound('Service request not found');
-    if (request.status !== 'ARRIVED') {
-      throw ApiError.badRequest('يجب تسجيل الوصول أولاً قبل إدخال القياسات');
-    }
-
-    // 1. حفظ القياسات في ملف العميل
-    if (data.measurements && Object.keys(data.measurements).length > 0) {
-      await MeasurementService.createUserMeasurement(request.customerId, {
-        name: `قياس ${new Date().toLocaleDateString('ar-SA')}`,
-        data: data.measurements,
-      });
-    }
-
-    // 2. إنشاء طلب تصنيع
-    const order = await OrderService.createOrder({
-      userId: request.customerId,
-      shopId: request.shopId,
-      measurements: data.measurements,
-      customerNotes: data.notes,
-      fabricId: data.fabricId,
-      fabricSource: data.fabricSource,
-    });
-
-    // 3. ربط القياسات بالطلب
-    await MeasurementService.addOrderMeasurement(order.id, {
-      measurementData: data.measurements,
-      notes: data.notes,
-    });
-
-    // 4. تحديث حالة طلب الخدمة إلى مكتمل وربطه بالطلب
-    const updated = await prisma.serviceRequest.update({
-      where: { id: requestId },
-      data: {
-        status: 'COMPLETED',
-        notes: data.notes || request.notes,
-      },
-    });
-
-    // 5. تحديث الطلب إلى مرحلة أخذ القياسات ← جاهز للتصنيع
-    await OrderService.updateOrderStatus(order.id, 'TAKING_MEASUREMENTS', request.customerId);
-    await OrderService.updateOrderStatus(order.id, 'IN_PROGRESS', request.customerId);
-
-    await NotificationService.sendToUser(request.customerId, 'ORDER_UPDATE', {
-      title: 'بدء التصنيع',
-      body: `تم حفظ قياساتك وبدأ الخياط في تصنيع طلبك #${order.orderNumber}`,
-      link: `/dashboard/customer/orders/${order.id}`,
-    });
-
-    return { request: updated, order };
-  }
-
   /** بيانات التتبّع اللحظي للعميل */
   static async getTracking(requestId: string) {
     const request = await prisma.serviceRequest.findUnique({
@@ -253,5 +193,126 @@ export class ServiceRequestService {
       representative,
       shop: request.shop,
     };
+  }
+
+  /**
+   * إكمال زيارة القياس: حفظ المقاسات ← إنشاء طلب تفصيل ← بدء التصنيع.
+   */
+  static async completeWithMeasurements(
+    requestId: string,
+    actor: { userId: string; role: string },
+    data: {
+      measurements: Record<string, number>;
+      notes?: string;
+      garmentType?: string;
+      fabricId?: string;
+      fabricSource?: string;
+      customerType?: string;
+      thobeSpecs?: Record<string, unknown>;
+    },
+  ) {
+    const request = await prisma.serviceRequest.findUnique({ where: { id: requestId } });
+    if (!request) throw ApiError.notFound('Service request not found');
+    if (!['ARRIVED', 'EN_ROUTE', 'ASSIGNED'].includes(request.status)) {
+      throw ApiError.badRequest('لا يمكن إكمال الطلب في حالته الحالية');
+    }
+    if (request.status === 'COMPLETED') {
+      throw ApiError.badRequest('تم إكمال هذا الطلب مسبقاً');
+    }
+    if (actor.role !== 'ADMIN' && request.representativeId !== actor.userId) {
+      throw ApiError.forbidden('هذا الطلب غير مُعيَّن لك');
+    }
+    if (!request.customerId) throw ApiError.badRequest('طلب الخدمة بدون عميل');
+
+    const measurementEntries = Object.entries(data.measurements || {}).filter(
+      ([, v]) => typeof v === 'number' && !Number.isNaN(v),
+    );
+    if (measurementEntries.length === 0) {
+      throw ApiError.badRequest('يجب إدخال قياس واحد على الأقل');
+    }
+    const measurements = Object.fromEntries(measurementEntries) as Record<string, number>;
+
+    const garmentType = (data.garmentType || 'thobe').toLowerCase();
+    const garmentLabels: Record<string, string> = {
+      thobe: 'ثوب',
+      bisht: 'بشت',
+      pants: 'سروال',
+      suit: 'بدلة',
+      alteration: 'تعديل',
+    };
+    const itemName = garmentLabels[garmentType] || garmentType;
+
+    const customerId = await OrderService.resolveCustomerId(request.customerId, request.shopId);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedRequest = await tx.serviceRequest.update({
+        where: { id: requestId },
+        data: { status: 'COMPLETED' },
+      });
+
+      await tx.customer.update({
+        where: { id: customerId },
+        data: { measurements },
+      });
+
+      await tx.userMeasurement.create({
+        data: {
+          userId: request.customerId!,
+          name: `قياس ${itemName}`,
+          data: measurements,
+        },
+      });
+
+      const order = await tx.order.create({
+        data: {
+          orderNumber: OrderService.generateOrderNumber(),
+          customerId,
+          shopId: request.shopId,
+          status: 'IN_PROGRESS',
+          customerNotes: data.notes,
+          items: {
+            create: [{ name: itemName, quantity: 1, unitPrice: 0, totalPrice: 0 }],
+          },
+        },
+        include: {
+          items: true,
+          customer: { select: { id: true, name: true, phone: true } },
+          shop: { select: { id: true, name: true } },
+        },
+      });
+
+      const orderMeasurement = await tx.orderMeasurement.create({
+        data: {
+          orderId: order.id,
+          measurementData: {
+            ...measurements,
+            ...(data.thobeSpecs ? { thobeSpecs: data.thobeSpecs } : {}),
+            ...(data.fabricId ? { fabricId: data.fabricId } : {}),
+            ...(data.fabricSource ? { fabricSource: data.fabricSource } : {}),
+          },
+          notes: data.notes,
+          garmentType: garmentType.toUpperCase(),
+          customerType: data.customerType,
+        },
+      });
+
+      const confirmation = await tx.confirmationLink.create({
+        data: {
+          token: nanoid(32),
+          orderId: order.id,
+          measurements,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      return { request: updatedRequest, order, orderMeasurement, confirmation };
+    });
+
+    await NotificationService.notifyMeasurementCompleted(
+      request.customerId,
+      result.order.orderNumber,
+    );
+
+    return result;
   }
 }

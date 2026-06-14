@@ -9,10 +9,25 @@ export const metadata = {
 const DOWNLOADS = [
   {
     title: 'حزمة كاملة (ZIP)',
-    desc: 'مذكرة التفاهم + لقطات المنصة + PDF',
+    desc: 'مذكرة PDF + لقطات المنصة + نص المذكرة',
     href: '/investor/MOFASAL-Investor-Package.zip',
     primary: true,
-    size: '~1 MB',
+    size: '~0.5 MB',
+  },
+  {
+    title: 'مذكرة التفاهم (PDF جاهز)',
+    desc: 'غلاف براند + نص كامل — بدون طباعة المتصفح',
+    href: '/investor/MOFASAL-MOU.pdf',
+    primary: false,
+    size: 'PDF',
+  },
+  {
+    title: 'التوقيع الإلكتروني',
+    desc: 'وقّع المذكرة وحمّل PDF موقّع بشهادة تحقق',
+    href: '/investor/mou',
+    primary: false,
+    size: '4 شركاء',
+    external: true,
   },
   {
     title: 'لقطات المنصة (PDF)',
@@ -20,14 +35,6 @@ const DOWNLOADS = [
     href: '/investor/MOFASAL-Investor-Deck.pdf',
     primary: false,
     size: '0.5 MB',
-  },
-  {
-    title: 'مذكرة التفاهم',
-    desc: 'وثيقة الشراكة — قالب البرند الرسمي',
-    href: '/investor/mou',
-    primary: false,
-    size: 'عرض + طباعة',
-    external: true,
   },
 ];
 

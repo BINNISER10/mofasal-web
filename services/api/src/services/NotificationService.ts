@@ -1,6 +1,7 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import logger from '../utils/logger';
-import { enqueueNotification } from '../queues/notification.queue';
+import socketService from './SocketService';
 
 interface NotificationData {
   title: string;
@@ -18,10 +19,23 @@ interface NotificationWhereClause {
 export class NotificationService {
   static async sendToUser(userId: string, type: string, data: NotificationData) {
     try {
-      await enqueueNotification({ userId, type, data });
-      return { queued: true, userId, type };
+      const notification = await prisma.notification.create({
+        data: {
+          userId,
+          type: type as 'ORDER_UPDATE' | 'PAYMENT_UPDATE' | 'DELIVERY_UPDATE' | 'PROMOTION' | 'SYSTEM' | 'CHAT_MESSAGE',
+          title: data.title,
+          titleAr: data.titleAr,
+          body: data.body,
+          bodyAr: data.bodyAr,
+          data: data.data as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      socketService.emitNotification(userId, notification);
+
+      return notification;
     } catch (error) {
-      logger.error('Failed to enqueue notification', error);
+      logger.error('Failed to create notification', error);
       return null;
     }
   }
@@ -64,6 +78,18 @@ export class NotificationService {
       titleAr: 'وصل مندوب القياسات',
       body: 'Our measurement specialist has arrived at your location.',
       bodyAr: 'وصل مندوب أخذ القياسات إلى موقعك.',
+    });
+  }
+
+  /** إشعار العميل بإنشاء طلب بعد حفظ القياسات */
+  static async notifyMeasurementCompleted(customerId: string | null, orderNumber: string) {
+    if (!customerId) return null;
+    return this.sendToUser(customerId, 'ORDER_UPDATE', {
+      title: 'Measurements saved — order created',
+      titleAr: 'تم حفظ القياسات وإنشاء الطلب',
+      body: `Your tailoring order ${orderNumber} has been created.`,
+      bodyAr: `تم إنشاء طلب التفصيل ${orderNumber}. يمكنك متابعة مراحل الخياطة الآن.`,
+      data: { orderNumber },
     });
   }
 

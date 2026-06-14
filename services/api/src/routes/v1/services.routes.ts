@@ -27,6 +27,16 @@ const locationSchema = z.object({
   lng: z.number(),
 });
 
+const completeSchema = z.object({
+  measurements: z.record(z.string(), z.number()),
+  notes: z.string().optional(),
+  garmentType: z.string().optional(),
+  fabricId: z.string().uuid().optional(),
+  fabricSource: z.string().optional(),
+  customerType: z.enum(['MAN', 'CHILD']).optional(),
+  thobeSpecs: z.record(z.string(), z.unknown()).optional(),
+});
+
 router.post('/', authenticate, validate(createSchema), ServiceRequestController.create);
 router.get('/', authenticate, ServiceRequestController.getAll);
 router.get('/:id', authenticate, ServiceRequestController.getById);
@@ -34,7 +44,7 @@ router.get('/:id/tracking', authenticate, ServiceRequestController.tracking);
 router.post('/:id/dispatch', authenticate, ServiceRequestController.dispatch);
 router.patch('/:id/location', authenticate, validate(locationSchema), ServiceRequestController.updateLocation);
 router.patch('/:id/arrive', authenticate, ServiceRequestController.arrive);
-router.post('/:id/complete', authenticate, ServiceRequestController.complete);
+router.post('/:id/complete', authenticate, validate(completeSchema), ServiceRequestController.complete);
 router.put('/:id', authenticate, ServiceRequestController.update);
 router.delete('/:id', authenticate, authorize('ADMIN'), ServiceRequestController.delete);
 
