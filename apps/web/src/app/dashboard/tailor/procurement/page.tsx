@@ -26,7 +26,6 @@ const STATUS_CONFIG: Record<string, { labelAr: string; labelEn: string; color: s
   PENDING: { labelAr: 'قيد الانتظار', labelEn: 'Pending', color: '#E65100', icon: Clock },
   CONFIRMED: { labelAr: 'مؤكّد', labelEn: 'Confirmed', color: '#1565C0', icon: CheckCircle },
   DELIVERED: { labelAr: 'تم التسليم', labelEn: 'Delivered', color: '#2E7D32', icon: CheckCircle },
-  RECEIVED: { labelAr: 'تم الاستلام', labelEn: 'Received', color: '#2E7D32', icon: CheckCircle },
   CANCELLED: { labelAr: 'ملغي', labelEn: 'Cancelled', color: '#C62828', icon: XCircle },
 };
 
@@ -155,7 +154,7 @@ export default function ProcurementPage() {
             </div>
             <div>
               <p className="text-sm text-[#735B4D]">{isRTL ? 'تم التسليم' : 'Delivered'}</p>
-              <p className="text-2xl font-bold text-[#2E7D32]">{orders.filter((o) => o.status === 'DELIVERED' || o.status === 'RECEIVED').length}</p>
+              <p className="text-2xl font-bold text-[#2E7D32]">{orders.filter((o) => o.status === 'DELIVERED').length}</p>
             </div>
           </div>
         </Card>

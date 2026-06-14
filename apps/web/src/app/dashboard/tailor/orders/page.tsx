@@ -6,8 +6,6 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { ChevronLeft, ChevronRight, Loader2, XCircle } from 'lucide-react';
 import { ordersApi } from '@/lib/api/orders';
-import { DEMO_ORDERS } from '@/lib/demoData';
-import { isDemoToken } from '@/lib/demoAuth';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -21,7 +19,7 @@ const COLUMNS: { status: string; labelAr: string; labelEn: string; color: string
   { status: 'SEWING_ASSEMBLY', labelAr: 'الخياطة والتجميع', labelEn: 'Sewing Assembly', color: '#735B4D' },
   { status: 'IRONING_FINISHING', labelAr: 'الكي والتشطيب', labelEn: 'Ironing & Finishing', color: '#00373E' },
   { status: 'PACKING_WRAPPING', labelAr: 'التغليف والتعبئة', labelEn: 'Packing & Wrapping', color: '#1A6470' },
-  { status: 'ON_WAY_TO_CUSTOMER', labelAr: 'في الطريق إليك', labelEn: 'On Way to You', color: '#2E7D32' },
+  { status: 'ON_WAY_TO_YOU', labelAr: 'في الطريق إليك', labelEn: 'On Way to You', color: '#2E7D32' },
   { status: 'DELIVERED', labelAr: 'تم التوصيل', labelEn: 'Delivered', color: '#2E7D32' },
 ];
 
@@ -34,35 +32,25 @@ const NEXT_STATUS: Record<string, string> = {
   CUTTING_FABRIC: 'SEWING_ASSEMBLY',
   SEWING_ASSEMBLY: 'IRONING_FINISHING',
   IRONING_FINISHING: 'PACKING_WRAPPING',
-  PACKING_WRAPPING: 'ON_WAY_TO_CUSTOMER',
-  ON_WAY_TO_CUSTOMER: 'DELIVERED',
+  PACKING_WRAPPING: 'ON_WAY_TO_YOU',
+  ON_WAY_TO_YOU: 'DELIVERED',
   DELIVERED: 'COMPLETED',
 };
 
-function readDemoOrders() {
-  if (typeof window === 'undefined') return null;
-  return isDemoToken(localStorage.getItem('token')) ? DEMO_ORDERS : null;
-}
-
 export default function TailorOrdersPage() {
   const { isRTL } = useAppStore();
-  const demoOrders = readDemoOrders();
-  const [orders, setOrders] = useState<any[]>(demoOrders ?? []);
-  const [loading, setLoading] = useState(!demoOrders);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [movingId, setMovingId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
-    if (readDemoOrders()) return;
     setLoading(true);
-    const safety = setTimeout(() => setLoading(false), 3000);
     try {
       const res = await ordersApi.list({ limit: '100' });
-      setOrders(res.orders ?? []);
+      setOrders(res.orders);
     } catch (err) {
       console.error('Failed to fetch orders', err);
-      setOrders([]);
     } finally {
-      clearTimeout(safety);
       setLoading(false);
     }
   }, []);

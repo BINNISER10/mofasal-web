@@ -29,7 +29,7 @@ export default function AdminPOSPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
 
-  const categories = ['ALL', 'Thobes', 'Fabrics', 'Accessories'];
+  const categories = ['ALL', 'Suits', 'Thobes', 'Fabrics', 'Accessories'];
 
   useEffect(() => {
     const fetchProducts = async () => {

@@ -49,15 +49,18 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkRead = async (id: string, link?: string) => {
+  const handleMarkRead = async (id: string) => {
     try {
       await notificationsApi.markAsRead(id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-      if (link) router.push(link);
     } catch (err) {
       console.error('Failed to mark as read', err);
-      if (link) router.push(link);
     }
+  };
+
+  const handleClick = async (notif: Notification) => {
+    if (!notif.isRead) await handleMarkRead(notif.id);
+    if (notif.link) router.push(notif.link);
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -90,7 +93,7 @@ export default function NotificationsPage() {
             key={notif.id}
             hover
             className={cn('p-4 transition-colors cursor-pointer', !notif.isRead && 'bg-primary-50/50 dark:bg-primary-900/10 border-l-4 border-primary-600')}
-            onClick={() => handleMarkRead(notif.id, notif.link)}
+            onClick={() => handleClick(notif)}
           >
             <div className="flex items-start gap-3">
               <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', notif.type === 'alert' ? 'bg-red-50 text-red-600' : notif.type === 'payment' ? 'bg-green-50 text-green-600' : notif.type === 'system' ? 'bg-blue-50 text-blue-600' : 'bg-primary-50 text-primary-600')}>

@@ -228,7 +228,7 @@ export function ThobeSpecSelector({ value, onChange }: ThobeSpecSelectorProps) {
           <div className="flex items-center gap-2">
             <PenTool size={16} className="text-amber-500" />
             <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">{isRTL ? 'بدلة كاملة' : 'Full Suit'}</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">{isRTL ? 'ثوب سعودي كامل' : 'Full Saudi Thobe'}</p>
               <p className="text-[10px] text-gray-400 dark:text-slate-500">{isRTL ? 'ثوب + جاكيت + بنطلون للمناسبات' : 'Thobe + jacket + trousers'}</p>
             </div>
           </div>

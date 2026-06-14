@@ -48,7 +48,7 @@ export default function CustomerOrdersPage() {
         </Button>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-        {['ALL', 'PENDING', 'CONFIRMED', 'SEWING_ASSEMBLY', 'ON_WAY_TO_CUSTOMER', 'DELIVERED', 'CANCELLED'].map((f) => (
+        {['ALL', 'PENDING', 'CONFIRMED', 'SEWING_ASSEMBLY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'].map((f) => (
           <button
             key={f}
             type="button"
@@ -61,7 +61,7 @@ export default function CustomerOrdersPage() {
             )}
           >
             {isRTL
-              ? { ALL: 'الكل', PENDING: 'جديد', CONFIRMED: 'مؤكد', SEWING_ASSEMBLY: 'تصنيع', ON_WAY_TO_CUSTOMER: 'توصيل', DELIVERED: 'مكتمل', CANCELLED: 'ملغي' }[f] || f
+              ? { ALL: 'الكل', PENDING: 'جديد', CONFIRMED: 'مؤكد', SEWING_ASSEMBLY: 'تصنيع', OUT_FOR_DELIVERY: 'توصيل', DELIVERED: 'مكتمل', CANCELLED: 'ملغي' }[f] || f
               : f}
           </button>
         ))}
