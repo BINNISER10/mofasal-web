@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ import { serviceRequestsApi } from '../../services/api/serviceRequests';
 import { useAuthContext } from '../../services/auth/AuthContext';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import BodyDiagram from '../../components/shared/BodyDiagram';
 
 const TOTAL_STEPS = 5;
 
@@ -48,6 +49,92 @@ const MeasurementWizardScreen: React.FC = () => {
   const [fabricSource, setFabricSource] = useState<string | null>(null);
   const [fabricNote, setFabricNote] = useState('');
   const [profileName, setProfileName] = useState('');
+  const [selectedFabricId, setSelectedFabricId] = useState<string | null>(null);
+  const [selectedFabricName, setSelectedFabricName] = useState<string | null>(null);
+  const [fabricCatalog, setFabricCatalog] = useState<any[]>([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [previousMeasurements, setPreviousMeasurements] = useState<any[]>([]);
+  const [fieldNotes, setFieldNotes] = useState<Record<string, string>>({});
+  const [autoSaving, setAutoSaving] = useState(false);
+
+  // تحميل المقاسات السابقة للعميل
+  useEffect(() => {
+    const loadPrevious = async () => {
+      if (!user?.id) return;
+      try {
+        const list = await measurementsApi.list(user.id);
+        setPreviousMeasurements(list);
+      } catch (e) {
+        // تجاهل الخطأ - المقاسات السابقة اختيارية
+      }
+    };
+    loadPrevious();
+  }, [user?.id]);
+
+  // تحميل كتالوج الأقمشة عند اختيار المصدر "catalog"
+  useEffect(() => {
+    const loadFabricCatalog = async () => {
+      if (fabricSource !== 'catalog' || !user?.id) return;
+      try {
+        setLoadingCatalog(true);
+        // ملاحظة: هذا يتطلب API endpoint لجلب الأقمشة
+        // حالياً سنستخدم بيانات وهمية مؤقتة
+        setFabricCatalog([
+          { id: '1', name: 'نياقة أبيض صيفي', price: 150, image: '' },
+          { id: '2', name: 'نياقة أسود شتوي', price: 200, image: '' },
+          { id: '3', name: 'دورمى كحلي فاخر', price: 350, image: '' },
+          { id: '4', name: 'سويسري رمادي', price: 180, image: '' },
+        ]);
+      } catch (e) {
+        // تجاهل الخطأ
+      } finally {
+        setLoadingCatalog(false);
+      }
+    };
+    loadFabricCatalog();
+  }, [fabricSource, user?.id]);
+
+  // حفظ تلقائي للقياسات (debounced)
+  useEffect(() => {
+    if (!user?.id || !garmentType || Object.keys(measurements).length === 0) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setAutoSaving(true);
+        const numericMeasurements: Record<string, number> = {};
+        Object.entries(measurements).forEach(([k, v]) => {
+          const s = String(v ?? '');
+          const n = Number(s);
+          if (s.trim() && !isNaN(n)) numericMeasurements[k] = n;
+        });
+
+        const payload = {
+          ...numericMeasurements,
+          _meta: {
+            customerType,
+            age: customerType === 'boy' ? age : undefined,
+            garmentType,
+            thobeSpecs,
+            hasPocket,
+            fabricSource,
+            fabricNote,
+            fieldNotes,
+            isDraft: true, // علامة أنه مسودة
+          },
+        };
+
+        const draftName = `مسودة - ${GARMENT_TYPES.find((g) => g.id === garmentType)?.label || 'قياس'}`;
+        await measurementsApi.create(user.id, draftName, payload);
+      } catch (e) {
+        // تجاهل خطأ الحفظ التلقائي - لا نريد إزعاج المستخدم
+      } finally {
+        setAutoSaving(false);
+      }
+    }, 2000); // حفظ بعد ثانيتين من التوقف عن الكتابة
+
+    return () => clearTimeout(timer);
+  }, [measurements, fieldNotes, thobeSpecs, garmentType, customerType, age, hasPocket, fabricSource, fabricNote, user?.id]);
 
   // الحقول المطلوبة للقطعة المختارة، مجمّعة حسب المنطقة الملوّنة
   const activeZones = useMemo(() => {
@@ -125,6 +212,7 @@ const MeasurementWizardScreen: React.FC = () => {
         hasPocket,
         fabricSource,
         fabricNote,
+        fieldNotes,
       },
     };
     const name = profileName.trim()
@@ -154,26 +242,35 @@ const MeasurementWizardScreen: React.FC = () => {
   };
 
   // ─── شريط التقدّم ───
-  const renderProgress = () => (
-    <View style={styles.progressRow}>
-      {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-        <View key={i} style={styles.progressItem}>
-          <View style={[
-            styles.progressDot,
-            i + 1 < step && styles.progressDone,
-            i + 1 === step && styles.progressCurrent,
-          ]}>
-            <Text style={[styles.progressNum, (i + 1 <= step) && styles.progressNumActive]}>
-              {i + 1 < step ? '✓' : i + 1}
-            </Text>
+  const renderProgress = () => {
+    const progressPercent = step === 3 && !isAlteration
+      ? Math.round((filledCount / allFields.length) * 100)
+      : Math.round((step / TOTAL_STEPS) * 100);
+
+    return (
+      <View style={styles.progressRow}>
+        {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+          <View key={i} style={styles.progressItem}>
+            <View style={[
+              styles.progressDot,
+              i + 1 < step && styles.progressDone,
+              i + 1 === step && styles.progressCurrent,
+            ]}>
+              <Text style={[styles.progressNum, (i + 1 <= step) && styles.progressNumActive]}>
+                {i + 1 < step ? '✓' : i + 1}
+              </Text>
+            </View>
+            {i < TOTAL_STEPS - 1 && (
+              <View style={[styles.progressBar, i + 1 < step && styles.progressBarDone]} />
+            )}
           </View>
-          {i < TOTAL_STEPS - 1 && (
-            <View style={[styles.progressBar, i + 1 < step && styles.progressBarDone]} />
-          )}
+        ))}
+        <View style={styles.progressPercent}>
+          <Text style={styles.progressPercentText}>{progressPercent}%</Text>
         </View>
-      ))}
-    </View>
-  );
+      </View>
+    );
+  };
 
   // ─── الخطوة 1: نوع الزبون ───
   const renderStep1 = () => (
@@ -288,10 +385,46 @@ const MeasurementWizardScreen: React.FC = () => {
       <View>
         <View style={styles.measureHeader}>
           <Text style={styles.stepTitle}>القياسات</Text>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{filledCount}/{allFields.length}</Text>
+          <View style={styles.headerRight}>
+            {autoSaving && (
+              <View style={styles.autoSavingIndicator}>
+                <Text style={styles.autoSavingText}>جاري الحفظ...</Text>
+              </View>
+            )}
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{filledCount}/{allFields.length}</Text>
+            </View>
           </View>
         </View>
+
+        {/* رسم الجسم التفاعلي */}
+        <BodyDiagram activeZone={activeZone || undefined} onZonePress={setActiveZone} />
+
+        {/* عرض المقاسات السابقة إن وُجدت */}
+        {previousMeasurements.length > 0 && (
+          <Card style={styles.previousCard}>
+            <Text style={styles.previousTitle}>مقاسات سابقة (مرجع)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previousScroll}>
+              {previousMeasurements.slice(0, 3).map((pm) => (
+                <TouchableOpacity
+                  key={pm.id}
+                  style={styles.previousChip}
+                  onPress={() => {
+                    // نسخ القياسات السابقة
+                    Object.entries(pm.data || {}).forEach(([k, v]) => {
+                      if (typeof v === 'number' && allFields.find(f => f.key === k)) {
+                        setMeasurement(k, String(v));
+                      }
+                    });
+                  }}
+                >
+                  <Text style={styles.previousChipText}>{pm.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Card>
+        )}
+
         {activeZones.map((zone) => (
           <View key={zone.id} style={styles.zoneCard}>
             <View style={[styles.zoneHeader, { backgroundColor: zone.color }]}>
@@ -302,6 +435,7 @@ const MeasurementWizardScreen: React.FC = () => {
               {zone.fields.map((f) => {
                 const err = fieldError(f);
                 const filled = measurements[f.key]?.trim();
+                const hasNote = fieldNotes[f.key]?.trim();
                 return (
                   <View key={f.key} style={styles.measureField}>
                     <View style={styles.measureTop}>
@@ -322,11 +456,36 @@ const MeasurementWizardScreen: React.FC = () => {
                           placeholderTextColor={colors.textMuted}
                         />
                         <Text style={styles.unit}>سم</Text>
+                        <TouchableOpacity
+                          style={styles.noteBtn}
+                          onPress={() => {
+                            Alert.prompt(
+                              'ملاحظة اختيارية',
+                              `أضف ملاحظة عن ${f.label}`,
+                              [
+                                { text: 'إلغاء', style: 'cancel' },
+                                {
+                                  text: 'حفظ',
+                                  onPress: (text) => setFieldNotes(prev => ({ ...prev, [f.key]: text || '' }))
+                                }
+                              ],
+                              'plain-text',
+                              fieldNotes[f.key] || ''
+                            );
+                          }}
+                        >
+                          <Text style={[styles.noteBtnText, hasNote && styles.noteBtnTextActive]}>
+                            📝
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
                     <Text style={[styles.measureHint, err && styles.measureHintError]}>
                       {err ? `⚠️ ${err}` : `💡 ${f.hint}`}
                     </Text>
+                    {hasNote && (
+                      <Text style={styles.fieldNoteText}>📌 {hasNote}</Text>
+                    )}
                   </View>
                 );
               })}
@@ -357,20 +516,50 @@ const MeasurementWizardScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
+
+      {fabricSource === 'catalog' && (
+        <View style={styles.catalogSection}>
+          <Text style={styles.catalogTitle}>كتالوج الأقمشة</Text>
+          {loadingCatalog ? (
+            <Text style={styles.loadingText}>جاري التحميل...</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catalogScroll}>
+              {fabricCatalog.map((fabric) => (
+                <TouchableOpacity
+                  key={fabric.id}
+                  style={[styles.fabricItem, selectedFabricId === fabric.id && styles.fabricItemActive]}
+                  onPress={() => {
+                    setSelectedFabricId(fabric.id);
+                    setSelectedFabricName(fabric.name);
+                    setFabricNote(fabric.name);
+                  }}
+                >
+                  <Text style={styles.fabricItemName}>{fabric.name}</Text>
+                  <Text style={styles.fabricItemPrice}>{fabric.price} ريال/متر</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
+
       {fabricSource && (
         <Card style={styles.fabricNoteCard}>
           <Text style={styles.fieldLabel}>
-            {fabricSource === 'physical' ? 'ملاحظة عن القماش المختار' : 'نوع/لون القماش المطلوب'}
+            {fabricSource === 'physical' ? 'ملاحظة عن القماش المختار' : 'تفاصيل إضافية'}
           </Text>
           <TextInput
             style={styles.notesInput}
             value={fabricNote}
             onChangeText={setFabricNote}
-            placeholder={fabricSource === 'physical' ? 'مثال: نياقة أبيض رقم 5' : 'مثال: دورمى كحلي شتوي'}
+            placeholder={fabricSource === 'physical' ? 'مثال: نياقة أبيض رقم 5' : 'مثال: تفاصيل إضافية'}
             placeholderTextColor={colors.textLight}
             multiline
             textAlign="right"
           />
+          {fabricSource === 'catalog' && selectedFabricName && (
+            <Text style={styles.selectedFabricText}>القماش المختار: {selectedFabricName}</Text>
+          )}
         </Card>
       )}
     </View>
@@ -500,6 +689,8 @@ const styles = StyleSheet.create({
   progressNumActive: { color: colors.white },
   progressBar: { width: 26, height: 3, backgroundColor: colors.surfaceGrey, marginHorizontal: 2 },
   progressBarDone: { backgroundColor: colors.success },
+  progressPercent: { marginRight: spacing.lg },
+  progressPercentText: { fontSize: fonts.sizes.md, color: colors.primary, ...fonts.bold },
 
   scroll: { padding: spacing.lg, paddingBottom: 40 },
   stepTitle: { fontSize: fonts.sizes.xxl, color: colors.textPrimary, ...fonts.bold, textAlign: 'right', marginBottom: spacing.xs },
@@ -552,6 +743,9 @@ const styles = StyleSheet.create({
   pocketLabel: { fontSize: fonts.sizes.md, color: colors.textPrimary },
 
   measureHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  autoSavingIndicator: { backgroundColor: colors.surfaceWarm, borderRadius: borderRadius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  autoSavingText: { fontSize: fonts.sizes.xs, color: colors.textSecondary },
   countBadge: { backgroundColor: colors.primaryMuted, borderRadius: borderRadius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   countText: { fontSize: fonts.sizes.md, color: colors.primary, ...fonts.bold },
   zoneCard: { borderRadius: borderRadius.lg, marginBottom: spacing.md, overflow: 'hidden', backgroundColor: colors.white, ...shadows.sm },
@@ -570,8 +764,12 @@ const styles = StyleSheet.create({
   },
   measureInputError: { borderColor: colors.error },
   unit: { fontSize: fonts.sizes.sm, color: colors.textSecondary },
+  noteBtn: { padding: 4 },
+  noteBtnText: { fontSize: 16 },
+  noteBtnTextActive: { opacity: 1 },
   measureHint: { fontSize: fonts.sizes.xs, color: colors.textLight, textAlign: 'right', marginTop: 2 },
   measureHintError: { color: colors.error },
+  fieldNoteText: { fontSize: fonts.sizes.xs, color: colors.primary, textAlign: 'right', marginTop: 2 },
 
   alterCard: { padding: spacing.lg },
   fabricCard: {
@@ -580,6 +778,23 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   fabricHint: { fontSize: fonts.sizes.xs, color: colors.textLight, textAlign: 'center', marginTop: spacing.xs },
+  catalogSection: { marginTop: spacing.lg },
+  catalogTitle: { fontSize: fonts.sizes.md, color: colors.textPrimary, ...fonts.medium, textAlign: 'right', marginBottom: spacing.sm },
+  loadingText: { fontSize: fonts.sizes.sm, color: colors.textSecondary, textAlign: 'center', padding: spacing.md },
+  catalogScroll: { flexDirection: 'row' },
+  fabricItem: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginRight: spacing.sm,
+    borderWidth: 2,
+    borderColor: colors.border,
+    minWidth: 140,
+  },
+  fabricItemActive: { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
+  fabricItemName: { fontSize: fonts.sizes.sm, color: colors.textPrimary, ...fonts.medium, textAlign: 'right', marginBottom: spacing.xs },
+  fabricItemPrice: { fontSize: fonts.sizes.xs, color: colors.textSecondary },
+  selectedFabricText: { fontSize: fonts.sizes.sm, color: colors.primary, ...fonts.medium, marginTop: spacing.sm, textAlign: 'right' },
   fabricNoteCard: { padding: spacing.lg, marginTop: spacing.lg },
   notesInput: {
     borderWidth: 1, borderColor: colors.border, borderRadius: borderRadius.md,
@@ -597,6 +812,20 @@ const styles = StyleSheet.create({
   reviewChipText: { fontSize: fonts.sizes.sm, color: colors.textSecondary },
   confirmNote: { backgroundColor: colors.primaryMuted, borderRadius: borderRadius.md, padding: spacing.md },
   confirmNoteText: { fontSize: fonts.sizes.sm, color: colors.primaryDark, textAlign: 'right' },
+
+  previousCard: { padding: spacing.lg, marginBottom: spacing.md },
+  previousTitle: { fontSize: fonts.sizes.md, color: colors.textSecondary, ...fonts.medium, textAlign: 'right', marginBottom: spacing.sm },
+  previousScroll: { flexDirection: 'row' },
+  previousChip: {
+    backgroundColor: colors.surfaceWarm,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginRight: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  previousChipText: { fontSize: fonts.sizes.sm, color: colors.textSecondary },
 
   footer: { padding: spacing.lg, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.divider },
 });

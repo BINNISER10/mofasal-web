@@ -97,9 +97,7 @@ export function HomeHero({ isRTL }: HomeHeroProps) {
                 <p className="text-white/50 text-xs">{isRTL ? 'قبل دقيقتين' : '2 min ago'}</p>
               </div>
             </div>
-            <p className="text-white/80 text-xs" suppressHydrationWarning>
-              {isRTL ? hero.orderPreviewAr : hero.orderPreviewEn}
-            </p>
+            <p className="text-white/80 text-xs">{isRTL ? 'بدلة رسمية — الرياض' : 'Formal Suit — Riyadh'}</p>
             <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
               <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-green-400 to-emerald-500" />
             </div>

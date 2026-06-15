@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Dimensions,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -18,13 +19,14 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import RatingStars from '../../components/shared/RatingStars';
 import { HomeStackParamList } from '../../navigation/stacks/HomeStack';
+import { shopsApi } from '../../services/api/shops';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COVER_HEIGHT = 220;
 
 type ShopDetailRouteProp = RouteProp<HomeStackParamList, 'ShopDetail'>;
 
-const MOCK_SHOP = {
+const FALLBACK_SHOP = {
   id: '1',
   name: 'خياط الرجال',
   description: 'أفضل محل خياطة رجالية في الرياض، نقدم خدمات الخياطة والتفصيل بأعلى جودة وأفضل الأسعار. نوفر خدمة القياس المنزلي المجانية.',
@@ -64,13 +66,61 @@ const ShopDetailScreen: React.FC = () => {
   const route = useRoute<ShopDetailRouteProp>();
 
   const [activeTab, setActiveTab] = useState<'services' | 'reviews' | 'about'>('services');
+  const [shop, setShop] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const shopId = route.params?.shopId;
+    if (shopId) {
+      shopsApi.getById(shopId)
+        .then((res: any) => {
+          if (res?.shop || res?.id) {
+            const s = res.shop || res;
+            setShop({
+              id: s.id,
+              name: s.nameAr || s.name,
+              description: s.description || '',
+              logo: s.logo || FALLBACK_SHOP.logo,
+              coverImage: s.coverImage || s.images?.[0] || FALLBACK_SHOP.coverImage,
+              rating: s.rating || 0,
+              ratingCount: s.ratingCount || s.reviewCount || 0,
+              distance: s.distance || 0,
+              estimatedArrival: s.estimatedArrival || 0,
+              isOpen: s.isOpen ?? true,
+              phone: s.phone || '',
+              address: s.address || s.city || '',
+              openHours: s.openHours || FALLBACK_SHOP.openHours,
+              services: s.services?.length ? s.services : FALLBACK_SHOP.services,
+              reviews: s.reviews?.length ? s.reviews : FALLBACK_SHOP.reviews,
+            });
+          } else {
+            setShop(FALLBACK_SHOP);
+          }
+        })
+        .catch(() => setShop(FALLBACK_SHOP))
+        .finally(() => setLoading(false));
+    } else {
+      setShop(shop);
+      setLoading(false);
+    }
+  }, [route.params?.shopId]);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={colors.primary[500]} style={{ marginTop: 100 }} />
+      </View>
+    );
+  }
+
+  if (!shop) return null;
 
   const handleCall = () => {
-    Linking.openURL(`tel:${MOCK_SHOP.phone}`);
+    if (shop.phone) Linking.openURL(`tel:${shop.phone}`);
   };
 
   const handleRequestService = () => {
-    navigation.navigate('OrderWizard', { shopId: route.params.shopId });
+    navigation.navigate('OrderWizard', { shopId: shop.id });
   };
 
   return (
@@ -78,7 +128,7 @@ const ShopDetailScreen: React.FC = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Cover Image */}
         <View style={styles.coverContainer}>
-          <Image source={{ uri: MOCK_SHOP.coverImage }} style={styles.cover} />
+          <Image source={{ uri: shop.coverImage }} style={styles.cover} />
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -86,27 +136,27 @@ const ShopDetailScreen: React.FC = () => {
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <View style={styles.logoContainer}>
-            <Image source={{ uri: MOCK_SHOP.logo }} style={styles.logo} />
+            <Image source={{ uri: shop.logo }} style={styles.logo} />
           </View>
         </View>
 
         {/* Shop Info */}
         <View style={styles.infoSection}>
-          <Text style={styles.shopName}>{MOCK_SHOP.name}</Text>
+          <Text style={styles.shopName}>{shop.name}</Text>
           <View style={styles.ratingRow}>
-            <RatingStars rating={MOCK_SHOP.rating} />
+            <RatingStars rating={shop.rating} />
             <Text style={styles.ratingText}>
-              {MOCK_SHOP.rating} ({MOCK_SHOP.ratingCount} {t('shop.reviewsCount')})
+              {shop.rating} ({shop.ratingCount} {t('shop.reviewsCount')})
             </Text>
           </View>
           <View style={styles.metaRow}>
-            <Badge label={MOCK_SHOP.isOpen ? 'مفتوح' : 'مغلق'}
-              color={MOCK_SHOP.isOpen ? colors.success : colors.error} size="sm" />
+            <Badge label={shop.isOpen ? 'مفتوح' : 'مغلق'}
+              color={shop.isOpen ? colors.success : colors.error} size="sm" />
             <Text style={styles.metaText}>
-              {formatDistance(MOCK_SHOP.distance)} • {getETA(MOCK_SHOP.estimatedArrival)}
+              {formatDistance(shop.distance)} • {getETA(shop.estimatedArrival)}
             </Text>
           </View>
-          <Text style={styles.address}>{MOCK_SHOP.address}</Text>
+          <Text style={styles.address}>{shop.address}</Text>
         </View>
 
         {/* Tabs */}
@@ -127,7 +177,7 @@ const ShopDetailScreen: React.FC = () => {
         {/* Tab Content */}
         {activeTab === 'services' && (
           <View style={styles.section}>
-            {MOCK_SHOP.services.map((service) => (
+            {shop.services.map((service) => (
               <Card key={service.id} style={styles.serviceCard}>
                 <View style={styles.serviceHeader}>
                   <Text style={styles.serviceName}>{service.name}</Text>
@@ -144,7 +194,7 @@ const ShopDetailScreen: React.FC = () => {
 
         {activeTab === 'reviews' && (
           <View style={styles.section}>
-            {MOCK_SHOP.reviews.map((review) => (
+            {shop.reviews.map((review) => (
               <Card key={review.id} style={styles.reviewCard}>
                 <View style={styles.reviewHeader}>
                   <Text style={styles.reviewerName}>{review.userName}</Text>
@@ -159,17 +209,17 @@ const ShopDetailScreen: React.FC = () => {
         {activeTab === 'about' && (
           <View style={styles.section}>
             <Card>
-              <Text style={styles.aboutText}>{MOCK_SHOP.description}</Text>
+              <Text style={styles.aboutText}>{shop.description}</Text>
               <View style={styles.aboutRow}>
                 <Text style={styles.aboutLabel}>{t('shop.location')}</Text>
-                <Text style={styles.aboutValue}>{MOCK_SHOP.address}</Text>
+                <Text style={styles.aboutValue}>{shop.address}</Text>
               </View>
               <TouchableOpacity style={styles.callRow} onPress={handleCall}>
                 <Text style={styles.callLabel}>{t('shop.call')}</Text>
-                <Text style={styles.callValue}>{MOCK_SHOP.phone}</Text>
+                <Text style={styles.callValue}>{shop.phone}</Text>
               </TouchableOpacity>
               <Text style={styles.hoursTitle}>{t('shop.openHours')}</Text>
-              {Object.entries(MOCK_SHOP.openHours).map(([day, hours]) => (
+              {Object.entries(shop.openHours).map(([day, hours]) => (
                 <View key={day} style={styles.hoursRow}>
                   <Text style={styles.hoursTime}>{hours.open} - {hours.close}</Text>
                   <Text style={styles.hoursDay}>{day}</Text>

@@ -15,7 +15,7 @@ import {
   Store, Sparkles, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 
-const TRENDING = ['ثوب سعودي', 'قماش صوف', 'بشت فاخر', 'ثوب أبيض', 'قماش كتان'];
+const TRENDING = ['بدلة رجالية', 'قماش صوف', 'بشت فاخر', 'ثوب أبيض', 'قماش كتان'];
 const CITIES = ['الكل', 'الرياض', 'جدة', 'الدمام', 'مكة', 'المدينة'];
 const SORT_OPTIONS = [
   { value: 'relevance', labelAr: 'الأكثر صلة' },
@@ -37,7 +37,7 @@ function SearchContent() {
   const [sortBy, setSortBy] = useState('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState(0);
-  const [recentSearches, setRecentSearches] = useState<string[]>(['ثوب سعودي', 'قماش صوف', 'خياط جدة']);
+  const [recentSearches, setRecentSearches] = useState<string[]>(['بدلة رسمية', 'قماش صوف', 'خياط جدة']);
   const [shops, setShops] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

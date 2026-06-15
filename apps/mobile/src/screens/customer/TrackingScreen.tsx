@@ -27,16 +27,20 @@ const SR_STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'اكتمل القياس',
 };
 
-const STATUS_STEPS = [
-  'PENDING', 'CONFIRMED', 'MEASURING', 'CUTTING',
-  'SEWING', 'FINISHING', 'READY', 'ON_WAY', 'DELIVERED',
+const CUSTOMER_STAGES = [
+  { id: 'received', label: 'تم الاستلام', statuses: ['PENDING'] },
+  { id: 'confirmed', label: 'تم التأكيد', statuses: ['CONFIRMED'] },
+  { id: 'measuring', label: 'أخذ المقاسات', statuses: ['STAFF_ON_WAY', 'TAKING_MEASUREMENTS'] },
+  { id: 'making', label: 'قيد التصنيع', statuses: ['IN_PROGRESS', 'CUTTING_FABRIC', 'SEWING_ASSEMBLY', 'IRONING_FINISHING', 'PACKING_WRAPPING'] },
+  { id: 'ready', label: 'جاهز للتوصيل', statuses: ['READY_FOR_DELIVERY'] },
+  { id: 'delivery', label: 'في الطريق', statuses: ['OUT_FOR_DELIVERY'] },
+  { id: 'delivered', label: 'تم التسليم', statuses: ['DELIVERED', 'COMPLETED'] },
 ];
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'قيد المراجعة', CONFIRMED: 'تم القبول', MEASURING: 'أخذ القياسات',
-  CUTTING: 'قص القماش', SEWING: 'خياطة وتجميع', FINISHING: 'كي وتشطيب',
-  READY: 'جاهز للتوصيل', ON_WAY: 'في الطريق إليك', DELIVERED: 'تم التوصيل',
-};
+function getStageIndex(status: string): number {
+  const idx = CUSTOMER_STAGES.findIndex((s) => s.statuses.includes(status));
+  return idx >= 0 ? idx : 0;
+}
 
 const TrackingScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -73,8 +77,12 @@ const TrackingScreen: React.FC = () => {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const res = await apiClient.get(`/orders/${orderId}`);
-      setOrder(res.data);
+      const [orderRes, trackingRes] = await Promise.all([
+        apiClient.get(`/orders/${orderId}`),
+        apiClient.get(`/orders/${orderId}/tracking`).catch(() => null),
+      ]);
+      const orderData = orderRes.data?.data || orderRes.data;
+      setOrder(trackingRes?.data?.data ? { ...orderData, tracking: trackingRes.data.data } : orderData);
     } catch {
       // keep stale data
     } finally {
@@ -90,11 +98,12 @@ const TrackingScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, [orderId, fetchOrder]);
 
-  const currentIdx = order ? STATUS_STEPS.indexOf(order.status) : -1;
-  const timelineSteps = STATUS_STEPS.map((s, i) => ({
-    status: s,
-    label: STATUS_LABELS[s],
-    timestamp: i <= currentIdx ? order?.updated_at || order?.created_at : null,
+  const rawStatus = order?.status || order?.data?.status || 'PENDING';
+  const currentIdx = order ? getStageIndex(rawStatus) : 0;
+  const timelineSteps = CUSTOMER_STAGES.map((s, i) => ({
+    status: s.id,
+    label: s.label,
+    timestamp: i <= currentIdx ? order?.updatedAt || order?.updated_at || order?.createdAt || order?.created_at : null,
     completed: i < currentIdx,
     active: i === currentIdx,
   }));
@@ -230,7 +239,7 @@ const TrackingScreen: React.FC = () => {
                   styles.statusText,
                   isDelivered && { color: '#22C55E' },
                 ]}>
-                  {STATUS_LABELS[order?.status] || order?.status}
+                  {CUSTOMER_STAGES.find((s) => s.statuses.includes(rawStatus))?.label || rawStatus}
                 </Text>
               </View>
               <Text style={styles.orderDate}>{orderDate}</Text>

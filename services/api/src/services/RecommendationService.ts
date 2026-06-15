@@ -295,11 +295,11 @@ export class RecommendationService {
     // متاجر مشابهة لتفضيلات المستخدم
     const visitedShops = await prisma.shop.findMany({
       where: { id: { in: topShops } },
-      select: { city: true, category: true },
+      select: { city: true, region: true },
     });
 
-    const cities = [...new Set(visitedShops.map((s) => s.city).filter(Boolean))];
-    const categories = [...new Set(visitedShops.map((s) => s.category).filter(Boolean))];
+    const cities = [...new Set(visitedShops.map((s) => s.city).filter(Boolean))] as string[];
+    const regions = [...new Set(visitedShops.map((s) => s.region).filter(Boolean))] as string[];
 
     return prisma.shop.findMany({
       where: {
@@ -307,7 +307,7 @@ export class RecommendationService {
         isOpen: true,
         OR: [
           ...(cities.length ? [{ city: { in: cities } }] : []),
-          ...(categories.length ? [{ category: { in: categories } }] : []),
+          ...(regions.length ? [{ region: { in: regions } }] : []),
         ],
       },
       orderBy: { rating: 'desc' },

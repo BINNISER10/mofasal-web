@@ -7,6 +7,7 @@ const router = Router();
 // POS is for shop staff/owners and merchants only.
 router.use(authenticate, requirePermission('pos'));
 
+router.get('/products', POSController.getProducts);
 router.post('/sessions', authenticate, POSController.openSession);
 router.post('/sessions/:id/close', authenticate, POSController.closeSession);
 router.get('/sessions', authenticate, POSController.getSessions);

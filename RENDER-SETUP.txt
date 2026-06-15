@@ -1,0 +1,92 @@
+================================================================================
+  مفصل MUFASAL — إعداد Render (API + قاعدة البيانات)
+================================================================================
+
+الويب: https://mufasal.onrender.com
+الـ API: https://mufasal-api.onrender.com
+
+مهم — الويب يجب أن يُبنى بـ Docker (ليس Node) لتجنب OOM أثناء npm install:
+  Settings → Environment: Docker
+  Dockerfile: Dockerfile (جذر المستودع)
+  Docker Context: .
+  Plan: Standard
+
+────────────────────────────────────────────────────────────────────────────────
+1) قاعدة بيانات PostgreSQL
+────────────────────────────────────────────────────────────────────────────────
+
+  Render Dashboard → New + → PostgreSQL
+  الاسم: mufasal-db
+  الخطة: Free
+  المنطقة: Frankfurt (نفس الويب)
+
+  انسخ Internal Database URL (للـ API على Render)
+  أو External URL (للاختبار من جهازك)
+
+────────────────────────────────────────────────────────────────────────────────
+2) خدمة API — mofasal-api
+────────────────────────────────────────────────────────────────────────────────
+
+  إن كانت موجودة: افتح mofasal-api → Settings
+  إن لم تكن: New + → Web Service → اربط mofasal-web repo
+
+  Environment:     Docker
+  Dockerfile:      docker/Dockerfile.api
+  Docker Context:  . (جذر المستودع)
+  Plan:            Standard
+  Region:          Frankfurt
+  Branch:          master
+
+  Build Command:   (فارغ — Docker يبني تلقائياً)
+  Start Command:   (فارغ — من Dockerfile)
+
+  Health Check:    /health/live
+  Port:            4001
+
+────────────────────────────────────────────────────────────────────────────────
+3) متغيرات البيئة — mofasal-api
+────────────────────────────────────────────────────────────────────────────────
+
+  DATABASE_URL          = (من قاعدة البيانات — Internal URL)
+  NODE_ENV              = production
+  PORT                  = 4001
+  API_PREFIX            = /api/v1
+  JWT_SECRET            = (أنشئ سلسلة عشوائية 32+ حرف)
+  JWT_REFRESH_SECRET    = (سلسلة عشوائية أخرى)
+  CORS_ORIGIN           = https://mufasal.onrender.com,http://localhost:3000
+  SEED_DATABASE         = true    (أول نشر فقط — ثم غيّرها false)
+
+  اختياري (بدونها يعمل API):
+  REDIS_URL             = (اتركه فارغاً إن لم يكن Redis)
+
+────────────────────────────────────────────────────────────────────────────────
+4) متغيرات البيئة — mofasal-web
+────────────────────────────────────────────────────────────────────────────────
+
+  NEXT_PUBLIC_API_URL   = https://mufasal-api.onrender.com/api/v1
+
+  بعد الحفظ → Manual Deploy للويب
+
+────────────────────────────────────────────────────────────────────────────────
+5) التحقق
+────────────────────────────────────────────────────────────────────────────────
+
+  افتح: https://mofasal-api.onrender.com/health/live
+  يجب: {"success":true,"status":"alive"}
+
+  افتح: https://mofasal-api.onrender.com/health
+  database: healthy (بعد ربط PostgreSQL)
+
+  جرّب من المتصفح:
+  https://mofasal-api.onrender.com/api/v1/shops?limit=5
+
+────────────────────────────────────────────────────────────────────────────────
+6) حسابات تجريبية (بعد seed)
+────────────────────────────────────────────────────────────────────────────────
+
+  admin@mufasal.com / admin123
+  (راجع services/api/prisma/seed.ts للحسابات الأخرى)
+
+  بعد أول نشر ناجح: SEED_DATABASE=false
+
+================================================================================

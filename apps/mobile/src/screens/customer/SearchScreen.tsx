@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -13,15 +14,17 @@ import SearchBar from '../../components/shared/SearchBar';
 import ShopCard from '../../components/shared/ShopCard';
 import ProductCard from '../../components/shared/ProductCard';
 import EmptyState from '../../components/ui/EmptyState';
+import { shopsApi } from '../../services/api/shops';
+import { productsApi } from '../../services/api/products';
 
 type SearchTab = 'shops' | 'products';
 
-const MOCK_SHOPS = [
-  { id: '1', name: 'خياط الرجال', image: 'https://via.placeholder.com/400x300/1B5E20/ffffff?text=خياط+الرجال', rating: 4.8, ratingCount: 124, distance: 1.2, estimatedArrival: 25, isFeatured: true, tags: ['خياطة رجالي'] },
+const FALLBACK_SHOPS = [
+  { id: '1', name: 'خياط الرجال', image: 'https://via.placeholder.com/400x300/1B5E20/ffffff?text=خياط+الرجال', rating: 4.8, ratingCount: 124, distance: 1.2, estimatedArrival: 25, tags: ['خياطة رجالي'] },
   { id: '2', name: 'مشغل الأمير', image: 'https://via.placeholder.com/400x300/2E7D32/ffffff?text=مشغل+الأمير', rating: 4.6, ratingCount: 89, distance: 2.5, estimatedArrival: 35, tags: ['أطفال'] },
 ];
 
-const MOCK_PRODUCTS = [
+const FALLBACK_PRODUCTS = [
   { id: '1', name: 'قماش صوف إيطالي', image: 'https://via.placeholder.com/200x200/D4AF37/000000?text=صوف', price: 180, merchantName: 'متجر الأقمشة', rating: 4.7 },
   { id: '2', name: 'قطن مصري فاخر', image: 'https://via.placeholder.com/200x200/1B5E20/ffffff?text=قطن', price: 95, merchantName: 'متجر الأقمشة', rating: 4.5 },
 ];
@@ -31,10 +34,27 @@ const SearchScreen: React.FC = () => {
   const navigation = useNavigation();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('shops');
+  const [shops, setShops] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleSearch = () => {
-    // Perform search
-  };
+  useEffect(() => {
+    if (!query.trim()) { setShops([]); setProducts([]); return; }
+    setLoading(true);
+    const search = query.trim();
+    Promise.all([
+      shopsApi.list({ search, limit: 10 }).catch(() => []),
+      productsApi.list({ search, limit: 10 }).catch(() => []),
+    ]).then(([sRes, pRes]) => {
+      const sData = Array.isArray(sRes) ? sRes : (sRes as any)?.shops || [];
+      const pData = Array.isArray(pRes) ? pRes : (pRes as any)?.products || [];
+      setShops(sData.length > 0 ? sData : []);
+      setProducts(pData.length > 0 ? pData : []);
+    }).catch(() => {
+      setShops(FALLBACK_SHOPS.filter(s => s.name.includes(search)));
+      setProducts(FALLBACK_PRODUCTS.filter(p => p.name.includes(search)));
+    }).finally(() => setLoading(false));
+  }, [query]);
 
   const handleShopPress = (shopId: string) => {
     navigation.navigate('ShopDetail' as never, { shopId } as never);
@@ -85,27 +105,29 @@ const SearchScreen: React.FC = () => {
           title={t('common.search')}
           message="ابحث عن محلات الخياطة أو المنتجات"
         />
+      ) : loading ? (
+        <ActivityIndicator size="large" color={colors.primary[500]} style={{ marginTop: 60 }} />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           {activeTab === 'shops' ? (
-            MOCK_SHOPS.length === 0 ? (
+            shops.length === 0 ? (
               <EmptyState icon="🏪" title={t('common.noResults')} message="لا توجد محلات تطابق بحثك" />
             ) : (
               <View style={styles.shopsList}>
-                {MOCK_SHOPS.map((shop) => (
+                {shops.map((shop) => (
                   <ShopCard key={shop.id} {...shop} onPress={handleShopPress} />
                 ))}
               </View>
             )
           ) : (
-            MOCK_PRODUCTS.length === 0 ? (
+            products.length === 0 ? (
               <EmptyState icon="📦" title={t('common.noResults')} message="لا توجد منتجات تطابق بحثك" />
             ) : (
               <View style={styles.productsGrid}>
-                {MOCK_PRODUCTS.map((product) => (
+                {products.map((product) => (
                   <ProductCard key={product.id} {...product} onPress={handleProductPress} />
                 ))}
               </View>

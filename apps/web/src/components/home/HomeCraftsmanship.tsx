@@ -12,7 +12,7 @@ const fabrics = [
   { nameAr: 'ثوب أبيض كلاسيكي', nameEn: 'Classic White Thobe', price: '399', image: HOME_IMAGES.products[0] },
   { nameAr: 'ثوب يومي بريميوم', nameEn: 'Premium Daily Thobe', price: '289', image: HOME_IMAGES.products[1] },
   { nameAr: 'قماش قطن فاخر', nameEn: 'Premium Cotton', price: '120', unitAr: '/ متر', unitEn: '/ m', image: HOME_IMAGES.products[2] },
-  { nameAr: 'قماش ثوب سعودي', nameEn: 'Saudi Thobe Fabric', price: '350', unitAr: '/ متر', unitEn: '/ m', image: HOME_IMAGES.products[3] },
+  { nameAr: 'بدلة رسمية', nameEn: 'Formal Suit Fabric', price: '350', unitAr: '/ متر', unitEn: '/ m', image: HOME_IMAGES.products[3] },
 ] as const;
 
 export function HomeCraftsmanship({ isRTL }: HomeCraftsmanshipProps) {

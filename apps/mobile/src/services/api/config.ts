@@ -1,10 +1,15 @@
 // خادم Express الموحّد (Node.js + Prisma) — المنفذ 4001
 // Local dev: http://10.0.2.2:4001/api/v1 (Android emulator)
 // Local dev: http://localhost:4001/api/v1 (iOS simulator)
-// Production: https://api.mufasal.com/api/v1
+// Production: https://mofasal.netlify.app/api/v1 (demo) أو api.mufasal.com
+const PROD_API =
+  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL
+    ? `${process.env.EXPO_PUBLIC_API_URL.replace(/\/$/, '')}/v1`
+    : 'https://mofasal.netlify.app/api/v1');
+
 export const API_BASE_URL = __DEV__
   ? 'http://10.0.2.2:4001/api/v1'
-  : 'https://api.mufasal.com/api/v1';
+  : PROD_API;
 
 export const API_TIMEOUT = 30000;
 

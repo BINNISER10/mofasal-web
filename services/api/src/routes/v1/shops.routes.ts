@@ -38,6 +38,8 @@ const vehicleSchema = z.object({
 });
 
 router.get('/', optionalAuth, ShopController.getShops);
+router.get('/ranked', optionalAuth, ShopController.getRankedShops);
+router.get('/:id/ranking', ShopController.getShopRanking);
 router.get('/:id', ShopController.getShop);
 router.post('/', authenticate, authorize('TAILOR', 'TAILOR_SHOP', 'ADMIN'), validate(createShopSchema), ShopController.createShop);
 router.put('/:id', authenticate, authorize('TAILOR_SHOP', 'ADMIN'), ShopController.updateShop);

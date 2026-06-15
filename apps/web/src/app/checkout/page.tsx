@@ -49,7 +49,6 @@ function CheckoutContent() {
   const [order, setOrder] = useState<any>(null);
   const [loadingOrder, setLoadingOrder] = useState(!!orderId);
   const [transactionId, setTransactionId] = useState<string | null>(null);
-  const [invoiceId, setInvoiceId] = useState('inv-1');
 
   useEffect(() => {
     if (orderId) {
@@ -84,7 +83,6 @@ function CheckoutContent() {
         amount: orderTotal || 2622.5,
       });
       setTransactionId(result.transaction?.id || null);
-      setInvoiceId('inv-1');
       setStep('success');
       toast.success(isRTL ? 'تم الدفع بنجاح' : 'Payment successful');
     } catch {
@@ -139,7 +137,7 @@ function CheckoutContent() {
             <Button variant="primary" fullWidth onClick={() => router.push('/dashboard/customer/orders')}>
               {isRTL ? 'تتبع طلبك' : 'Track Your Order'}
             </Button>
-            <Button variant="outline" fullWidth onClick={() => router.push(`/dashboard/invoices/${invoiceId}`)} icon={<FileText size={14} />}>
+            <Button variant="outline" fullWidth onClick={() => router.push(`/dashboard/invoices/${transactionId || 'latest'}`)} icon={<FileText size={14} />}>
               {isRTL ? 'عرض الفاتورة' : 'View Invoice'}
             </Button>
           </div>

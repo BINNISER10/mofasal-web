@@ -34,6 +34,7 @@ export class ProductService {
   static async getProducts(filters: {
     categoryId?: string; shopId?: string; search?: string; minPrice?: number; maxPrice?: number;
     tags?: string; isActive?: boolean; page?: number; limit?: number; visibility?: string;
+    sort?: 'smart' | 'newest' | 'price_asc' | 'price_desc';
   }) {
     const page = filters.page || 1;
     const limit = filters.limit || 20;

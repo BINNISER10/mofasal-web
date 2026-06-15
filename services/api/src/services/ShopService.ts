@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { ApiError } from '../utils/ApiError';
+import { RankingService } from './RankingService';
 
 interface ShopWhereClause {
   city?: object;
@@ -22,6 +23,8 @@ interface ShopFilters {
   maxDistance?: number;
   search?: string;
   isOpen?: boolean;
+  sort?: 'smart' | 'rating' | 'distance' | 'popular' | 'newest';
+  userId?: string;
 }
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -45,13 +48,14 @@ export class ShopService {
     return shop;
   }
 
-  static async getFeaturedShops() {
-    return prisma.shop.findMany({
+  static async getFeaturedShops(userId?: string) {
+    const shops = await prisma.shop.findMany({
       where: { isVerified: true, isOpen: true, rating: { gte: 4 } },
-      take: 20,
-      orderBy: { rating: 'desc' },
+      take: 50,
       include: { _count: { select: { orders: true, products: true } } },
     });
+    const ranked = await RankingService.rankShops(shops, { userId });
+    return ranked.slice(0, 20);
   }
 
   static async verifyShop(id: string) {
@@ -163,10 +167,13 @@ export class ShopService {
     commissionRate: number;
     minOrderAmount: number;
     deliveryRadius: number;
+    branding: Record<string, unknown>;
   }>) {
     const shop = await prisma.shop.findUnique({ where: { id } });
     if (!shop) throw ApiError.notFound('Shop not found');
-    return prisma.shop.update({ where: { id }, data });
+    const updated = await prisma.shop.update({ where: { id }, data });
+    await RankingService.invalidateShopCache(id);
+    return updated;
   }
 
   static async deleteShop(id: string) {

@@ -29,8 +29,8 @@ export const colors = {
   info: '#1565C0',
   inactive: '#B0B6B7',
   overlay: 'rgba(0,55,62,0.5)',
-  gold: '#D4AF37',
-  starActive: '#D4AF37',
+  gold: '#B8963E',
+  starActive: '#B8963E',
   starInactive: '#D0D6D7',
   statusPending: '#E65100',
   statusActive: '#00373E',
@@ -43,15 +43,15 @@ export const colors = {
 
 export const fonts = {
   regular: {
-    fontFamily: 'ITF Rawasi Display Arabic',
+    fontFamily: 'IBMPlexSansArabic-Regular',
     fontWeight: '400' as const,
   },
   medium: {
-    fontFamily: 'ITF Rawasi Display Arabic',
+    fontFamily: 'IBMPlexSansArabic-Medium',
     fontWeight: '500' as const,
   },
   bold: {
-    fontFamily: 'ITF Rawasi Display Arabic',
+    fontFamily: 'IBMPlexSansArabic-Bold',
     fontWeight: '700' as const,
   },
   sizes: {

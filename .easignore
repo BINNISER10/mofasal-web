@@ -1,0 +1,15 @@
+apps/mobile/node_modules/
+apps/mobile/dist/
+apps/mobile/.expo/
+apps/web/
+apps/web/node_modules/
+services/
+packages/
+node_modules/
+.git/
+*.log
+desktop.ini
+AUTOCORE SYSTEM FILES/
+BRAND/
+_archive/
+**/*.md

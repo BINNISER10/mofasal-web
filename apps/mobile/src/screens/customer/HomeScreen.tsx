@@ -47,20 +47,6 @@ const CATEGORIES = [
   { id: '8', emoji: '🧥', label: 'معطف', color: '#3a2a1a' },
 ];
 
-const MOCK_SHOPS = [
-  { id: '1', name: 'خياط الرجال', image: 'https://via.placeholder.com/400x300/1B5E20/ffffff?text=خياط+الرجال', rating: 4.8, ratingCount: 124, distance: 1.2, estimatedArrival: 25, isFeatured: true, tags: ['خياطة رجالي', 'توصيل'] },
-  { id: '2', name: 'مشغل الأمير', image: 'https://via.placeholder.com/400x300/2E7D32/ffffff?text=مشغل+الأمير', rating: 4.6, ratingCount: 89, distance: 2.5, estimatedArrival: 35, tags: ['أطفال', 'رجالي'] },
-  { id: '3', name: 'بيت البشوت الماسية', image: 'https://via.placeholder.com/400x300/D4AF37/000000?text=الماسية', rating: 4.9, ratingCount: 203, distance: 0.8, estimatedArrival: 15, isFeatured: true, tags: ['بشوت ومشالح', 'تعديل'] },
-  { id: '4', name: 'محل الفخامة', image: 'https://via.placeholder.com/400x300/1B5E20/ffffff?text=الفخامة', rating: 4.5, ratingCount: 67, distance: 3.8, estimatedArrival: 40, tags: ['أقمشة', 'خياطة'] },
-];
-
-const MOCK_PRODUCTS = [
-  { id: '1', name: 'قماش صوف إيطالي', image: 'https://via.placeholder.com/200x200/D4AF37/000000?text=صوف', price: 180, merchantName: 'متجر الأقمشة', rating: 4.7 },
-  { id: '2', name: 'قماش قطن مصري', image: 'https://via.placeholder.com/200x200/1B5E20/ffffff?text=قطن', price: 95, merchantName: 'متجر الأقمشة', rating: 4.5 },
-  { id: '3', name: 'حرير طبيعي', image: 'https://via.placeholder.com/200x200/D4AF37/000000?text=حرير', price: 250, merchantName: 'متجر الحرير', rating: 4.8 },
-  { id: '4', name: 'كتان بلجيكي', image: 'https://via.placeholder.com/200x200/2E7D32/ffffff?text=كتان', price: 140, merchantName: 'متجر الأقمشة', rating: 4.3 },
-];
-
 const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<HomeNavProp>();
@@ -81,12 +67,12 @@ const HomeScreen: React.FC = () => {
         shopsApi.list({ limit: 10 }),
         productsApi.list({ limit: 4 }),
       ]);
-      setShops(shopsData.length > 0 ? shopsData : MOCK_SHOPS);
-      setProducts(productsData.length > 0 ? productsData : MOCK_PRODUCTS);
+      setShops(shopsData);
+      setProducts(productsData);
     } catch (error) {
       console.error('Failed to load home data from API:', error);
-      setShops(MOCK_SHOPS);
-      setProducts(MOCK_PRODUCTS);
+      setShops([]);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

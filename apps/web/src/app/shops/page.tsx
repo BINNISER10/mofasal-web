@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 const CITIES = ['الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام', 'الخبر', 'أبها', 'تبوك'];
-const CATEGORIES = ['الكل', 'خياطة رجالية', 'أطفال', 'ثوب سعودي', 'بشوت ومشالح', 'تعديلات'];
+const CATEGORIES = ['الكل', 'خياطة رجالية', 'أطفال', 'بدل رسمية', 'بشوت ومشالح', 'تعديلات'];
 const SORT_OPTIONS = [
   { value: 'smart', labelAr: 'الترتيب الذكي', labelEn: 'Smart' },
   { value: 'rating', labelAr: 'الأعلى تقييماً', labelEn: 'Top Rated' },
@@ -58,16 +58,10 @@ function ShopCard({ shop, isRTL }: { shop: ShopCardData; isRTL: boolean }) {
       onClick={() => trackBehavior('VIEW_SHOP', { shopId: shop.id })}
     >
       <article className="h-full flex flex-col">
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-[#00373E]/5 mb-3">
-          {shop.image ? (
-            <img src={shop.image} alt={shop.nameAr} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-[#00373E]/5 mb-3 flex items-center justify-center">
           <div className="w-14 h-14 rounded-2xl bg-[#00373E] flex items-center justify-center text-white text-lg font-semibold">
             {initials}
           </div>
-          </div>
-          )}
           {shop.verified && (
             <span className="absolute top-3 end-3 text-[10px] font-medium px-2.5 py-1 rounded-full bg-white/95 text-[#0A0A0A]">
               {isRTL ? 'موثق' : 'Verified'}
@@ -134,12 +128,12 @@ function mapShop(raw: any): ShopCardData {
     rating: raw.rating || 0,
     reviewCount: raw.reviewCount || 0,
     orderCount: raw.totalOrders || raw.orderCount || 0,
-    minPrice: raw.minPrice || raw.minOrderAmount || 200,
-    deliveryDays: raw.estimatedDeliveryTime || raw.deliveryDays || 7,
+    minPrice: raw.minPrice || 0,
+    deliveryDays: raw.deliveryDays || 7,
     verified: raw.status === 'ACTIVE' || raw.isVerified || false,
-    specialties: raw.specialties || raw.categories || [],
-    image: raw.coverImage || raw.logo || null,
-    isOpen: raw.isOpen !== false,
+    specialties: raw.specialties || [],
+    image: raw.logo || null,
+    isOpen: raw.isOpen || false,
   };
 }
 
@@ -188,8 +182,8 @@ export default function ShopsPage() {
         isRTL={isRTL}
         title={isRTL ? 'محلات الخياطة' : 'Tailor Shops'}
         subtitle={isRTL
-          ? 'ورش خياطة رجالية وأطفال معتمدة — ثوب، بشوت.'
-          : 'Verified men’s and boys’ tailoring — thobe, bisht.'}
+          ? 'ورش خياطة رجالية وأطفال معتمدة — ثوب، بدلة، بشوت.'
+          : 'Verified men’s and boys’ tailoring — thobe, suit, bisht.'}
         image={HOME_IMAGES.shops}
         search={search}
         onSearchChange={setSearch}

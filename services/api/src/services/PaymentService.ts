@@ -6,6 +6,7 @@ import logger from '../utils/logger';
 import socketService from './SocketService';
 import { NotificationService } from './NotificationService';
 import { config } from '../config';
+import { AccountingService } from './AccountingService';
 
 interface GatewayResult {
   success: boolean;
@@ -91,6 +92,27 @@ export class PaymentService {
         await NotificationService.sendToUser(order.customerId, 'PAYMENT_UPDATE', {
           title: 'Payment Successful', body: `Payment of SAR ${data.amount} completed`,
         });
+
+        // قيد محاسبي تلقائي عند الدفع الناجح
+        try {
+          const cashAccount = await prisma.account.findFirst({
+            where: { shopId: order.shopId, code: '1000' },
+          });
+          const revenueAccount = await prisma.account.findFirst({
+            where: { shopId: order.shopId, code: '4000' },
+          });
+          if (cashAccount && revenueAccount) {
+            await AccountingService.recordSale(
+              order.shopId,
+              order.id,
+              data.amount,
+              cashAccount.id,
+              revenueAccount.id
+            );
+          }
+        } catch (accountingError) {
+          logger.warn(`[Payment] Failed to create accounting entry for order ${order.id}:`, accountingError);
+        }
 
         return { success: true, transactionId: transaction.id, reference: gatewayResult.reference };
       } else {

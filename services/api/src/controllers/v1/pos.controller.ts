@@ -4,6 +4,18 @@ import { sendSuccess, sendCreated } from '../../utils/response';
 import { POSService } from '../../services/POSService';
 
 export class POSController {
+  static async getProducts(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const shopId = req.user!.shopId!;
+      const { category, search } = req.query;
+      const products = await POSService.getProducts(shopId, {
+        category: category as string | undefined,
+        search: search as string | undefined,
+      });
+      sendSuccess(res, products);
+    } catch (error) { next(error); }
+  }
+
   static async openSession(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const shopId = req.user!.shopId!;
