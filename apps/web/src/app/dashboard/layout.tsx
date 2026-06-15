@@ -40,7 +40,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, isLoading, isAuthenticated } = useAuth();
+  const { user, logout, isLoading, isAuthenticated, hasRole } = useAuth();
   const { language, setLanguage, isRTL, sidebarOpen, setSidebarOpen } = useAppStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,9 +53,11 @@ export default function DashboardLayout({
   useLayoutEffect(() => {
     hydrateAuthFromStorage();
     const demo = readStoredUser();
-    if (demo) setStoredUser(demo);
+    if (demo) {
+      setStoredUser(demo);
+      useAuthStore.getState().setLoading(false);
+    }
     setReady(true);
-    useAuthStore.getState().setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -80,6 +82,28 @@ export default function DashboardLayout({
       router.replace('/login');
     }
   }, [ready, isLoading, isAuthenticated, activeUser, router]);
+
+  useEffect(() => {
+    if (!ready || isLoading || !activeUser) return;
+    const roleRoutes: { prefix: string; roles: import('@/lib/stores/authStore').UserRole[] }[] = [
+      { prefix: '/dashboard/admin', roles: ['admin'] },
+      { prefix: '/dashboard/tailor', roles: ['tailor', 'admin'] },
+      { prefix: '/dashboard/merchant', roles: ['merchant', 'admin'] },
+      { prefix: '/dashboard/rep', roles: ['rep', 'admin'] },
+      { prefix: '/dashboard/customer', roles: ['customer', 'admin'] },
+    ];
+    const match = roleRoutes.find((r) => pathname.startsWith(r.prefix));
+    if (match && !hasRole(match.roles)) {
+      const home: Record<string, string> = {
+        admin: '/dashboard/admin',
+        tailor: '/dashboard/tailor',
+        merchant: '/dashboard/merchant',
+        customer: '/dashboard/customer',
+        rep: '/dashboard/rep',
+      };
+      router.replace(home[activeUser.role] || '/dashboard');
+    }
+  }, [ready, isLoading, activeUser, pathname, hasRole, router]);
 
   useEffect(() => {
     if (!activeUser) return;

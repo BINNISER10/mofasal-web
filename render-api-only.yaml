@@ -1,0 +1,40 @@
+# Render — API + قاعدة بيانات فقط (الويب على Netlify)
+# Dashboard → New → Blueprint → هذا الملف أو انسخ المحتوى
+
+databases:
+  - name: mufasal-db
+    databaseName: mufasal
+    user: mufasal
+    plan: free
+    region: frankfurt
+
+services:
+  - type: web
+    name: mufasal-api
+    runtime: docker
+    region: frankfurt
+    plan: free
+    branch: master
+    autoDeploy: true
+    dockerfilePath: ./docker/Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4001"
+      - key: API_PREFIX
+        value: /api/v1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mufasal-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://mufasal.netlify.app,https://mofasal-web.onrender.com,https://mufasal.onrender.com,http://localhost:3000
+      - key: SEED_DATABASE
+        value: "true"

@@ -53,6 +53,10 @@ export const servicesApi = {
     return { service };
   },
 
+  getAvailableReps: async (shopId: string): Promise<AvailableRep[]> => {
+    return apiClient.get<AvailableRep[]>('/services/reps/available', { params: { shopId } });
+  },
+
   list: async (params?: { status?: string }): Promise<ServiceRequest[]> => {
     const query = params?.status ? `?status=${params.status}` : '';
     return apiClient.get<any[]>(`/services${query}`).then(d => d as unknown as ServiceRequest[]);

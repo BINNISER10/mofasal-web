@@ -46,6 +46,7 @@ interface FastApiUser {
   status: string;
   avatar?: string;
   phoneVerified?: boolean;
+  shopId?: string;
   createdAt: string;
 }
 
@@ -57,13 +58,26 @@ interface FastApiAuthResult {
 }
 
 function mapUser(u: FastApiUser): User {
+  const role = (u.role || 'customer').toLowerCase();
+  const roleMap: Record<string, User['role']> = {
+    super_admin: 'admin',
+    superadmin: 'admin',
+    tailor: 'tailor',
+    tailor_shop: 'tailor',
+    merchant: 'merchant',
+    customer: 'customer',
+    representative: 'rep',
+    rep: 'rep',
+  };
   return {
     id: u.id,
     name: u.name,
     phone: u.phone,
     email: u.email || '',
-    role: u.role as User['role'],
+    role: roleMap[role] || 'customer',
     avatar: u.avatar,
+    shopId: u.shopId,
+    merchantId: roleMap[role] === 'merchant' ? u.shopId : undefined,
     isActive: u.status === 'ACTIVE',
     createdAt: u.createdAt,
   };

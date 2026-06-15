@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAppStore } from '@/lib/stores/appStore';
 import { servicesApi } from '@/lib/api/services';
+import { shopsApi } from '@/lib/api/shops';
 import { ThobeSpecSelector, DEFAULT_THOBE_SPEC, ThobeSpec } from '@/components/shared/ThobeSpecSelector';
 import { FabricPicker, SelectedFabric } from '@/components/shared/FabricPicker';
 import toast from 'react-hot-toast';
@@ -38,6 +39,7 @@ export default function BookMeasurementPage() {
   const router = useRouter();
   const { isRTL } = useAppStore();
   const [step, setStep] = useState(1);
+  const [shopId, setShopId] = useState<string | null>(null);
   const [reps, setReps] = useState<any[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
   const [address, setAddress] = useState('');
@@ -50,43 +52,48 @@ export default function BookMeasurementPage() {
   const [fabric, setFabric] = useState<SelectedFabric>({ type: 'shop' });
 
   useEffect(() => {
-    if (step === 2) {
+    shopsApi.list({ limit: '1' })
+      .then((res) => {
+        const id = res.shops?.[0]?.id;
+        if (id) setShopId(id);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (step === 2 && shopId) {
       setLoadingReps(true);
-      servicesApi.list({ status: 'available' })
-        .then((data: any[]) => {
+      servicesApi.getAvailableReps(shopId)
+        .then((data) => {
           const mapped = (Array.isArray(data) ? data : []).map((r: any) => ({
             id: r.id,
-            name: r.name || r.representative?.name || 'مندوب',
-            rating: r.rating || 4.5,
-            completedJobs: r.completedJobs || 0,
-            distanceKm: r.distanceKm || r.distance || 0,
+            name: r.name || 'مندوب',
+            rating: 4.8,
+            completedJobs: 0,
+            distanceKm: 0,
             availableToday: true,
             avatar: (r.name || 'م')[0],
-            pricePerVisit: r.pricePerVisit || 30,
+            pricePerVisit: 30,
           }));
-          setReps(mapped.length > 0 ? mapped : [
-            { id: 'r1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, availableToday: true, avatar: 'م', pricePerVisit: 30 },
-            { id: 'r2', name: 'فهد العتيبي', rating: 4.8, completedJobs: 218, distanceKm: 2.5, availableToday: true, avatar: 'ف', pricePerVisit: 25 },
-          ]);
+          setReps(mapped);
         })
-        .catch(() => {
-          setReps([
-            { id: 'r1', name: 'ماجد الشمري', rating: 4.9, completedJobs: 342, distanceKm: 1.2, availableToday: true, avatar: 'م', pricePerVisit: 30 },
-            { id: 'r2', name: 'فهد العتيبي', rating: 4.8, completedJobs: 218, distanceKm: 2.5, availableToday: true, avatar: 'ف', pricePerVisit: 25 },
-          ]);
-        })
+        .catch(() => setReps([]))
         .finally(() => setLoadingReps(false));
     }
-  }, [step]);
+  }, [step, shopId]);
 
   const handleConfirm = async () => {
     if (!selectedRep || !selectedDate || !selectedTime) return;
+    if (!shopId) {
+      toast.error(isRTL ? 'لم يُعثر على متجر' : 'No shop found');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const specNotes = `الياقة: ${thobeSpec.collarType}, الكبك: ${thobeSpec.cuffType}, القصة: ${thobeSpec.cutStyle}, الموسم: ${thobeSpec.season}`;
       const fabricNotes = fabric.productName ? `القماش: ${fabric.productName} (${fabric.meters || 3}م)` : '';
       const service = await servicesApi.create({
-        shopId: 'default',
+        shopId,
         serviceType: 'ON_SITE_MEASUREMENT',
         customAddress: address || undefined,
         scheduledDate: new Date(`${selectedDate}T${selectedTime}:00`).toISOString(),

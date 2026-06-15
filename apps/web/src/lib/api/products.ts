@@ -107,6 +107,17 @@ export const productsApi = {
     return apiClient.post(`/products/${id}/stock`, { type, quantity, notes });
   },
 
+  getInventoryMovements: async (limit = 20) => {
+    return apiClient.get<Array<{
+      id: string;
+      type: string;
+      quantity: number;
+      notes?: string;
+      createdAt: string;
+      product?: { name?: string; nameAr?: string };
+    }>>('/products/inventory/movements', { params: { limit: String(limit) } });
+  },
+
   toggleVisibility: async (id: string): Promise<ProductResponse> => {
     const product = await apiClient.patch<Product>(`/products/${id}/visibility`);
     return { product };

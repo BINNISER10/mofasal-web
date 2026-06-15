@@ -38,6 +38,7 @@ import hrRoutes from './routes/v1/hr.routes';
 import procurementRoutes from './routes/v1/procurement.routes';
 import supplierRoutes from './routes/v1/supplier.routes';
 import posRoutes from './routes/v1/pos.routes';
+import b2bRoutes from './routes/v1/b2b.routes';
 
 const app = express();
 const server = http.createServer(app);
@@ -84,7 +85,6 @@ app.use(compression());
 app.use(requestId);
 app.use(responseTime);
 app.use(requestTimeout(30000));
-app.use(sanitize);
 
 // Monitoring middleware
 app.use((req, _res, next) => {
@@ -140,6 +140,7 @@ if (config.isDev) {
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(sanitize);
 
 // Static files for uploads
 app.use('/uploads', express.static(path.resolve(config.storage.path)));
@@ -206,6 +207,7 @@ app.use(`${apiPrefix}/hr`, hrRoutes);
 app.use(`${apiPrefix}/procurement`, procurementRoutes);
 app.use(`${apiPrefix}/suppliers`, supplierRoutes);
 app.use(`${apiPrefix}/pos`, posRoutes);
+app.use(`${apiPrefix}/b2b`, b2bRoutes);
 
 // Error handling
 app.use((err: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {

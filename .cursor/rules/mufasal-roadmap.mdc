@@ -1,0 +1,74 @@
+---
+description: خطة تنفيذ مفصل MUFASAL — تسلسل المراحل والأولويات
+alwaysApply: true
+---
+
+# MUFASAL — خطة التنفيذ المتسلسلة
+
+## السياق الثابت
+- **منصة:** تجار أقمشة + خياطين + عملاء — **رجال وأطفال ذكور فقط**
+- **تجربة العميل:** 3 خطوات ظاهرة — **اختر → أكد → تابع** (7 مراحل تتبع خلفية)
+- **تصميم:** Lomar Minimal 2026 — `#00373E` `#0A0A0A` `#FAFAFA` `#B8963E` — IBM Plex Sans Arabic
+- **مستودع:** `BINNISER10/mofasal-web` branch `master`
+- **ويب حي:** https://mofasal-web.onrender.com (Render **Standard** — يعمل)
+- **API حي:** https://mofasal-api.onrender.com — **يعمل** (منتجات + متاجر)
+- **سير العمل:** لا `npm install` محلي (ذاكرة ضعيفة) — push إلى GitHub → Render/Vercel
+
+## المرحلة 0 — البنية التحتية ✅
+- [x] نشر الويب على Render Standard
+- [x] Lomar UI أساسي + تدفق طلب 3 خطوات (ويب + جوال)
+- [x] `customerOrderFlow.ts` — 7 مراحل تتبع
+- [x] كود API Docker + migrate/seed عند الإقلاع
+- [x] PostgreSQL على Render + `DATABASE_URL` على mofasal-api
+- [~] `NEXT_PUBLIC_API_URL` على mofasal-web — إعادة بناء بعد push
+- [~] migrate + seed — `SEED_DATABASE=false` بعد أول نشر ناجح
+
+## المرحلة 1 — ربط حقيقي (صفر mock)
+**الأولوية بعد API+DB**
+- [x] `marketplace/` — API حقيقي
+- [x] `shops/` — API حقيقي
+- [x] `search/page.tsx` — API حقيقي
+- [x] `useNotifications.ts` — API حقيقي
+- [x] `customer/page.tsx` — `ordersApi.list()`
+- [ ] تسجيل دخول حقيقي على الإنتاج (بعد push)
+- [ ] اختبار E2E: تسجيل → طلب → تتبع
+
+## المرحلة 2 — قياس منزلي + مندوب GPS
+- [ ] حجز موعد قياس (عميل)
+- [ ] لوحة مندوب القياس + خريطة
+- [ ] ربط القياسات بـ `OrderService` / `measurements`
+
+## المرحلة 3 — ERP التاجر
+- [ ] مخزون أقمشة (CRUD + صور)
+- [ ] طلبات واردة من العملاء
+- [ ] تقارير مبيعات أساسية
+- [ ] إشعارات الطلبات
+
+## المرحلة 4 — ERP الخياط
+- [ ] قائمة مهام الخياطة حسب الحالة
+- [ ] تحديث مراحل الإنتاج (15 حالة backend → 7 للعميل)
+- [ ] رفع صور التقدم
+
+## المرحلة 5 — ذكاء اصطناعي
+- [ ] توصية قماش/مقاس
+- [ ] تقدير سعر ذكي
+- [ ] دعم محادثة (اختياري)
+
+## المرحلة 6 — مدفوعات وإطلاق
+- [ ] بوابة دفع (مدى / Apple Pay / تحويل)
+- [ ] فواتير PDF
+- [ ] مراجعة أمنية + أداء
+- [ ] نطاق مخصص `mufasal.com`
+
+## قواعد التنفيذ
+1. مهمة واحدة صغيرة في كل مرة — لا تعليق طويل
+2. لا تغييرات خارج نطاق المرحلة الحالية
+3. كل commit يدفع إلى `master` بعد اكتمال المهمة
+4. لا محتوى نسائي — تحقق من `site-config.json` و seed
+5. عند النشر: Build `npm run build` أو Docker — Start `cd apps/web && npm start`
+
+## الملفات المرجعية
+- `packages/shared/constants/customerOrderFlow.ts`
+- `apps/web/src/app/dashboard/customer/orders/new/page.tsx`
+- `services/api/src/services/OrderService.ts`
+- `scripts/render-build.sh` / `Dockerfile` / `render.yaml`

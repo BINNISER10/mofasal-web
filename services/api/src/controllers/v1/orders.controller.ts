@@ -2,6 +2,25 @@ import { Response, NextFunction } from 'express';
 import { OrderService } from '../../services/OrderService';
 import { AuthRequest } from '../../middleware/auth';
 import { sendSuccess, sendCreated, sendPaginated } from '../../utils/response';
+import { ApiError } from '../../utils/ApiError';
+
+const SHOP_STAFF_ROLES = ['TAILOR', 'TAILOR_SHOP', 'MERCHANT', 'REPRESENTATIVE'];
+const PLATFORM_ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN'];
+
+function resolveOrderScope(req: AuthRequest, queryShopId?: string) {
+  const role = req.user?.role || '';
+  if (role === 'CUSTOMER') {
+    return { userId: req.user!.id, shopId: undefined as string | undefined };
+  }
+  if (SHOP_STAFF_ROLES.includes(role)) {
+    if (!req.user?.shopId) throw ApiError.forbidden('Shop context required');
+    return { shopId: req.user.shopId, userId: undefined as string | undefined };
+  }
+  if (PLATFORM_ADMIN_ROLES.includes(role)) {
+    return { shopId: queryShopId, userId: undefined as string | undefined };
+  }
+  return { userId: req.user?.id, shopId: undefined as string | undefined };
+}
 
 export class OrderController {
   static async create(req: AuthRequest, res: Response, next: NextFunction) {
@@ -13,12 +32,11 @@ export class OrderController {
 
   static async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { status, search, page, limit } = req.query;
-      // العميل يرى طلباته فقط؛ صاحب المحل/الخياط يرى طلبات محله
-      const isShopMember = ['TAILOR', 'TAILOR_SHOP', 'MERCHANT', 'ADMIN', 'SUPER_ADMIN'].includes(req.user?.role || '');
+      const { status, search, page, limit, shopId } = req.query;
+      const scope = resolveOrderScope(req, shopId as string | undefined);
       const result = await OrderService.getOrders({
-        shopId: isShopMember ? req.user?.shopId : undefined,
-        userId: isShopMember ? undefined : req.user?.id,
+        shopId: scope.shopId,
+        userId: scope.userId,
         status: status as string, search: search as string,
         page: page ? parseInt(page as string) : 1, limit: limit ? parseInt(limit as string) : 20,
       });

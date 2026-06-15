@@ -228,6 +228,15 @@ export class ProductService {
     return movement;
   }
 
+  static async getInventoryMovements(shopId: string, limit = 20) {
+    return prisma.inventoryMovement.findMany({
+      where: { product: { shopId } },
+      include: { product: { select: { id: true, name: true, nameAr: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
   static async getCategories(filters: { parentId?: string; isActive?: boolean }) {
     const where: { parentId?: string; isActive?: boolean } = {};
     if (filters.parentId !== undefined) where.parentId = filters.parentId;

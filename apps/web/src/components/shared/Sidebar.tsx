@@ -244,6 +244,13 @@ const menuItems: MenuItem[] = [
     roles: ['tailor'],
   },
   {
+    label: 'Fabric B2B',
+    labelAr: 'طلب أقمشة',
+    icon: <Package size={20} />,
+    href: '/dashboard/tailor/fabric-supply',
+    roles: ['tailor'],
+  },
+  {
     label: 'Procurement',
     labelAr: 'المشتريات',
     icon: <Truck size={20} />,

@@ -2,6 +2,9 @@ import { Response, NextFunction } from 'express';
 import { ProductService } from '../../services/ProductService';
 import { AuthRequest } from '../../middleware/auth';
 import { sendSuccess, sendCreated, sendPaginated } from '../../utils/response';
+import { ApiError } from '../../utils/ApiError';
+
+const SHOP_SCOPED_ROLES = ['MERCHANT', 'TAILOR', 'TAILOR_SHOP'];
 
 export class ProductController {
   static async createProduct(req: AuthRequest, res: Response, next: NextFunction) {
@@ -16,8 +19,13 @@ export class ProductController {
     try {
       const { categoryId, shopId, merchantId, search, minPrice, maxPrice, tags, page, limit, sort } = req.query;
       const allowedSort = ['smart', 'newest', 'price_asc', 'price_desc'];
+      let effectiveShopId = (shopId || merchantId) as string | undefined;
+      // ERP: التاجر/الخياط يرى منتجات محله فقط عند الطلب المصادَق
+      if (!effectiveShopId && req.user && SHOP_SCOPED_ROLES.includes(req.user.role) && req.user.shopId) {
+        effectiveShopId = req.user.shopId;
+      }
       const result = await ProductService.getProducts({
-        categoryId: categoryId as string, shopId: (shopId || merchantId) as string, search: search as string,
+        categoryId: categoryId as string, shopId: effectiveShopId, search: search as string,
         minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
         maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
         tags: tags as string, page: page ? parseInt(page as string) : 1,
@@ -74,6 +82,16 @@ export class ProductController {
     try {
       const movement = await ProductService.adjustStock(req.params.productId, req.body.type, req.body.quantity, req.body.reference, req.body.notes, req.user!.id);
       sendSuccess(res, movement, 'Stock adjusted');
+    } catch (error) { next(error); }
+  }
+
+  static async getInventoryMovements(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const shopId = req.user?.shopId;
+      if (!shopId) throw ApiError.badRequest('Shop context required');
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const movements = await ProductService.getInventoryMovements(shopId, limit);
+      sendSuccess(res, movements);
     } catch (error) { next(error); }
   }
 

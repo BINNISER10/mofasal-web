@@ -17,7 +17,7 @@ const entrySchema = z.object({
   })).min(2),
 });
 
-router.use(authenticate, authorize('TAILOR_SHOP', 'MERCHANT', 'ADMIN', 'SUPER_ADMIN'), requirePermission('accounting'));
+router.use(authenticate, authorize('TAILOR', 'TAILOR_SHOP', 'MERCHANT', 'ADMIN', 'SUPER_ADMIN'), requirePermission('accounting'));
 
 router.get('/accounts', AccountingController.getAccounts);
 router.post('/accounts/seed', AccountingController.seedAccounts);

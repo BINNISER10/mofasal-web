@@ -57,6 +57,8 @@ model Shop {
   posSessions       POSSession[]
   coupons           Coupon[]
   loyaltyBalances   LoyaltyBalance[]
+  fabricSupplySold     FabricSupplyOrder[] @relation("FabricSupplyMerchant")
+  fabricSupplyPurchased FabricSupplyOrder[] @relation("FabricSupplyBuyer")
 
   @@index([subscriptionPlan])
   @@index([city])
@@ -109,6 +111,7 @@ model User {
   processedPayrolls Payroll[]        @relation("PayrollProcessor")
   createdPurchaseOrders PurchaseOrder[] @relation("PurchaseOrderCreator")
   posSessions       POSSession[]
+  fabricSupplyOrders FabricSupplyOrder[]
 
   @@index([shopId, email])
   @@index([shopId, phone])
@@ -219,6 +222,7 @@ model Product {
   cartItems             CartItem[]
   purchaseOrderItems    PurchaseOrderItem[]
   supplierProducts      SupplierProduct[]
+  fabricSupplyOrderItems FabricSupplyOrderItem[]
 
   @@index([shopId, sku])
   @@index([categoryId])
@@ -329,6 +333,8 @@ model Order {
   deliveryFee     Float          @default(0)
   grandTotal      Float          @default(0)
   customerNotes   String?
+  deliveryAddress Json?
+  estimatedDeliveryDate DateTime?
   paymentMethod   String?
   paymentStatus   String         @default("UNPAID")
   isConfirmed     Boolean        @default(false)
@@ -350,6 +356,7 @@ model Order {
   posOrders         POSOrder[]
   couponUsages      CouponUsage[]
   loyaltyTransactions LoyaltyTransaction[]
+  fabricSupplyOrders    FabricSupplyOrder[]
 
   @@index([shopId, status, createdAt])
   @@index([customerId])
@@ -864,6 +871,53 @@ model PurchaseOrderItem {
   notes           String?
 
   @@index([purchaseOrderId])
+}
+
+// ─── 15b. B2B Fabric Supply (تاجر قماش ↔ خياط) ───
+model FabricSupplyOrder {
+  id              String    @id @default(uuid())
+  orderNumber     String    @unique
+  merchantShopId  String
+  merchantShop    Shop      @relation("FabricSupplyMerchant", fields: [merchantShopId], references: [id])
+  buyerShopId     String
+  buyerShop       Shop      @relation("FabricSupplyBuyer", fields: [buyerShopId], references: [id])
+  buyerUserId     String
+  buyerUser       User      @relation(fields: [buyerUserId], references: [id])
+  linkedOrderId   String?
+  linkedOrder     Order?    @relation(fields: [linkedOrderId], references: [id])
+  deliveryTarget  String    @default("TAILOR_SHOP")
+  deliveryAddress Json?
+  status          String    @default("PENDING")
+  totalAmount     Float     @default(0)
+  vatAmount       Float     @default(0)
+  grandTotal      Float     @default(0)
+  notes           String?
+  deliveredAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  items FabricSupplyOrderItem[]
+
+  @@index([merchantShopId, status, createdAt])
+  @@index([buyerShopId, status, createdAt])
+  @@index([orderNumber])
+  @@index([linkedOrderId])
+}
+
+model FabricSupplyOrderItem {
+  id                  String            @id @default(uuid())
+  fabricSupplyOrderId String
+  fabricSupplyOrder   FabricSupplyOrder @relation(fields: [fabricSupplyOrderId], references: [id], onDelete: Cascade)
+  productId           String?
+  product             Product?          @relation(fields: [productId], references: [id])
+  name                String
+  quantity            Float             @default(1)
+  unit                String            @default("meter")
+  unitPrice           Float             @default(0)
+  totalPrice          Float             @default(0)
+
+  @@index([fabricSupplyOrderId])
+  @@index([productId])
 }
 
 // ─── 16. Supplier Management ───

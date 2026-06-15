@@ -7,10 +7,39 @@ import { ApiError } from '../utils/ApiError';
 import { JwtPayload } from '../middleware/auth';
 import redisService from './RedisService';
 import { NotificationService } from './NotificationService';
+import { normalizeRole } from '../utils/normalizeRole';
 
 export class AuthService {
+  static formatAuthUser(user: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    status: string;
+    avatar: string | null;
+    phoneVerified: boolean;
+    emailVerified?: boolean;
+    createdAt: Date;
+    shopId?: string | null;
+    role: { name: string };
+  }) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      status: user.status,
+      avatar: user.avatar,
+      phoneVerified: user.phoneVerified,
+      emailVerified: user.emailVerified ?? false,
+      createdAt: user.createdAt,
+      shopId: user.shopId ?? undefined,
+      role: normalizeRole(user.role.name),
+    };
+  }
+
   static async register(data: { name: string; phone?: string; email?: string; password: string }) {
-    const hashedPassword = await bcrypt.hash(data.password, 12);
+    const hashedPassword = await bcrypt.hash(data.password, 10);
     const shop = await prisma.shop.findFirst({ orderBy: { createdAt: 'asc' } });
     if (!shop) throw ApiError.internal('No shop configured');
 
@@ -40,14 +69,18 @@ export class AuthService {
         roleId: role.id,
         status: 'ACTIVE',
       },
-      select: { id: true, name: true, email: true, phone: true, status: true, avatar: true, phoneVerified: true, createdAt: true },
+      select: { id: true, name: true, email: true, phone: true, status: true, avatar: true, phoneVerified: true, createdAt: true, shopId: true },
     });
 
     const tokens = this.generateTokens(user.id, role.name);
-    return { user: { ...user, role: role.name }, ...tokens };
+    return { user: { ...user, role: normalizeRole(role.name) }, ...tokens };
   }
 
   static async login(identifier: string, password: string) {
+    if (!identifier?.trim() || !password) {
+      throw ApiError.badRequest('Email/phone and password are required');
+    }
+
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -60,13 +93,16 @@ export class AuthService {
     if (!user) throw ApiError.unauthorized('Invalid credentials');
     if (user.status !== 'ACTIVE') throw ApiError.forbidden('Account is not active');
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    let validPassword = false;
+    try {
+      validPassword = await bcrypt.compare(password, user.password);
+    } catch {
+      throw ApiError.unauthorized('Invalid credentials');
+    }
     if (!validPassword) throw ApiError.unauthorized('Invalid credentials');
 
     const tokens = this.generateTokens(user.id, user.role.name);
-
-    const { password: _, roleId: __, ...userWithoutSensitive } = user;
-    return { user: { ...userWithoutSensitive, role: user.role.name }, ...tokens };
+    return { user: this.formatAuthUser(user), ...tokens };
   }
 
   static async verifyPhone(userId: string, code: string) {
@@ -156,18 +192,17 @@ export class AuthService {
       include: { role: { select: { name: true } } },
     });
     if (!user) throw ApiError.notFound('User not found');
-    const { password, roleId, ...safe } = user;
-    return { ...safe, role: user.role.name };
+    return this.formatAuthUser({ ...user, role: user.role });
   }
 
   static async updateProfile(userId: string, data: { name?: string; email?: string; avatar?: string }) {
     const user = await prisma.user.update({
       where: { id: userId },
       data,
-      select: { id: true, name: true, email: true, phone: true, roleId: true, avatar: true },
+      select: { id: true, name: true, email: true, phone: true, roleId: true, avatar: true, status: true, phoneVerified: true, createdAt: true },
     });
     const role = await prisma.role.findUnique({ where: { id: user.roleId } });
-    return { ...user, role: role?.name || 'UNKNOWN' };
+    return { ...user, role: normalizeRole(role?.name || 'CUSTOMER') };
   }
 
   /**

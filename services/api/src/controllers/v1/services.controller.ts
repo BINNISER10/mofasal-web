@@ -70,12 +70,22 @@ export class ServiceRequestController {
       const where: ServiceRequestWhereClause = {};
       if (req.user!.role === 'CUSTOMER') where.customerId = req.user!.id;
       if (req.user!.role === 'REPRESENTATIVE') where.representativeId = req.user!.id;
+      if (req.query.status) where.status = String(req.query.status);
       const services = await prisma.serviceRequest.findMany({
         where,
         include: { shop: { select: { id: true, name: true, logo: true } } },
         orderBy: { createdAt: 'desc' },
       });
       sendSuccess(res, services);
+    } catch (error) { next(error); }
+  }
+
+  static async getAvailableReps(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const shopId = (req.query.shopId as string) || req.user?.shopId;
+      if (!shopId) throw ApiError.badRequest('shopId is required');
+      const reps = await ServiceRequestService.findAvailableRepresentatives(shopId);
+      sendSuccess(res, reps);
     } catch (error) { next(error); }
   }
 

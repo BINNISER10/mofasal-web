@@ -5,8 +5,201 @@ import { DEFAULT_ROLE_PERMISSIONS } from '../src/config/permissions';
 
 const prisma = new PrismaClient();
 
+const FABRIC_CATALOG = [
+  { name: 'Egyptian Cotton Fabric', nameAr: 'قماش قطني مصري', price: 120, costPrice: 60, sku: 'FAB-001', unit: 'meter' },
+  { name: 'Italian Silk Fabric', nameAr: 'قماش حرير إيطالي', price: 450, costPrice: 200, sku: 'FAB-002', unit: 'meter' },
+  { name: 'Wool Blend Fabric', nameAr: 'قماش صوف مخلوط', price: 280, costPrice: 140, sku: 'FAB-003', unit: 'meter' },
+  { name: 'Linen Fabric', nameAr: 'قماش كتان', price: 150, costPrice: 70, sku: 'FAB-004', unit: 'meter' },
+];
+
+/** متجر أقمشة منفصل + ربط التاجر + طلب B2B تجريبي */
+async function ensureFabricB2BSetup(tailorShopId: string, password: string, catFabricsId?: string) {
+  let fabricShop = await prisma.shop.findFirst({ where: { name: 'متجر الأقمشة' } });
+  if (!fabricShop) {
+    fabricShop = await prisma.shop.create({
+      data: {
+        name: 'متجر الأقمشة',
+        nameAr: 'متجر الأقمشة',
+        description: 'تاجر أقمشة رجالية — توريد B2B للخياطين',
+        phone: '966544444440',
+        email: 'fabric@mufasal.com',
+        city: 'الرياض',
+        region: 'الرياض',
+        address: 'حي الصناعية، الرياض',
+        lat: 24.75,
+        lng: 46.68,
+        rating: 4.9,
+        isVerified: true,
+        isOpen: true,
+        subscriptionPlan: 'PREMIUM',
+      },
+    });
+  }
+
+  let merchantRole = await prisma.role.findFirst({ where: { shopId: fabricShop.id, name: 'MERCHANT' } });
+  if (!merchantRole) {
+    merchantRole = await prisma.role.create({
+      data: { shopId: fabricShop.id, name: 'MERCHANT', permissions: DEFAULT_ROLE_PERMISSIONS.MERCHANT },
+    });
+  } else {
+    await prisma.role.update({
+      where: { id: merchantRole.id },
+      data: { permissions: DEFAULT_ROLE_PERMISSIONS.MERCHANT },
+    });
+  }
+
+  if (catFabricsId) {
+    for (const f of FABRIC_CATALOG) {
+      const exists = await prisma.product.findFirst({ where: { shopId: fabricShop.id, sku: f.sku } });
+      if (!exists) {
+        await prisma.product.create({
+          data: {
+            shopId: fabricShop.id,
+            name: f.name,
+            nameAr: f.nameAr,
+            sku: f.sku,
+            type: 'PHYSICAL',
+            price: f.price,
+            costPrice: f.costPrice,
+            stockQuantity: 100,
+            unit: f.unit,
+            images: [],
+            categoryId: catFabricsId,
+            visibility: 'PUBLIC',
+            isActive: true,
+          },
+        });
+      }
+    }
+  }
+
+  const merchant = await prisma.user.findUnique({ where: { email: 'merchant@mufasal.com' } });
+  if (merchant) {
+    await prisma.user.update({
+      where: { id: merchant.id },
+      data: { shopId: fabricShop.id, roleId: merchantRole.id, password },
+    });
+  }
+
+  const tailorRole = await prisma.role.findFirst({ where: { shopId: tailorShopId, name: 'TAILOR' } });
+  if (tailorRole) {
+    await prisma.role.update({
+      where: { id: tailorRole.id },
+      data: { permissions: DEFAULT_ROLE_PERMISSIONS.TAILOR },
+    });
+  }
+
+  const b2bCount = await prisma.fabricSupplyOrder.count({ where: { merchantShopId: fabricShop.id } });
+  if (b2bCount === 0) {
+    const tailorUser = await prisma.user.findUnique({ where: { email: 'tailor@mufasal.com' } });
+    const product = await prisma.product.findFirst({ where: { shopId: fabricShop.id, sku: 'FAB-001' } });
+    if (tailorUser && product) {
+      const qty = 5;
+      const unitPrice = product.price;
+      const total = unitPrice * qty;
+      const vat = total * 0.15;
+      await prisma.fabricSupplyOrder.create({
+        data: {
+          orderNumber: `B2B-${nanoid(8).toUpperCase()}`,
+          merchantShopId: fabricShop.id,
+          buyerShopId: tailorShopId,
+          buyerUserId: tailorUser.id,
+          deliveryTarget: 'TAILOR_SHOP',
+          deliveryAddress: { city: 'الرياض', street: 'حي العليا' },
+          status: 'PENDING',
+          totalAmount: total,
+          vatAmount: vat,
+          grandTotal: total + vat,
+          notes: 'طلب تجريبي — قماش لتفصيل ثوب',
+          items: {
+            create: [{
+              productId: product.id,
+              name: product.nameAr || product.name,
+              quantity: qty,
+              unit: 'meter',
+              unitPrice,
+              totalPrice: total,
+            }],
+          },
+        },
+      });
+    }
+  }
+
+  return { fabricShop, merchantRole };
+}
+
+/** يحدّث حسابات التجربة على قاعدة موجودة دون إعادة seed كامل */
+async function ensureDemoUsers(password: string): Promise<boolean> {
+  const shop = await prisma.shop.findFirst({ where: { name: 'مفصل الرياض' } });
+  if (!shop) return false;
+
+  const catFabrics = await prisma.category.findFirst({ where: { slug: 'fabrics' } });
+  const b2b = await ensureFabricB2BSetup(shop.id, password, catFabrics?.id);
+
+  const roles = await prisma.role.findMany({ where: { shopId: shop.id } });
+  const roleId = (name: string) => roles.find((r) => r.name === name)?.id;
+
+  const users = [
+    { email: 'admin@mufasal.com', name: 'مدير النظام', phone: '966500000000', role: 'ADMIN' },
+    { email: 'customer@mufasal.com', name: 'أحمد العميل', phone: '966511111111', role: 'CUSTOMER' },
+    { email: 'tailor@mufasal.com', name: 'خالد الخياط', phone: '966533333333', role: 'TAILOR' },
+    { email: 'merchant@mufasal.com', name: 'سعد التاجر', phone: '966544444444', role: 'MERCHANT' },
+    { email: 'rep@mufasal.com', name: 'ماجد الشمري', phone: '966522222222', role: 'REPRESENTATIVE' },
+    { email: 'rep2@mufasal.com', name: 'فهد المندوب', phone: '966522222223', role: 'REPRESENTATIVE' },
+  ];
+
+  for (const u of users) {
+    if (u.role === 'MERCHANT' && b2b?.fabricShop) {
+      await prisma.user.upsert({
+        where: { email: u.email },
+        create: {
+          shopId: b2b.fabricShop.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone,
+          password,
+          roleId: b2b.merchantRole.id,
+          status: 'ACTIVE',
+        },
+        update: {
+          name: u.name,
+          phone: u.phone,
+          password,
+          shopId: b2b.fabricShop.id,
+          roleId: b2b.merchantRole.id,
+          status: 'ACTIVE',
+        },
+      });
+      continue;
+    }
+    const rid = roleId(u.role);
+    if (!rid) continue;
+    await prisma.user.upsert({
+      where: { email: u.email },
+      create: { shopId: shop.id, name: u.name, email: u.email, phone: u.phone, password, roleId: rid, status: 'ACTIVE' },
+      update: { name: u.name, phone: u.phone, password, roleId: rid, status: 'ACTIVE' },
+    });
+  }
+
+  for (const role of roles) {
+    const defaults = DEFAULT_ROLE_PERMISSIONS[role.name];
+    if (defaults) {
+      await prisma.role.update({
+        where: { id: role.id },
+        data: { permissions: defaults },
+      });
+    }
+  }
+
+  console.log('Demo users upserted on existing database');
+  return true;
+}
+
 async function main() {
-  const password = await bcrypt.hash('admin123', 12);
+  const password = await bcrypt.hash('admin123', 10);
+
+  if (await ensureDemoUsers(password)) return;
 
   const shop = await prisma.shop.create({
     data: {
@@ -76,9 +269,13 @@ async function main() {
     data: { shopId: shop.id, name: 'MERCHANT', permissions: DEFAULT_ROLE_PERMISSIONS.MERCHANT },
   });
 
+  const roleMerchant = await prisma.role.findFirst({ where: { shopId: shop.id, name: 'MERCHANT' } });
+
   await prisma.role.create({
     data: { shopId: shop.id, name: 'REPRESENTATIVE', permissions: DEFAULT_ROLE_PERMISSIONS.REPRESENTATIVE },
   });
+
+  const roleRep = await prisma.role.findFirst({ where: { shopId: shop.id, name: 'REPRESENTATIVE' } });
 
   const roleCustomer = await prisma.role.create({
     data: { shopId: shop.id, name: 'CUSTOMER', permissions: DEFAULT_ROLE_PERMISSIONS.CUSTOMER },
@@ -117,6 +314,7 @@ async function main() {
   ];
 
   for (const p of products) {
+    if (p.categoryId === catFabrics.id) continue;
     await prisma.product.create({
       data: {
         shopId: shop.id,
@@ -141,6 +339,35 @@ async function main() {
     create: { shopId: shop.id, name: 'أحمد العميل', email: 'customer@mufasal.com', phone: '966511111111', password, roleId: roleCustomer.id, status: 'ACTIVE' },
     update: { name: 'أحمد العميل', password, roleId: roleCustomer.id, status: 'ACTIVE' },
   });
+
+  await prisma.user.upsert({
+    where: { email: 'tailor@mufasal.com' },
+    create: { shopId: shop.id, name: 'خالد الخياط', email: 'tailor@mufasal.com', phone: '966533333333', password, roleId: roleTailor.id, status: 'ACTIVE' },
+    update: { name: 'خالد الخياط', password, roleId: roleTailor.id, status: 'ACTIVE' },
+  });
+
+  if (roleMerchant) {
+    await prisma.user.upsert({
+      where: { email: 'merchant@mufasal.com' },
+      create: { shopId: shop.id, name: 'سعد التاجر', email: 'merchant@mufasal.com', phone: '966544444444', password, roleId: roleMerchant.id, status: 'ACTIVE' },
+      update: { name: 'سعد التاجر', password, roleId: roleMerchant.id, status: 'ACTIVE' },
+    });
+  }
+
+  await ensureFabricB2BSetup(shop.id, password, catFabrics.id);
+
+  if (roleRep) {
+    await prisma.user.upsert({
+      where: { email: 'rep@mufasal.com' },
+      create: { shopId: shop.id, name: 'ماجد الشمري', email: 'rep@mufasal.com', phone: '966522222222', password, roleId: roleRep.id, status: 'ACTIVE' },
+      update: { name: 'ماجد الشمري', password, roleId: roleRep.id, status: 'ACTIVE' },
+    });
+    await prisma.user.upsert({
+      where: { email: 'rep2@mufasal.com' },
+      create: { shopId: shop.id, name: 'فهد المندوب', email: 'rep2@mufasal.com', phone: '966522222223', password, roleId: roleRep.id, status: 'ACTIVE' },
+      update: { name: 'فهد المندوب', password, roleId: roleRep.id, status: 'ACTIVE' },
+    });
+  }
 
   let customer = await prisma.customer.findFirst({ where: { phone: '966511111111' } });
   if (!customer) {
@@ -275,7 +502,10 @@ async function main() {
   });
 
   // ─── Supplier Products ───
-  const fabricProducts = await prisma.product.findMany({ where: { shopId: shop.id, category: { slug: 'fabrics' } } });
+  const fabricShop = await prisma.shop.findFirst({ where: { name: 'متجر الأقمشة' } });
+  const fabricProducts = await prisma.product.findMany({
+    where: { shopId: fabricShop?.id || shop.id, category: { slug: 'fabrics' } },
+  });
   if (fabricProducts.length > 0) {
     await prisma.supplierProduct.create({
       data: { supplierId: sup1.id, productId: fabricProducts[0].id, price: 55, minOrder: 10 },
@@ -301,6 +531,9 @@ async function main() {
   console.log('Seed completed successfully!');
   console.log(`  Admin: admin@mufasal.com / admin123`);
   console.log(`  Customer: customer@mufasal.com / admin123`);
+  console.log(`  Tailor: tailor@mufasal.com / admin123`);
+  console.log(`  Merchant: merchant@mufasal.com / admin123`);
+  console.log(`  Rep: rep@mufasal.com / admin123`);
   console.log(`  Shop: ${shop.name}`);
   console.log(`  Products: ${products.length}`);
   console.log(`  Employees: 3, Suppliers: 2, Departments: 3`);

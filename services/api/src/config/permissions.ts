@@ -26,6 +26,7 @@ export const PERMISSIONS = {
   SHOPS: 'shops',
   SETTINGS: 'settings',
   B2B: 'b2b',
+  MANUFACTURING: 'manufacturing',
   SERVICES: 'services',
   MEASUREMENTS: 'measurements',
   AI: 'ai',
@@ -45,12 +46,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionMap> = {
     orders: true, products: true, inventory: true,
     finances: true, accounting: true, reports: true,
     hr: true, staff: true, procurement: true, suppliers: true,
-    pos: true, settings: true, services: true, measurements: true,
+    manufacturing: true, pos: true, settings: true, services: true, measurements: true,
+    b2b: true,
   },
 
   TAILOR: {
     orders: true, products: true, inventory: true,
-    staff: true, services: true, measurements: true,
+    finances: true, reports: true,
+    hr: true, staff: true, procurement: true, suppliers: true,
+    manufacturing: true, settings: true, services: true, measurements: true,
+    b2b: true,
   },
 
   STAFF: {

@@ -38,6 +38,7 @@ const completeSchema = z.object({
 });
 
 router.post('/', authenticate, validate(createSchema), ServiceRequestController.create);
+router.get('/reps/available', authenticate, ServiceRequestController.getAvailableReps);
 router.get('/', authenticate, ServiceRequestController.getAll);
 router.get('/:id', authenticate, ServiceRequestController.getById);
 router.get('/:id/tracking', authenticate, ServiceRequestController.tracking);

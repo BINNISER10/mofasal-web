@@ -12,7 +12,7 @@ import { getCustomerStageLabel } from '@mufasal/shared';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 import {
-  ShoppingBag, Package, ChevronLeft, ChevronRight, Star, RefreshCw,
+  ShoppingBag, Package, ChevronLeft, ChevronRight, Star, RefreshCw, Calendar, MapPin,
 } from 'lucide-react';
 
 export default function CustomerOrderDetailPage() {
@@ -61,6 +61,8 @@ export default function CustomerOrderDetailPage() {
 
   const status = order.status || 'PENDING';
   const stageLabel = getCustomerStageLabel(status, isRTL);
+  const deliveryAddr = order.deliveryAddress as { street?: string; city?: string; district?: string } | undefined;
+  const fabricMeta = order.orderMeasurements?.[0]?.measurementData as { fabricId?: string; fabricSource?: string } | undefined;
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -160,6 +162,30 @@ export default function CustomerOrderDetailPage() {
               {order.paymentStatus === 'PAID' ? (isRTL ? 'مدفوع' : 'Paid') : (isRTL ? 'غير مدفوع' : 'Unpaid')}
             </Badge>
           </Card>
+          {(order.estimatedDeliveryDate || deliveryAddr) && (
+            <Card className="p-5 border border-[#E8E8E8] space-y-2 text-sm">
+              <h3 className="font-semibold mb-1">{isRTL ? 'التوصيل' : 'Delivery'}</h3>
+              {order.estimatedDeliveryDate && (
+                <p className="flex items-center gap-2 text-neutral-600">
+                  <Calendar size={14} />
+                  {new Date(order.estimatedDeliveryDate).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                  })}
+                </p>
+              )}
+              {deliveryAddr?.street && (
+                <p className="flex items-start gap-2 text-neutral-600">
+                  <MapPin size={14} className="mt-0.5 shrink-0" />
+                  <span>{[deliveryAddr.city, deliveryAddr.street].filter(Boolean).join(' — ')}</span>
+                </p>
+              )}
+              {fabricMeta?.fabricSource && (
+                <p className="text-xs text-neutral-400">
+                  {isRTL ? 'مصدر القماش:' : 'Fabric:'} {fabricMeta.fabricSource === 'marketplace' ? (isRTL ? 'السوق' : 'Marketplace') : (isRTL ? 'المتجر' : 'Shop')}
+                </p>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </div>

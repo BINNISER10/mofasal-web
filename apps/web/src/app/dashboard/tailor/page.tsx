@@ -22,15 +22,19 @@ const MufasalBarChart = dynamic(
   }
 );
 
-const weeklyOrders = [
-  { name: 'سبت', value: 18 },
-  { name: 'أحد', value: 22 },
-  { name: 'إثن', value: 15 },
-  { name: 'ثلث', value: 28 },
-  { name: 'أربع', value: 21 },
-  { name: 'خميس', value: 31 },
-  { name: 'جمعة', value: 12 },
-];
+const DAY_NAMES = ['أحد', 'إثن', 'ثلث', 'أربع', 'خميس', 'جمعة', 'سبت'];
+
+function buildWeeklyOrders(orders: any[]) {
+  const buckets = DAY_NAMES.map((name) => ({ name, value: 0 }));
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toDateString();
+    buckets[6 - i].value = orders.filter((o) => new Date(o.createdAt).toDateString() === key).length;
+  }
+  return buckets;
+}
 
 function mapRecentOrders(orders: any[]) {
   return orders.slice(0, 4).map((o) => ({
@@ -64,6 +68,7 @@ export default function TailorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ today: 0, pending: 0, revenue: 0 });
   const [recentOrders, setRecentOrders] = useState<ReturnType<typeof mapRecentOrders>>([]);
+  const [weeklyOrders, setWeeklyOrders] = useState(() => buildWeeklyOrders([]));
 
   useEffect(() => {
     let active = true;
@@ -72,6 +77,7 @@ export default function TailorDashboardPage() {
     if (demo?.length) {
       setStats(calcStats(demo));
       setRecentOrders(mapRecentOrders(demo));
+      setWeeklyOrders(buildWeeklyOrders(demo));
       setLoading(false);
       return;
     }
@@ -88,6 +94,7 @@ export default function TailorDashboardPage() {
         if (orders.length) {
           setStats(calcStats(orders));
           setRecentOrders(mapRecentOrders(orders));
+          setWeeklyOrders(buildWeeklyOrders(orders));
         }
       })
       .catch(() => {})

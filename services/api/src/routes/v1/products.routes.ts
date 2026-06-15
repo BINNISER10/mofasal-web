@@ -48,6 +48,7 @@ const categorySchema = z.object({
 });
 
 router.get('/', optionalAuth, ProductController.getProducts);
+router.get('/inventory/movements', authenticate, authorize('MERCHANT', 'ADMIN', 'TAILOR_SHOP'), ProductController.getInventoryMovements);
 router.get('/:id', optionalAuth, ProductController.getProduct);
 router.post('/', authenticate, authorize('MERCHANT', 'ADMIN'), validate(productSchema), ProductController.createProduct);
 router.put('/:id', authenticate, authorize('MERCHANT', 'ADMIN'), ProductController.updateProduct);

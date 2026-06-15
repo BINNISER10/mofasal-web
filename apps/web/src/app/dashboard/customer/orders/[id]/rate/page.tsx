@@ -23,7 +23,13 @@ export default function RateOrderPage() {
     if (shopRating === 0) { toast.error(isRTL ? 'يرجى تقييم المتجر' : 'Please rate the shop'); return; }
     try {
       setIsSubmitting(true);
-      await reviewsApi.create({ orderId: id as string, shopRating, tailorRating: tailorRating || undefined, representativeRating: repRating || undefined, comment: comment || undefined });
+      await reviewsApi.create({
+        orderId: id as string,
+        shopRating,
+        tailorRating: tailorRating || undefined,
+        representativeRating: repRating || undefined,
+        shopReview: comment || undefined,
+      });
       setSubmitted(true);
       toast.success(isRTL ? 'شكراً لتقييمك!' : 'Thank you for your review!');
     } catch { toast.error(isRTL ? 'فشل إرسال التقييم' : 'Failed to submit review'); }

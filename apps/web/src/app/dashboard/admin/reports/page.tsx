@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/utils/formatting';
 import { DollarSign, TrendingUp, Download, FileText, BarChart3, Loader2 } from 'lucide-react';
 import { reportsApi } from '@/lib/api/reports';
 import { adminApi } from '@/lib/api/admin';
+import { shopsApi } from '@/lib/api/shops';
 import { DashboardStatLink } from '@/components/shared/DashboardStatLink';
 
 const MONTHS_AR = ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'];
@@ -23,14 +24,28 @@ export default function AdminReportsPage() {
   useEffect(() => {
     let active = true;
     Promise.all([
-      reportsApi.getSummary(),
-      reportsApi.getSalesTrend(),
-      reportsApi.getPaymentBreakdown(),
-      adminApi.getCommissions(),
-    ]).then(([summaryRes, trendRes, paymentRes, commissionRes]) => {
+      adminApi.getDashboard().catch(() => null),
+      adminApi.getCommissions().catch(() => []),
+      shopsApi.list({ limit: '1' }).catch(() => ({ shops: [] as any[] })),
+    ]).then(async ([dashboard, commissionRes, shopsRes]) => {
       if (!active) return;
-      setSummary(summaryRes);
-      setSalesTrend((trendRes || []).map((t: any, i: number) => ({
+      const defaultShopId = shopsRes?.shops?.[0]?.id;
+      const reportParams = defaultShopId ? { shopId: defaultShopId } : undefined;
+      const [summaryRes, trendRes, paymentRes] = await Promise.all([
+        reportsApi.getSummary(reportParams).catch(() => null),
+        reportsApi.getSalesTrend(reportParams).catch(() => []),
+        reportsApi.getPaymentBreakdown(reportParams).catch(() => []),
+      ]);
+      if (!active) return;
+      const summary = summaryRes || {
+        totalRevenue: dashboard?.dashboard?.totalRevenue || 0,
+        totalOrders: dashboard?.dashboard?.totalOrders || 0,
+        paidOrders: dashboard?.dashboard?.totalOrders || 0,
+        avgOrderValue: 0,
+      };
+      setSummary(summary);
+      const trend = trendRes?.length ? trendRes : (dashboard?.dashboard?.revenueByMonth || []).map((m: any) => ({ date: m.name, revenue: m.value }));
+      setSalesTrend((trend || []).map((t: any, i: number) => ({
         name: MONTHS_AR[i] || t.date?.slice(0, 7) || '',
         value: t.revenue || t.value || 0,
       })));

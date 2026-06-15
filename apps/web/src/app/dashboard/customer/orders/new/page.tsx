@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { OrderTrackingTimeline } from '@/components/shared/OrderTrackingTimeline';
@@ -13,7 +13,7 @@ import { ThobeSpecSelector, DEFAULT_THOBE_SPEC, ThobeSpec } from '@/components/s
 import { FabricPicker, SelectedFabric } from '@/components/shared/FabricPicker';
 import {
   Store, Scissors, Ruler, Package, CreditCard, CheckCircle2,
-  ChevronRight, ChevronLeft, Search, Star, MapPin, Clock, Check, Truck,
+  ChevronRight, ChevronLeft, Search, Star, MapPin, Clock, Check, Truck, Calendar,
 } from 'lucide-react';
 
 const PAYMENT_METHODS = [
@@ -44,6 +44,15 @@ interface OrderState {
   deliveryAddress: string;
   deliveryCity: string;
   paymentMethod: string | null;
+  deliveryDate: string;
+}
+
+const STEP_ICONS = [Store, CreditCard, Truck];
+
+function addDaysISO(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + Math.max(1, days));
+  return d.toISOString().slice(0, 10);
 }
 
 const initialOrder: OrderState = {
@@ -57,9 +66,8 @@ const initialOrder: OrderState = {
   deliveryAddress: 'حي العليا، شارع التحلية',
   deliveryCity: 'الرياض',
   paymentMethod: null,
+  deliveryDate: addDaysISO(7),
 };
-
-const STEP_ICONS = [Store, CreditCard, Truck];
 
 function NewOrderPageContent() {
   const { isRTL } = useAppStore();
@@ -75,6 +83,7 @@ function NewOrderPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const lastServiceId = useRef<string | null>(null);
 
   useEffect(() => {
     const queryShopId = searchParams.get('shop');
@@ -138,13 +147,22 @@ function NewOrderPageContent() {
       .finally(() => setLoadingServices(false));
   }, [order.shopId]);
 
+  useEffect(() => {
+    if (!order.serviceId) return;
+    const svc = services.find((s) => s.id === order.serviceId);
+    if (!svc?.days) return;
+    if (lastServiceId.current === order.serviceId) return;
+    lastServiceId.current = order.serviceId;
+    setOrder((p) => ({ ...p, deliveryDate: addDaysISO(svc.days) }));
+  }, [order.serviceId, services]);
+
   const selectedShop = shops.find((s) => s.id === order.shopId);
   const selectedService = services.find((s) => s.id === order.serviceId);
 
   const canProceed = () => {
     const fabricOk = order.fabricChoice ?? order.fabric.type;
     if (step === 1) {
-      return order.shopId && order.serviceId && fabricOk && order.deliveryAddress.trim().length > 3;
+      return order.shopId && order.serviceId && fabricOk && order.deliveryAddress.trim().length > 3 && Boolean(order.deliveryDate);
     }
     if (step === 2) return order.paymentMethod !== null && !submitting;
     return true;
@@ -157,6 +175,7 @@ function NewOrderPageContent() {
     if (!order.serviceId) missing.push(isRTL ? 'الخدمة' : 'Service');
     if (!(order.fabricChoice ?? order.fabric.type)) missing.push(isRTL ? 'القماش' : 'Fabric');
     if (order.deliveryAddress.trim().length <= 3) missing.push(isRTL ? 'عنوان التوصيل' : 'Delivery address');
+    if (!order.deliveryDate) missing.push(isRTL ? 'موعد التسليم' : 'Delivery date');
     return missing;
   };
 
@@ -187,6 +206,9 @@ function NewOrderPageContent() {
         },
         notes: order.notes || undefined,
         paymentMethod: order.paymentMethod || undefined,
+        estimatedDeliveryDate: order.deliveryDate
+          ? new Date(`${order.deliveryDate}T12:00:00`).toISOString()
+          : undefined,
       });
       setCreatedOrder(res.order);
       setStep(3);
@@ -237,6 +259,14 @@ function NewOrderPageContent() {
           <div className="flex justify-between">
             <span className="text-neutral-500">{isRTL ? 'الخدمة' : 'Service'}</span>
             <span className="font-medium">{selectedService?.nameAr}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-neutral-500">{isRTL ? 'موعد التسليم' : 'Delivery date'}</span>
+            <span className="font-medium">
+              {order.deliveryDate
+                ? new Date(`${order.deliveryDate}T12:00:00`).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US')
+                : '—'}
+            </span>
           </div>
           <div className="flex justify-between font-semibold pt-2 border-t border-[#E8E8E8]">
             <span>{isRTL ? 'الإجمالي' : 'Total'}</span>
@@ -435,6 +465,26 @@ function NewOrderPageContent() {
                 className="w-full border border-[#E8E8E8] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00373E]/40"
               />
             </section>
+
+            <section>
+              <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <Calendar size={16} /> {isRTL ? 'موعد التسليم المتوقع' : 'Expected delivery date'}
+              </h3>
+              <input
+                type="date"
+                value={order.deliveryDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setOrder({ ...order, deliveryDate: e.target.value })}
+                className="w-full border border-[#E8E8E8] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#00373E]/40"
+              />
+              {selectedService?.days ? (
+                <p className="text-[11px] text-neutral-400 mt-1.5">
+                  {isRTL
+                    ? `مدة الخدمة التقريبية: ${selectedService.days} أيام`
+                    : `Typical service time: ${selectedService.days} days`}
+                </p>
+              ) : null}
+            </section>
           </div>
         )}
 
@@ -448,6 +498,10 @@ function NewOrderPageContent() {
               <div className="flex justify-between"><span className="text-neutral-500">{isRTL ? 'المتجر' : 'Shop'}</span><span>{selectedShop?.nameAr}</span></div>
               <div className="flex justify-between"><span className="text-neutral-500">{isRTL ? 'الخدمة' : 'Service'}</span><span>{selectedService?.nameAr}</span></div>
               <div className="flex justify-between"><span className="text-neutral-500">{isRTL ? 'العنوان' : 'Address'}</span><span className="truncate max-w-[180px]">{order.deliveryAddress}</span></div>
+              <div className="flex justify-between"><span className="text-neutral-500">{isRTL ? 'موعد التسليم' : 'Delivery'}</span><span>{order.deliveryDate ? new Date(`${order.deliveryDate}T12:00:00`).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US') : '—'}</span></div>
+              {order.fabric.productName && (
+                <div className="flex justify-between"><span className="text-neutral-500">{isRTL ? 'القماش' : 'Fabric'}</span><span className="truncate max-w-[180px]">{order.fabric.productName}</span></div>
+              )}
               <div className="flex justify-between font-semibold pt-2 border-t border-[#E8E8E8]">
                 <span>{isRTL ? 'الإجمالي' : 'Total'}</span>
                 <span>﷼{selectedService?.price}</span>

@@ -23,6 +23,7 @@ interface StockRow {
 export default function MerchantInventoryPage() {
   const { isRTL } = useAppStore();
   const [stock, setStock] = useState<StockRow[]>([]);
+  const [movements, setMovements] = useState<Array<{ id: string; type: string; quantity: number; notes?: string; createdAt: string; product?: { name?: string; nameAr?: string } }>>([]);
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
   const [editVal, setEditVal] = useState('');
@@ -30,8 +31,11 @@ export default function MerchantInventoryPage() {
   const fetchStock = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await productsApi.list({ limit: '100' });
-      setStock(res.products.map((p: any) => ({
+      const [productsRes, movementsRes] = await Promise.all([
+        productsApi.list({ limit: '100' }),
+        productsApi.getInventoryMovements(15).catch(() => []),
+      ]);
+      setStock(productsRes.products.map((p: any) => ({
         id: p.id,
         name: p.nameAr || p.name,
         stock: p.stockQuantity ?? p.stock ?? 0,
@@ -39,6 +43,7 @@ export default function MerchantInventoryPage() {
         unit: p.unit || 'متر',
         price: p.price || 0,
       })));
+      setMovements(Array.isArray(movementsRes) ? movementsRes : []);
     } catch {
       // لا بيانات
     } finally {
@@ -59,6 +64,7 @@ export default function MerchantInventoryPage() {
     try {
       await productsApi.adjustStock(id, delta > 0 ? 'IN' : 'OUT', Math.abs(delta), isRTL ? 'تعديل يدوي' : 'Manual adjustment');
       toast.success(isRTL ? 'تم تحديث المخزون' : 'Stock updated');
+      productsApi.getInventoryMovements(15).then((m) => setMovements(Array.isArray(m) ? m : [])).catch(() => {});
     } catch (e: any) {
       toast.error(e?.message || (isRTL ? 'تعذّر التحديث' : 'Failed'));
       fetchStock();
@@ -151,25 +157,29 @@ export default function MerchantInventoryPage() {
       <Card className="p-5">
         <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4">{isRTL ? 'حركة المخزون' : 'Stock Movement'}</h3>
         <div className="space-y-3">
-          {[
-            { action: isRTL ? 'إضافة مخزون' : 'Stock Added', item: 'قطن فاخر', qty: 50, date: '2024-03-15', type: 'in' },
-            { action: isRTL ? 'بيع' : 'Sold', item: 'حرير طبيعي', qty: 2, date: '2024-03-14', type: 'out' },
-            { action: isRTL ? 'إضافة مخزون' : 'Stock Added', item: 'صوف إيطالي', qty: 30, date: '2024-03-12', type: 'in' },
-            { action: isRTL ? 'بيع' : 'Sold', item: 'مخمل فاخر', qty: 1, date: '2024-03-11', type: 'out' },
-            { action: isRTL ? 'مرتجع' : 'Returned', item: 'كتان بلجيكي', qty: 1, date: '2024-03-10', type: 'in' },
-          ].map((log, i) => (
-            <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl">
+          {movements.length === 0 ? (
+            <p className="text-center text-sm text-gray-400 py-6">{isRTL ? 'لا توجد حركات مسجّلة بعد' : 'No movements recorded yet'}</p>
+          ) : movements.map((log) => {
+            const isIn = log.type === 'IN';
+            const itemName = log.product?.nameAr || log.product?.name || '—';
+            const date = new Date(log.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US');
+            return (
+            <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-xl">
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${log.type === 'in' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                  {log.type === 'in' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isIn ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                  {isIn ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                 </div>
-                <div><p className="text-sm font-semibold dark:text-slate-200">{log.action}</p><p className="text-xs text-gray-500 dark:text-slate-400">{log.item} - {log.date}</p></div>
+                <div>
+                  <p className="text-sm font-semibold dark:text-slate-200">{isIn ? (isRTL ? 'إضافة مخزون' : 'Stock In') : (isRTL ? 'خصم مخزون' : 'Stock Out')}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{itemName} — {date}</p>
+                </div>
               </div>
-              <span className={`font-bold ${log.type === 'in' ? 'text-green-600' : 'text-red-600'}`}>
-                {log.type === 'in' ? '+' : '-'}{log.qty}
+              <span className={`font-bold ${isIn ? 'text-green-600' : 'text-red-600'}`}>
+                {isIn ? '+' : '-'}{log.quantity}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
     </div>

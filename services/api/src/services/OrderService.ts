@@ -58,8 +58,25 @@ export class OrderService {
   }
 
   static async createOrder(data: {
-    customerId?: string; userId?: string; shopId: string; totalAmount?: number;
-    deliveryFee?: number; customerNotes?: string; paymentMethod?: string;
+    customerId?: string;
+    userId?: string;
+    shopId: string;
+    totalAmount?: number;
+    deliveryFee?: number;
+    customerNotes?: string;
+    paymentMethod?: string;
+    estimatedDeliveryDate?: string;
+    deliveryAddress?: {
+      label?: string;
+      street?: string;
+      district?: string;
+      city?: string;
+      lat?: number;
+      lng?: number;
+    };
+    measurements?: Record<string, number>;
+    fabricId?: string;
+    fabricSource?: string;
     items?: Array<{ name: string; quantity: number; unitPrice: number }>;
   }) {
     const orderNumber = this.generateOrderNumber();
@@ -68,39 +85,85 @@ export class OrderService {
     const vatAmount = totalAmount * 0.15;
     const grandTotal = totalAmount + vatAmount + deliveryFee;
 
-    // إن لم يُمرّر customerId صريح، نوفّقه من المستخدم المصادَق
     const customerId = data.customerId
       || (data.userId ? await this.resolveCustomerId(data.userId, data.shopId) : undefined);
     if (!customerId) throw ApiError.badRequest('Customer could not be resolved');
 
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        customerId,
-        shopId: data.shopId,
-        totalAmount,
-        vatAmount,
-        deliveryFee,
-        grandTotal,
-        customerNotes: data.customerNotes,
-        paymentMethod: data.paymentMethod,
-        items: data.items ? {
-          create: data.items.map((item) => ({
-            name: item.name,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.quantity * item.unitPrice,
-          })),
-        } : undefined,
-      },
+    const measurementEntries = Object.entries(data.measurements || {}).filter(
+      ([, v]) => typeof v === 'number' && !Number.isNaN(v),
+    );
+    const measurements = Object.fromEntries(measurementEntries) as Record<string, number>;
+    const hasMeasurements = measurementEntries.length > 0;
+    const hasFabricMeta = Boolean(data.fabricId || data.fabricSource);
+
+    let estimatedDeliveryDate: Date | undefined;
+    if (data.estimatedDeliveryDate) {
+      const parsed = new Date(data.estimatedDeliveryDate);
+      if (!Number.isNaN(parsed.getTime())) estimatedDeliveryDate = parsed;
+    }
+
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          orderNumber,
+          customerId,
+          shopId: data.shopId,
+          totalAmount,
+          vatAmount,
+          deliveryFee,
+          grandTotal,
+          customerNotes: data.customerNotes,
+          paymentMethod: data.paymentMethod,
+          estimatedDeliveryDate,
+          deliveryAddress: data.deliveryAddress || undefined,
+          items: data.items ? {
+            create: data.items.map((item) => ({
+              name: item.name,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.quantity * item.unitPrice,
+            })),
+          } : undefined,
+        },
+        include: {
+          items: true,
+          customer: { select: { id: true, name: true, phone: true } },
+          shop: { select: { id: true, name: true } },
+        },
+      });
+
+      if (hasMeasurements || hasFabricMeta) {
+        await tx.orderMeasurement.create({
+          data: {
+            orderId: created.id,
+            measurementData: {
+              ...measurements,
+              ...(data.fabricId ? { fabricId: data.fabricId } : {}),
+              ...(data.fabricSource ? { fabricSource: data.fabricSource } : {}),
+            },
+          },
+        });
+      }
+
+      if (hasMeasurements) {
+        await tx.customer.update({
+          where: { id: customerId },
+          data: { measurements },
+        });
+      }
+
+      return created;
+    });
+
+    return prisma.order.findUnique({
+      where: { id: order.id },
       include: {
         items: true,
         customer: { select: { id: true, name: true, phone: true } },
         shop: { select: { id: true, name: true } },
+        orderMeasurements: true,
       },
     });
-
-    return order;
   }
 
   static async getOrders(filters: {
@@ -151,6 +214,7 @@ export class OrderService {
       where: { id: orderId },
       include: {
         items: true,
+        orderMeasurements: true,
         customer: { select: { id: true, name: true, phone: true } },
         shop: { select: { id: true, name: true, nameAr: true, logo: true, address: true, lat: true, lng: true } },
       },

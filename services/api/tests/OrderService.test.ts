@@ -17,7 +17,12 @@ jest.mock('../src/config/database', () => ({
     customer: {
       findFirst: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
+    orderMeasurement: {
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(),
     product: {
       findFirst: jest.fn(),
       update: jest.fn(),
@@ -40,6 +45,61 @@ describe('OrderService', () => {
     it('should generate a string starting with MUF-', () => {
       const num = OrderService.generateOrderNumber();
       expect(num).toMatch(/^MUF-/);
+    });
+  });
+
+  describe('createOrder', () => {
+    beforeEach(() => {
+      (prisma.$transaction as jest.Mock).mockImplementation(async (fn: (tx: typeof prisma) => unknown) => fn(prisma));
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({ name: 'عميل', phone: '966511111111' });
+      (prisma.customer.findFirst as jest.Mock).mockResolvedValue({ id: 'cust-1' });
+      (prisma.order.create as jest.Mock).mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'MUF-TEST',
+        items: [],
+        customer: { id: 'cust-1', name: 'عميل', phone: '966511111111' },
+        shop: { id: 'shop-1', name: 'محل' },
+      });
+      (prisma.order.findUnique as jest.Mock).mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'MUF-TEST',
+        estimatedDeliveryDate: new Date('2026-06-20'),
+        deliveryAddress: { city: 'الرياض', street: 'العليا' },
+        items: [],
+        orderMeasurements: [{ measurementData: { chest: 100, fabricId: 'fab-1' } }],
+        customer: { id: 'cust-1', name: 'عميل', phone: '966511111111' },
+        shop: { id: 'shop-1', name: 'محل' },
+      });
+      (prisma.orderMeasurement.create as jest.Mock).mockResolvedValue({ id: 'om-1' });
+      (prisma.customer.update as jest.Mock).mockResolvedValue({});
+    });
+
+    it('should persist measurements, fabric, address, and delivery date', async () => {
+      const result = await OrderService.createOrder({
+        userId: 'user-1',
+        shopId: 'shop-1',
+        totalAmount: 500,
+        estimatedDeliveryDate: '2026-06-20T12:00:00.000Z',
+        deliveryAddress: { city: 'الرياض', street: 'العليا' },
+        measurements: { chest: 100 },
+        fabricId: 'fab-1',
+        fabricSource: 'marketplace',
+        items: [{ name: 'تفصيل ثوب', quantity: 1, unitPrice: 500 }],
+      });
+
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            deliveryAddress: { city: 'الرياض', street: 'العليا' },
+            estimatedDeliveryDate: expect.any(Date),
+          }),
+        }),
+      );
+      expect(prisma.orderMeasurement.create).toHaveBeenCalled();
+      expect(prisma.customer.update).toHaveBeenCalled();
+      expect(result?.orderMeasurements?.[0]?.measurementData).toEqual(
+        expect.objectContaining({ chest: 100, fabricId: 'fab-1' }),
+      );
     });
   });
 

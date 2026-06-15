@@ -5,11 +5,15 @@ import { sendSuccess } from '../../utils/response';
 import { ApiError } from '../../utils/ApiError';
 
 function resolveShopId(req: AuthRequest): string {
-  const isAdmin = req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN';
+  const role = req.user?.role || '';
+  const isPlatformAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
   const queryShopId = req.query.shopId as string | undefined;
-  const shopId = isAdmin && queryShopId ? queryShopId : req.user?.shopId;
-  if (!shopId) throw ApiError.badRequest('No shop associated with this account');
-  return shopId;
+  if (isPlatformAdmin && queryShopId) return queryShopId;
+  if (req.user?.shopId) return req.user.shopId;
+  if (isPlatformAdmin) {
+    throw ApiError.badRequest('shopId query parameter required for admin reports');
+  }
+  throw ApiError.badRequest('No shop associated with this account');
 }
 
 function parseRange(req: AuthRequest) {

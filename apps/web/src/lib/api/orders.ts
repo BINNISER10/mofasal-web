@@ -115,6 +115,7 @@ interface CreateOrderRequest {
   items: Array<{ name: string; quantity: number; price?: number; unitPrice?: number; type?: string }>;
   deliveryAddress?: Address;
   deliveryMethod?: string;
+  estimatedDeliveryDate?: string;
   notes?: string;
   paymentMethod?: string;
   totalAmount?: number;
@@ -154,6 +155,7 @@ export const ordersApi = {
             city: data.deliveryAddress.city,
           }
         : undefined,
+      estimatedDeliveryDate: data.estimatedDeliveryDate,
       items: data.items.map((i) => ({
         name: i.name,
         quantity: i.quantity,

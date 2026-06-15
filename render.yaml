@@ -1,0 +1,80 @@
+# =============================================================================
+# Render Blueprint — منصة مفصل MUFASAL
+# =============================================================================
+# الروابط بعد النشر:
+#   الويب:  https://mufasal.onrender.com
+#   API:    https://mufasal-api.onrender.com
+#   DB:     mufasal-db (داخلي)
+#
+# التطبيق: Render Dashboard → Blueprints → New Blueprint Instance
+#           → اختر repo: BINNISER10/mofasal-web → فرع master
+# =============================================================================
+
+databases:
+  - name: mufasal-db
+    databaseName: mufasal
+    user: mufasal
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+
+services:
+  # ── API ──────────────────────────────────────────────────────────────────
+  - type: web
+    name: mufasal-api
+    runtime: docker
+    region: frankfurt
+    plan: free
+    branch: master
+    autoDeploy: true
+    dockerfilePath: ./docker/Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4001"
+      - key: API_PREFIX
+        value: /api/v1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mufasal-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://mofasal.netlify.app,https://mofasal-web.onrender.com,https://mofasal.onrender.com,https://mufasal.com,https://www.mufasal.com,http://localhost:3000
+      - key: SEED_DATABASE
+        value: "true"
+
+  # ── الويب (Next.js + تصميم لومار) ───────────────────────────────────────
+  - type: web
+    name: mufasal
+    runtime: docker
+    region: frankfurt
+    plan: free
+    branch: master
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: PORT
+        value: "10000"
+      - key: HOSTNAME
+        value: "0.0.0.0"
+      - key: NEXT_PUBLIC_API_URL
+        value: https://mufasal-api.onrender.com/api/v1
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://mufasal.onrender.com
+      - key: DATABASE_URL
+        value: postgresql://build:build@localhost:5432/build?schema=public
+      - key: DIRECT_DATABASE_URL
+        value: postgresql://build:build@localhost:5432/build?schema=public
